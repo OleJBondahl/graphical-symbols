@@ -493,6 +493,9 @@ square at the default module), because a dot per module of a 1e300 symbol would 
 Why: CLAUDE.md wants every module-level function pure and non-raising; a symbol name can carry
 `"\r"` or a NUL from TOML, and a build the sibling repo compares byte for byte must be well-formed
 XML with LF-only bytes.
+"Never raises" covers the typed inputs, floats: a Python int beyond float range (10**400) in a
+hand-built `Point` is outside the contract (the fields are `float`) and unreachable from files
+(numbers are bounded to 1e6, D22).
 Cost if wrong: a garbage symbol draws garbage numbers instead of an error; a real symbol above
 100 by 100 M gets no grid in its annotated SVG (one constant); a `\r` in a name shows as `&#13;`
 in the file.
@@ -510,8 +513,9 @@ red translucent strip 0.5 M wide from the port along its direction to the edge o
 per port a red dot (`port`) and its id (`port-id`, size 0.6, centred 1 M out). The elements are
 drawn first, under all of it. The view is the keep-out box united with every port label box, every
 lane start (0.5 M across), every anchor marker and label and every slot label, plus 1 M on every
-side; a label box is 1 M wide per font size and character (0.18 M per character at size 0.3) and one
-font size high, a little wider than the glyphs. Plain, the view is the body box, plus the slot boxes
+side; a port or anchor label box is 1 em wide per character (0.3 M per character at size 0.6, 0.4 M at
+0.4), a little wider than the glyphs, a slot label box is 0.6 em per character (0.18 M at size
+0.3, the guide's own text width), and each is one font size high. Plain, the view is the body box, plus the slot boxes
 of the texts that are drawn. Sample text (`<g class="samples">`, drawn last, in both modes, class
 `sample-text`, orange, no stroke, upright, `font-family="sans-serif"`): the font size is the
 largest `s <= 1` with `s <= h` and `0.6 * s * characters <= w`, rounded down to 4 decimals; a
@@ -520,7 +524,9 @@ for gets nothing. Vertical placement uses explicit baselines and no `dominant-ba
 several renderers (MuPDF, cairosvg) ignore: E and W put the baseline 0.36 s below the slot point (a
 capital is about 0.72 s tall, so it is centred on the point), N puts it on the point, S 0.72 s
 below (the capitals hang from the point). The port id labels use the same 0.36 rule instead of
-`dominant-baseline="central"`, so they moved 0.216 M down. Slots are drawn in id order because
+`dominant-baseline="central"`, so they moved 0.216 M down, and so does a symbol's own `Text`
+element (its baseline is `at.y + 0.36 * height`, so the capitals are centred in the text box the
+guide defines; it was `at.y`, which put them above the box). Slots are drawn in id order because
 resolved JSON keeps them in id order (D30): a symbol loaded from a bundle must give the same
 bytes as the one from the sources. The build (`build_files`) draws `build/annotated/<n>.svg` with
 `sample_texts(symbol)` from `gallery.py`: `tag` is `-X1`, `value` is `10 A`, `marking.<port id>` is

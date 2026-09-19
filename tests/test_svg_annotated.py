@@ -12,6 +12,7 @@ from graphical_symbols import (
     Anchor,
     Direction,
     Line,
+    Orientation,
     Point,
     Polyline,
     Port,
@@ -22,6 +23,7 @@ from graphical_symbols import (
     SymbolKind,
     body_box,
     keepout_box,
+    orient,
     slot_box,
     to_svg,
 )
@@ -459,3 +461,66 @@ def test_the_order_of_the_slots_does_not_change_the_output():
     assert to_svg(reversed_slots, annotate=True, texts=texts) == to_svg(
         symbol, annotate=True, texts=texts
     )
+
+
+def expected_lane(port, view):
+    """The lane by the guide's definition: 0.5 M wide, from the port to the view edge."""
+    vx0, vy0, vx1, vy1 = view
+    px, py, d = port.position.x, port.position.y, port.direction
+    if d is E:
+        return (px, py - 0.25, vx1 - px, 0.5)
+    if d is W:
+        return (vx0, py - 0.25, px - vx0, 0.5)
+    if d is N:
+        return (px - 0.25, vy0, 0.5, py - vy0)
+    return (px - 0.25, py, 0.5, vy1 - py)
+
+
+class TestOrientedSymbols:
+    """The slot boxes do not turn with the symbol; ports, anchors and slot points and sides do."""
+
+    @pytest.mark.parametrize("number", ["S00227", "S00230", "S00254"])
+    @pytest.mark.parametrize("orientation", list(Orientation))
+    def test_the_annotated_render_follows_the_oriented_ports_and_slots(self, number, orientation):
+        base = LIBRARY.get(number)
+        symbol = orient(base, orientation)
+        root = annotated(symbol, sample_texts(base))
+        view = view_of(root)
+
+        lanes = by_class(root, "lane")
+        assert len(lanes) == len(symbol.ports)
+        for port, lane in zip(symbol.ports, lanes, strict=True):
+            got = tuple(float(lane.get(k)) for k in ("x", "y", "width", "height"))
+            assert got == pytest.approx(expected_lane(port, view), abs=1e-4)
+        markers = by_class(root, "port")
+        for port, marker in zip(symbol.ports, markers, strict=True):
+            assert (float(marker.get("cx")), float(marker.get("cy"))) == pytest.approx(
+                (port.position.x, port.position.y)
+            )
+
+        slots = sorted(symbol.slots, key=lambda s: s.id)
+        boxes = by_class(root, "slot-box")
+        assert len(boxes) == len(slots)
+        for slot, rect in zip(slots, boxes, strict=True):
+            box = slot_box(slot)
+            got = tuple(float(rect.get(k)) for k in ("x", "y", "width", "height"))
+            assert got == pytest.approx((box.min.x, box.min.y, box.width, box.height))
+            # The box keeps the declared size in every orientation.
+            assert (got[2], got[3]) == pytest.approx(slot.box)
+
+        samples = by_class(root, "sample-text")
+        assert len(samples) == len(slots)
+        anchors = {E: "start", W: "end", N: "middle", S: "middle"}
+        for slot, text in zip(slots, samples, strict=True):
+            assert text.get("text-anchor") == anchors[slot.side]
+            assert float(text.get("x")) == pytest.approx(slot.position.x)
+            assert "transform" not in text.attrib
+            width = 0.6 * float(text.get("font-size")) * len(text.text)
+            box = slot_box(slot)
+            x, x0 = float(text.get("x")), {"start": 0, "end": -1, "middle": -0.5}
+            left = x + x0[text.get("text-anchor")] * width
+            assert box.min.x - 1e-4 <= left
+            assert left + width <= box.max.x + 1e-4
+
+        for name, found in annotation_boxes(root):
+            assert inside(found, view), (number, orientation, name, found, view)

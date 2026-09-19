@@ -22,6 +22,7 @@ from graphical_symbols import (
     Weight,
     to_svg,
 )
+from graphical_symbols.boxes import element_box
 from graphical_symbols.geometry import arc_point
 
 NS = {"s": "http://www.w3.org/2000/svg"}
@@ -157,12 +158,29 @@ def test_arc_sweep_wraps_past_360():
 def test_text_attributes_and_escaping():
     out = to_svg(sym(Text("a<&>b", Point(1, 2), 0.5)))
     assert (
-        '<text x="1" y="2" font-size="0.5" text-anchor="middle" fill="#000" stroke="none" '
+        '<text x="1" y="2.18" font-size="0.5" text-anchor="middle" fill="#000" stroke="none" '
         'font-family="sans-serif">a&lt;&amp;&gt;b</text>'
     ) in out
     text = parse(out).find(".//s:text", NS)
     assert text is not None
     assert text.text == "a<&>b"
+
+
+@pytest.mark.parametrize("height", [0.5, 1, 0.25, 0.125])
+@pytest.mark.parametrize("at", [Point(1, 2), Point(-3, 0), Point(0, -4.5)])
+def test_a_text_element_is_drawn_centred_on_its_position_inside_its_box(at, height):
+    element = Text("MW", at, height)
+    drawn = parse(to_svg(sym(element))).find(".//s:text", NS)
+    assert drawn is not None
+    baseline = float(drawn.get("y"))
+    # A capital is about 0.72 of the font size tall: the band it covers is centred on `at.y` and
+    # inside the text box the guide defines (and `element_box` reports). The old baseline at
+    # `at.y` put the band above the box.
+    top, bottom = baseline - 0.72 * height, baseline
+    box = element_box(element)
+    assert box.min.y - 1e-4 <= top
+    assert bottom <= box.max.y + 1e-4
+    assert (top + bottom) / 2 == pytest.approx(at.y, abs=1e-4)
 
 
 def test_title_is_escaped():

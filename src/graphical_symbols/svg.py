@@ -33,8 +33,9 @@ _MARGIN = 1.0
 _DASHED = ' stroke-dasharray="0.5 0.25"'
 _MAX_GRID_DOTS = 10_000
 
-# Annotation sizes and colours (D33). Label boxes assume 1 M of width per font size and character,
-# a little wide on purpose, so a label never touches the edge of the view.
+# Annotation sizes and colours (D33). Port and anchor label boxes are 1 em wide per character, a
+# little wider than the glyphs on purpose, so a label never touches the edge of the view; slot
+# label boxes are 0.6 em per character (0.18 M at size 0.3), the guide's own text width.
 _LANE_HALF_WIDTH = 0.25
 _PORT_FONT = 0.6
 _PORT_COLOUR = "#d00"
@@ -128,9 +129,14 @@ def _arc(arc: Arc) -> str:
 
 @deal.pure
 def _text(text: Text) -> str:
-    """Render a text label, middle-anchored, in black without a stroke."""
+    """Render a text label, middle-anchored, in black without a stroke.
+
+    The guide makes a text element a box centred on its position, so the baseline is a cap-centre
+    below it (D33) and the capitals are centred on the position.
+    """
+    baseline = text.position.y + _CAP_CENTRE * text.height
     return (
-        f'<text x="{_num(text.position.x)}" y="{_num(text.position.y)}" '
+        f'<text x="{_num(text.position.x)}" y="{_num(baseline)}" '
         f'font-size="{_num(text.height)}" text-anchor="middle" fill="#000" '
         f'stroke="none" font-family="sans-serif">{_content(text.content)}</text>'
     )
