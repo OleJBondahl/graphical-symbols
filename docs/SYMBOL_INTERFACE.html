@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Symbol interface design guide</title>
+<style>
+  :root { --bg:#fff; --fg:#1b1f24; --muted:#57606a; --line:#d0d7de; --code:#f6f8fa; --accent:#0a5cc2; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1317; --fg:#e6edf3; --muted:#9aa4af; --line:#30363d; --code:#171c22; --accent:#6cb0ff; }
+  }
+  body { background:var(--bg); color:var(--fg); font:16px/1.55 system-ui,sans-serif; margin:0; }
+  main { max-width:60rem; margin:0 auto; padding:2rem 1rem 4rem; }
+  h1 { font-size:1.9rem; margin:0 0 .25rem; }
+  h2 { font-size:1.35rem; margin:2.5rem 0 .5rem; padding-top:.75rem; border-top:1px solid var(--line); }
+  h3 { font-size:1.08rem; margin:1.5rem 0 .4rem; }
+  p.meta { color:var(--muted); margin:0 0 1.5rem; }
+  a { color:var(--accent); }
+  code { background:var(--code); padding:.1em .3em; border-radius:4px; font:0.9em ui-monospace,Consolas,monospace; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:6px; padding:.8rem 1rem; overflow-x:auto; }
+  pre code { background:none; padding:0; font-size:.85rem; line-height:1.45; }
+  table { border-collapse:collapse; width:100%; margin:.75rem 0; font-size:.93rem; display:block; overflow-x:auto; }
+  th, td { border:1px solid var(--line); padding:.4rem .6rem; text-align:left; vertical-align:top; }
+  th { background:var(--code); }
+  .note { border-left:4px solid var(--accent); background:var(--code); padding:.6rem 1rem; margin:1rem 0; }
+  nav ol { columns:2; padding-left:1.2rem; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Symbol interface design guide</h1>
+<p class="meta">Binding spec for the <code>graphical-symbols</code> toolkit and the <code>iec60617</code> data repo.
+Agreed with the repo owner on 2026-09-19. Identical copies live at <code>docs/SYMBOL_INTERFACE.html</code> in both repos;
+change both together.</p>
+
+<div class="note">
+<strong>This guide is the only design document.</strong> The earlier <code>docs/DESIGN.md</code> and <code>docs/superpowers/plans/</code>
+in both repos described a Python-factory design and have been removed; they exist only in git history and must not be revived.
+Code already in <code>graphical-symbols</code> was built from that older design and is to be reworked to match this guide (see <a href="#s13">section 13</a>).
+This is a from-scratch design: nothing in Schematika's symbol code is a constraint.
+</div>
+
+<nav>
+<ol>
+  <li><a href="#s1">Why: what went wrong before</a></li>
+  <li><a href="#s2">Principles</a></li>
+  <li><a href="#s3">Conventions</a></li>
+  <li><a href="#s4">The symbol file</a></li>
+  <li><a href="#s5">Connectivity model</a></li>
+  <li><a href="#s6">Text slots and boxes</a></li>
+  <li><a href="#s7">Composition</a></li>
+  <li><a href="#s8">Wiring contract</a></li>
+  <li><a href="#s9">Lint rules</a></li>
+  <li><a href="#s10">Resolved output</a></li>
+  <li><a href="#s11">Toolkit API and consumer usage</a></li>
+  <li><a href="#s12">Repo layout, build and gates</a></li>
+  <li><a href="#s13">What survives from the existing code</a></li>
+  <li><a href="#s14">Deferred and open</a></li>
+</ol>
+</nav>
+
+<h2 id="s1">1. Why: what went wrong before</h2>
+<p>Schematika's symbols made one object do three jobs. Every recurring problem traces back to that.</p>
+<table>
+<tr><th>Layer</th><th>What it is</th><th>Example</th><th>Owner</th></tr>
+<tr><td>Symbol</td><td>the graphic concept in the standard</td><td>make contact, S00227</td><td>data repo (<code>iec60617</code>)</td></tr>
+<tr><td>Device terminal marking</td><td>numbers printed on the real part (EN 50005 / EN 50011)</td><td><code>13/14</code>, <code>23/24</code>, <code>A1/A2</code></td><td>the consumer's device or catalog model</td></tr>
+<tr><td>Placement</td><td>tag, position, orientation, rendered text</td><td><code>-K1</code> at (40, 120)</td><td>the drawing library</td></tr>
+</table>
+<ul>
+  <li><strong>Port identity drifted.</strong> <code>no_contact()</code> had ports <code>13/14</code>, <code>no_contact(poles=2)</code> had <code>1/2/3/4</code>, and keys were remapped after construction. Resolvers broke on ids that were not port keys.</li>
+  <li><strong>Text was baked into geometry.</strong> Tags and pin numbers were text elements placed by heuristics, so layout could not tell label space from body space and labels collided.</li>
+  <li><strong>Wiring geometry was per-symbol luck.</strong> No shared port pitch, no guaranteed straight-through axis, no guaranteed clear exit for a wire.</li>
+  <li><strong>Variants were hand-written geometry.</strong> <code>inverted=True</code>, multi-pole and contact-plus-actuator forms each copied coordinates, so a correction had to be repeated everywhere.</li>
+  <li><strong>Electrical function lived in docstrings.</strong> Every consumer re-encoded "these four ports are one net" and "this is a switch".</li>
+</ul>
+
+<h2 id="s2">2. Principles</h2>
+<ol>
+  <li><strong>A symbol is a definition.</strong> It has no tag, no terminal numbers, no position and no orientation. Those belong to the placement.</li>
+  <li><strong>Port ids are roles.</strong> Stable, lowercase, semantic, never terminal numbers, never dependent on configuration.</li>
+  <li><strong>Electrical function is data.</strong> Nodes and typed paths, so consumers netlist and check without per-symbol knowledge.</li>
+  <li><strong>Text goes in slots.</strong> The symbol reserves boxes for the tag and for each port's marking. The consumer renders the text.</li>
+  <li><strong>Data is the source of truth.</strong> One TOML file per symbol, validated by a published JSON Schema. Any language can consume the resolved JSON.</li>
+  <li><strong>Composition mirrors the standard.</strong> IEC 60617 builds symbols from elements and qualifying symbols. Composites reference parts by anchor and contain no copied coordinates.</li>
+  <li><strong>The wiring contract is strict and linted</strong> in all 8 orientations. A router never repairs a symbol.</li>
+  <li><strong>Every gate is proven able to fail</strong> with a deliberately broken fixture.</li>
+</ol>
+
+<h2 id="s3">3. Conventions</h2>
+<table>
+<tr><th>Item</th><th>Rule</th></tr>
+<tr><td>Unit</td><td>The module <code>M</code>. Default <code>M = 2.5 mm</code> (ISO 81714-1, ISO 14617). Files never contain millimetres.</td></tr>
+<tr><td>Axes</td><td>SVG axes: x right, y down. Angles in degrees, clockwise on screen from +x.</td></tr>
+<tr><td>Drawing grid</td><td><code>0.125 M</code>. Every shape coordinate, radius, text height, anchor, slot point and slot box size is a multiple of it. 0.125 is exact in binary floating point.</td></tr>
+<tr><td>Wiring grid</td><td><code>1 M</code>. Every port position is a multiple of it. The origin is on it by definition.</td></tr>
+<tr><td>Pole pitch</td><td><code>4 M</code> (10 mm). The only pitch <code>repeat</code> uses by default. A symbol too wide for it declares <code>pole_pitch</code>, a multiple of 4.</td></tr>
+<tr><td>Same-side port spacing</td><td>Two ports with the same <code>dir</code> are a multiple of <code>2 M</code> apart, measured along the side (x for N and S ports, y for E and W ports).</td></tr>
+<tr><td>Base orientation</td><td>The through path (section 5) is vertical: its two ports are at <code>(0, -a)</code> pointing N and <code>(0, a)</code> pointing S, with <code>a</code> a whole number of M. Horizontal use is an orientation, never a second file.</td></tr>
+<tr><td>Line weight</td><td><code>normal</code> = 0.1 M (ISO 81714-1, width : module = 1 : 10), <code>thick</code> = 0.2 M (provisional).</td></tr>
+<tr><td>Line style</td><td><code>solid</code> or <code>dashed</code>. Dashed means dash 0.5 M, gap 0.25 M; renderers implement the pattern, files never spell out dash segments.</td></tr>
+<tr><td>Text elements</td><td>Text that is part of the symbol itself (the <code>M</code> in a motor). Height at most 1 M. Stays upright in every orientation; only its position transforms.</td></tr>
+<tr><td>Extents</td><td>All boxes ignore stroke width. A line or polyline extends over its points, a circle over its full diameter, an arc over its true swept extent. A text element counts as a box centred on <code>at</code>, <code>height</code> tall and <code>0.6 &times; height &times; character count</code> wide.</td></tr>
+<tr><td>Overlap</td><td>Two shapes overlap when their open interiors intersect. Touching along an edge or at a corner is not overlap. For overlap tests a stroke is a zero-width curve, a filled shape is its area, and an unfilled closed outline is only its outline (so a slot may sit inside an empty body rectangle).</td></tr>
+<tr><td>Ids</td><td>Port, anchor and part ids match <code>^[a-z][a-z0-9_]*$</code>. The dot is reserved for namespacing by composition and <code>repeat</code> (<code>contact.in</code>, <code>2.out</code>).</td></tr>
+</table>
+
+<h3>Orientations</h3>
+<p>There are exactly 8: <code>R0 R90 R180 R270 MR0 MR90 MR180 MR270</code>. <code>M</code> mirrors first (flip x: <code>(x, y) -> (-x, y)</code>), then <code>Rn</code> rotates clockwise on screen by n degrees.
+A 90 degree clockwise rotation is <code>(x, y) -> (-y, x)</code>. Directions and slot sides transform the same way as vectors.
+Circle and arc centres transform as points and radii are unchanged. Rotation by n adds n to an arc's <code>start</code> and <code>end</code>. Mirroring maps an angle t to 180 - t and swaps <code>start</code> with <code>end</code>, so the arc is still swept clockwise. Angles are normalised to [0, 360).
+Text elements and slot boxes never rotate or mirror; only their <code>at</code> point moves.
+Flipping top to bottom is <code>MR180</code>. There is no other transform in the interface.</p>
+
+<h3>Port id vocabulary</h3>
+<table>
+<tr><th>Case</th><th>Ids</th></tr>
+<tr><td>Any two-terminal series symbol (contact, fuse, resistor, coil, lamp)</td><td><code>in</code> (top in base orientation), <code>out</code>. No polarity is implied.</td></tr>
+<tr><td>Polarity carries meaning</td><td><code>anode</code>/<code>cathode</code>, <code>plus</code>/<code>minus</code></td></tr>
+<tr><td>Change-over contact</td><td><code>com</code>, <code>nc</code>, <code>no</code></td></tr>
+<tr><td>Three-phase and protective earth</td><td><code>u</code>, <code>v</code>, <code>w</code>, <code>n</code>, <code>pe</code></td></tr>
+<tr><td>Windings</td><td><code>pri_in</code>, <code>pri_out</code>, <code>sec_in</code>, <code>sec_out</code></td></tr>
+<tr><td>Junction-like symbols</td><td><code>n</code>, <code>e</code>, <code>s</code>, <code>w</code> by compass side</td></tr>
+</table>
+<p><code>A1/A2</code>, <code>13/14</code>, <code>X1/X2</code> are terminal markings, not roles. They never appear in a symbol file.
+Generic consumers should chain symbols using the through path's <code>from</code> and <code>to</code>, not by assuming the ids <code>in</code>/<code>out</code>.</p>
+
+<h2 id="s4">4. The symbol file</h2>
+<p>One file per symbol: <code>symbols/&lt;number&gt;.toml</code> in the data repo. Symbol elements and qualifying symbols from IEC 60617 Part 2 are files too, with a different <code>kind</code>.</p>
+
+<h3>Top-level keys</h3>
+<table>
+<tr><th>Key</th><th>Type</th><th>Required</th><th>Meaning</th></tr>
+<tr><td><code>schema</code></td><td>integer</td><td>yes</td><td>Schema version. Currently <code>1</code>.</td></tr>
+<tr><td><code>name</code></td><td>string</td><td>yes</td><td>The standard's English name, verbatim.</td></tr>
+<tr><td><code>kind</code></td><td><code>symbol</code> | <code>element</code> | <code>qualifier</code></td><td>yes</td><td><code>symbol</code> is placeable on its own. <code>element</code> and <code>qualifier</code> exist to be used as parts; slot and through-path rules do not apply to them.</td></tr>
+<tr><td><code>status</code></td><td><code>unverified</code> | <code>verified</code></td><td>yes</td><td><code>verified</code> only after the geometry is compared with the standard's own drawing.</td></tr>
+<tr><td><code>reference</code></td><td>table</td><td>yes</td><td><code>standard</code>, <code>number</code>, optional <code>edition</code>, <code>form</code>. Identity is <code>number</code>; it equals the file stem.</td></tr>
+<tr><td><code>ports</code></td><td>array of tables, or a rename map in composites</td><td>no</td><td>Atomic: <code>id</code>, <code>at</code>, <code>dir</code> (<code>N E S W</code>), optional <code>description</code>. Composite: <code>{ new_id = "part.port" }</code>.</td></tr>
+<tr><td><code>nodes</code></td><td>array of tables</td><td>no</td><td><code>ports</code> (list of ids) and optional <code>potential</code>. See section 5.</td></tr>
+<tr><td><code>paths</code></td><td>array of tables</td><td>no</td><td><code>from</code>, <code>to</code>, <code>kind</code>, optional <code>through</code>. See section 5.</td></tr>
+<tr><td><code>anchors</code></td><td>array of tables</td><td>no</td><td><code>id</code>, <code>at</code>, <code>dir</code>. Attachment points for composition.</td></tr>
+<tr><td><code>elements</code></td><td>array of tables</td><td>atomic: yes</td><td>Geometry. See below.</td></tr>
+<tr><td><code>parts</code></td><td>array of tables</td><td>composite: yes</td><td>See section 7. A file has <code>elements</code>, <code>parts</code>, or both.</td></tr>
+<tr><td><code>slots</code></td><td>table of tables</td><td><code>kind = "symbol"</code>: yes</td><td>See section 6.</td></tr>
+<tr><td><code>pole_pitch</code></td><td>integer</td><td>no</td><td>Multiple of 4. Only for symbols that cannot fit the 4 M pitch.</td></tr>
+<tr><td><code>lint_allow</code></td><td>array of tables</td><td>no</td><td><code>rule</code>, <code>reason</code>. The only way to be exempt from a lint rule.</td></tr>
+</table>
+
+<h3>Elements</h3>
+<p>Each element is a table with exactly one shape key. Optional on all: <code>weight</code> (<code>normal</code> | <code>thick</code>). Optional on line, polyline, arc: <code>style</code> (<code>solid</code> | <code>dashed</code>).</p>
+<table>
+<tr><th>Shape</th><th>Form</th></tr>
+<tr><td>Line</td><td><code>{ line = [[x1, y1], [x2, y2]] }</code></td></tr>
+<tr><td>Polyline</td><td><code>{ polyline = [[x, y], ...], closed = true, fill = "solid" }</code> (<code>closed</code> default false, <code>fill</code> <code>none</code> | <code>solid</code>, default none)</td></tr>
+<tr><td>Circle</td><td><code>{ circle = [cx, cy], r = 0.5, fill = "none" }</code></td></tr>
+<tr><td>Arc</td><td><code>{ arc = [cx, cy], r = 0.5, start = 180, end = 0 }</code> (clockwise from <code>start</code> to <code>end</code>)</td></tr>
+<tr><td>Text</td><td><code>{ text = "M", at = [0, 0], height = 1 }</code> (always middle-anchored, always upright)</td></tr>
+</table>
+
+<h3>Example: make contact (atomic, simplest case)</h3>
+<pre data-lang="toml"><code>schema = 1
+name = "Make contact, general symbol"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00227" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "switch_open", through = true },
+]
+
+anchors = [
+  { id = "link", at = [-0.5, 0], dir = "W" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+  { line = [[0, 1], [-1, -1]] },
+]
+
+[slots]
+tag           = { at = [-1.5, 0],    side = "W", box = [6, 1] }
+"marking.in"  = { at = [0.25, -1.5], side = "E", box = [1.5, 1] }
+"marking.out" = { at = [0.25, 1.5],  side = "E", box = [1.5, 1] }
+</code></pre>
+
+<h3>Example: change-over contact (two paths, one through)</h3>
+<pre data-lang="toml"><code>schema = 1
+name = "Change-over break before make contact"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00230" }
+pole_pitch = 8          # 5.5 M wide with its markings, so it cannot repeat at 4 M
+
+ports = [
+  { id = "com", at = [0, 2],   dir = "S", description = "common" },
+  { id = "no",  at = [0, -2],  dir = "N", description = "closes on actuation" },
+  { id = "nc",  at = [-2, -2], dir = "N", description = "opens on actuation" },
+]
+
+paths = [
+  { from = "no", to = "com", kind = "switch_open", through = true },
+  { from = "nc", to = "com", kind = "switch_closed" },
+]
+
+anchors = [
+  { id = "link", at = [-0.5, 0], dir = "W" },
+]
+
+elements = [
+  { line = [[0, 2], [0, 1]] },
+  { line = [[0, -2], [0, -1]] },
+  { line = [[-2, -2], [-2, -1]] },
+  { line = [[-2, -1], [-1, -1]] },
+  { line = [[0, 1], [-1.125, -1.25]] },
+]
+
+[slots]
+tag           = { at = [-4, 0],        side = "W", box = [6, 1] }
+"marking.com" = { at = [0.25, 1.5],    side = "E", box = [1.5, 1] }
+"marking.no"  = { at = [0.25, -1.5],   side = "E", box = [1.5, 1] }
+"marking.nc"  = { at = [-2.25, -1.5],  side = "W", box = [1.5, 1] }
+</code></pre>
+
+<h3>Example: relay coil (impedance)</h3>
+<pre data-lang="toml"><code>schema = 1
+name = "Operating device, general symbol; relay coil, general symbol"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00305" }
+
+ports = [
+  { id = "in",  at = [0, -3], dir = "N" },
+  { id = "out", at = [0, 3],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "impedance", through = true },
+]
+
+anchors = [
+  { id = "link", at = [2, 0], dir = "E" },
+]
+
+elements = [
+  { line = [[0, -3], [0, -1]] },
+  { line = [[0, 3], [0, 1]] },
+  { polyline = [[-2, -1], [2, -1], [2, 1], [-2, 1]], closed = true },
+]
+
+[slots]
+tag           = { at = [-2.5, 0],  side = "W", box = [6, 1] }
+"marking.in"  = { at = [0.25, -2], side = "E", box = [1.5, 1] }
+"marking.out" = { at = [0.25, 2],  side = "E", box = [1.5, 1] }
+</code></pre>
+
+<h3>Example: connection point (one node, declared exceptions)</h3>
+<pre data-lang="toml"><code>schema = 1
+name = "Connection point"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00016" }
+
+ports = [
+  { id = "n", at = [0, 0], dir = "N" },
+  { id = "e", at = [0, 0], dir = "E" },
+  { id = "s", at = [0, 0], dir = "S" },
+  { id = "w", at = [0, 0], dir = "W" },
+]
+
+nodes = [
+  { ports = ["n", "e", "s", "w"] },
+]
+
+elements = [
+  { circle = [0, 0], r = 0.25, fill = "solid" },
+]
+
+lint_allow = [
+  { rule = "port-on-body-edge", reason = "junction: wires meet at the centre of the dot" },
+  { rule = "port-lane-clear",   reason = "junction: wires start inside the dot" },
+  { rule = "slot-missing",      reason = "a junction carries no tag or markings" },
+]
+
+[slots]
+</code></pre>
+
+<p class="note">The examples in this guide are normative for the format and have been machine-checked: they parse as TOML, every reference resolves, and the four atomic ones pass
+<code>port-off-geometry</code>, <code>port-on-body-edge</code>, <code>port-lane-clear</code>, <code>port-spacing</code>, <code>through-axis</code>, <code>slot-overlap-body</code>, <code>slot-overlap-slot</code>, <code>pitch-overflow</code> and <code>allow-unused</code> in all 8 orientations, using a throwaway checker written from the definitions in this guide.
+The toolkit's first test fixture is these five files: they must load and lint clean. If the real linter disagrees with an example, stop and resolve which one is wrong before going on. The shapes themselves are unverified against IEC drawings, like all geometry.</p>
+
+<h2 id="s5">5. Connectivity model</h2>
+<p>This is what keeps the electrical function explicit. It is declarative data only; the toolkit never simulates anything.</p>
+<ul>
+  <li><strong>Node.</strong> A set of ports that are the same electrical point inside the symbol. Every port belongs to exactly one node. A port not listed under <code>nodes</code> is a node of its own. Ports may share a position only if they share a node.</li>
+  <li><strong>Node potential</strong> (optional): <code>earth</code>, <code>protective_earth</code>, <code>functional_earth</code>, <code>frame</code>. This is how an earth symbol says what it does:
+    <code>nodes = [{ ports = ["pe"], potential = "protective_earth" }]</code>.</li>
+  <li><strong>Path.</strong> A two-terminal relation between ports of two different nodes, with a kind. At most one path per unordered node pair.</li>
+  <li><strong>Through path.</strong> At most one path per symbol has <code>through = true</code>. It is the axis series chains run along, and it fixes the base orientation: <code>from</code> is the N port, <code>to</code> is the S port. A <code>kind = "symbol"</code> file with two or more nodes and no potential should have one.</li>
+</ul>
+<table>
+<tr><th>Path kind</th><th>Meaning</th><th>Direction matters</th><th>Examples</th></tr>
+<tr><td><code>conductor</code></td><td>always conducts</td><td>no</td><td>fuse, link, shunt</td></tr>
+<tr><td><code>switch_open</code></td><td>open in the drawn (rest, de-energised) state</td><td>no</td><td>make contact, circuit breaker</td></tr>
+<tr><td><code>switch_closed</code></td><td>closed in the drawn state</td><td>no</td><td>break contact</td></tr>
+<tr><td><code>impedance</code></td><td>a load or passive element: consumes or stores</td><td>no</td><td>resistor, capacitor, coil, lamp, motor winding, meter</td></tr>
+<tr><td><code>source</code></td><td>delivers energy; <code>to</code> is the positive terminal where polarity exists</td><td>yes</td><td>battery, generator</td></tr>
+<tr><td><code>diode</code></td><td>conducts from <code>from</code> to <code>to</code> only</td><td>yes</td><td>diode, LED, thyristor main path</td></tr>
+</table>
+<p>What a consumer can do with this and nothing else: build a netlist across placed symbols, find nets with a source and no load, find nets that are shorted through conductors,
+trace which switch states complete a circuit, and know that a terminal's or junction's ports are one net. Tag letter codes (IEC 81346) and device behaviour stay in the consumer: they classify devices, not symbols.</p>
+
+<h2 id="s6">6. Text slots and boxes</h2>
+<p>A slot reserves room for text the consumer will draw. A symbol never contains tag or marking text.</p>
+<table>
+<tr><th>Slot</th><th>Meaning</th></tr>
+<tr><td><code>tag</code></td><td>The reference designation (<code>-K1</code>). Required for <code>kind = "symbol"</code>.</td></tr>
+<tr><td><code>"marking.&lt;port id&gt;"</code></td><td>The terminal marking for that port (<code>13</code>). Required for every port of a <code>kind = "symbol"</code> file.</td></tr>
+<tr><td><code>value</code></td><td>Optional. Rating or value text (<code>10 A</code>).</td></tr>
+</table>
+<p>Each slot is <code>{ at = [x, y], side = "N|E|S|W", box = [w, h] }</code> with <code>w</code> and <code>h</code> positive. Text is always upright. <code>side</code> says which way the box grows from <code>at</code>, and therefore the alignment:</p>
+<table>
+<tr><th><code>side</code></th><th>Box, for <code>at = (x, y)</code>, <code>box = [w, h]</code></th><th>Text alignment</th></tr>
+<tr><td><code>E</code></td><td>x in [x, x + w], y in [y - h/2, y + h/2]</td><td>start, vertically centred</td></tr>
+<tr><td><code>W</code></td><td>x in [x - w, x], y in [y - h/2, y + h/2]</td><td>end, vertically centred</td></tr>
+<tr><td><code>N</code></td><td>x in [x - w/2, x + w/2], y in [y - h, y]</td><td>middle, sitting above <code>at</code></td></tr>
+<tr><td><code>S</code></td><td>x in [x - w/2, x + w/2], y in [y, y + h]</td><td>middle, hanging below <code>at</code></td></tr>
+</table>
+<p><strong>Orientation.</strong> <code>at</code> transforms as a point and <code>side</code> as a direction. <code>box</code> stays <code>[w, h]</code>, because the text stays upright. So one declaration covers all 8 orientations,
+and because the box does not rotate with the symbol, slot rules must be linted in every orientation, not just the base one.</p>
+<p><strong>Two boxes for layout engines.</strong> <code>body_box</code> is the extent of the elements. <code>keepout_box</code> is the body box united with every slot box.
+A layout engine that keeps keep-out boxes apart can never produce a label collision between symbols.</p>
+<p><strong>Consumer duty.</strong> The box is a maximum extent. A consumer that draws text larger than the box has broken the contract on its side; it should shrink or report, never overflow silently.</p>
+
+<h2 id="s7">7. Composition</h2>
+<h3>Parts</h3>
+<p>A composite lists parts. Each part is <code>{ as, use, ... }</code>: a local id and the number of another file.</p>
+<table>
+<tr><th>Key</th><th>Meaning</th></tr>
+<tr><td><code>as</code></td><td>Local part id. Namespaces the part's ports, anchors and slots: <code>contact.in</code>.</td></tr>
+<tr><td><code>use</code></td><td>Reference number of the part's file. Any <code>kind</code>.</td></tr>
+<tr><td><code>orient</code></td><td>Optional orientation applied to the part before placing. Default <code>R0</code>.</td></tr>
+<tr><td><code>attach</code>, <code>to</code>, <code>length</code>, <code>via</code></td><td>Place by anchor. The part's anchor <code>attach</code> is put at the point <code>length</code> M from the target anchor <code>to</code> (<code>"part.anchor"</code>), along the target's direction. The two anchors must face each other after <code>orient</code>; otherwise it is a lint error. <code>via = "mechanical_link"</code> adds a dashed line between them. <code>length</code> defaults to 0, <code>via</code> to none.</td></tr>
+<tr><td><code>at</code></td><td>Alternative to <code>attach</code>: place the part's origin at <code>[x, y]</code>. For qualifiers drawn inside a body. The first part defaults to <code>at = [0, 0]</code>. Every later part must have exactly one of <code>attach</code> or <code>at</code>.</td></tr>
+<tr><td><code>repeat</code></td><td>Optional pole count. Applied to the part first, before <code>orient</code> and placement. Its ports are then <code>part.1.in</code>, <code>part.2.in</code>, and so on.</td></tr>
+</table>
+<p><strong>Placement, exactly.</strong> Parts are resolved in file order, and <code>to</code> may only name an anchor of an earlier part. Let <code>T</code> and <code>dT</code> be the target anchor's position and unit direction in the composite's frame,
+and <code>A</code> and <code>dA</code> the attaching anchor's position and direction in the part's own frame after <code>repeat</code> and <code>orient</code>. It is an error unless <code>dA = -dT</code>.
+The part is translated by <code>T + length &times; dT - A</code>. With <code>via = "mechanical_link"</code> the composite gains the element <code>{ line = [T, T + length &times; dT], style = "dashed" }</code>; <code>length</code> must then be positive.
+The flattened result is linted like any other symbol, so a placement that pushes a port off the wiring grid fails there.</p>
+<h3>What a composite inherits</h3>
+<ul>
+  <li><strong>Ports:</strong> only through the explicit rename map <code>ports = { new = "part.port" }</code>. Every port of every part must be exported. There is no implicit export.</li>
+  <li><strong>Nodes and paths:</strong> inherited automatically through the renames. A path declared in the composite's own <code>paths</code> replaces the inherited path between the same nodes. If more than one inherited path is marked <code>through</code>, the composite must redeclare the one that stays; the <code>through</code> flag is then cleared on all the others.</li>
+  <li><strong>Anchors:</strong> not inherited. A composite declares its own if it is meant to be a part.</li>
+  <li><strong>Slots:</strong> not inherited silently. A slot value may be a string reference (<code>"marking.in" = "contact.marking.in"</code>) or a new table. A part's tag slot is usually where the next part goes, so composites normally declare a new <code>tag</code>.</li>
+  <li><strong>Elements:</strong> all parts' elements, plus the composite's own <code>elements</code> if present.</li>
+</ul>
+
+<h3>Example: push-button (no coordinates except the tag slot)</h3>
+<pre data-lang="toml"><code>schema = 1
+name = "Switch, manually operated, push-button, automatic return"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00254" }
+
+parts = [
+  { as = "contact",  use = "S00227" },
+  { as = "actuator", use = "S00171", attach = "link", to = "contact.link", length = 2, via = "mechanical_link" },
+]
+
+ports = { in = "contact.in", out = "contact.out" }
+
+[slots]
+tag           = { at = [-3.5, 0], side = "W", box = [6, 1] }
+"marking.in"  = "contact.marking.in"
+"marking.out" = "contact.marking.out"
+</code></pre>
+<p><code>S00171</code> stands for the Part 2 qualifier "operated by pushing". Its number, like every number in this guide, must be confirmed against the IEC database overview before the file is committed.</p>
+
+<h3><code>repeat</code>: the only multi-pole mechanism</h3>
+<p><code>repeat(symbol, n)</code> places <code>n</code> copies along +x in base orientation and returns an ordinary symbol. Pole <code>k</code> (counting from 1) is the symbol translated by <code>((k - 1) &times; pitch, 0)</code>, where <code>pitch</code> is the symbol's <code>pole_pitch</code>, default 4. It requires <code>n &gt;= 1</code> and a symbol with a through path; <code>repeat(symbol, 1)</code> still renames the ports.</p>
+<ul>
+  <li>Ports, and their marking slots, are prefixed with the pole number: <code>1.in</code>, <code>2.in</code>, <code>"marking.2.in"</code>. Nodes and paths repeat per pole. Pole 1's through path stays the through path; the flag is cleared on the other poles. The result's <code>pole_pitch</code> is <code>n &times; pitch</code>.</li>
+  <li>The <code>tag</code> slot is taken from pole 1 only. A <code>value</code> slot likewise.</li>
+  <li>If the symbol has an anchor with the id <code>link</code> and <code>n &gt; 1</code>, the result gains one element: a dashed line from pole 1's <code>link</code> anchor to pole n's. It may cross the poles in between; that is how the standard draws it. Pole 1's anchors become the result's anchors; the other poles' anchors are dropped.</li>
+  <li>It is available as a toolkit function for consumers, and as a data op in a part: <code>{ as = "main", use = "S00227", repeat = 3 }</code>.</li>
+</ul>
+<p>There are no <code>poles=</code>, <code>pins=</code> or <code>inverted=</code> parameters anywhere. Pole count is <code>repeat</code>, markings belong to the placement, and inversion is the orientation <code>MR180</code>.</p>
+
+<h2 id="s8">8. Wiring contract</h2>
+<p>What every flattened symbol guarantees a router, in all 8 orientations:</p>
+<ol>
+  <li>Every port is on the 1 M wiring grid.</li>
+  <li>Every port is the free end of a lead (or lies on the outline) and sits on the side of the <code>body_box</code> that matches its direction. Its direction is that side's outward normal.</li>
+  <li>The wire lane of every port is clear. For a port at <code>P</code> with direction <code>d</code>, the lane is the open, unbounded region of points <code>P + t &times; d + u &times; n</code> with <code>t &gt; 0</code> and <code>|u| &lt; 0.25</code>, where <code>n</code> is perpendicular to <code>d</code>. No element and no slot box overlaps it. The port's own lead ends at <code>t = 0</code> and a marking box 0.25 M beside the wire only touches the lane, so both are fine. A wire that leaves a port straight crosses nothing of its own symbol.</li>
+  <li>The through path is collinear on x = 0 with ports at <code>(0, -a)</code> and <code>(0, a)</code>. Series chains wire dead straight, and chained symbol heights are whole M.</li>
+  <li>Same-side ports are a multiple of 2 M apart, and repeated poles are 4 M apart, so a 3-pole breaker, a 3-pole contactor and a motor's <code>u v w</code> line up without jogs.</li>
+  <li>For a symbol with a through path, the x extent in base orientation of the body box united with every slot box except <code>tag</code> and <code>value</code> is at most its pole pitch, so repeated poles never overlap each other.</li>
+</ol>
+<p>A symbol that cannot comply declares each exemption in <code>lint_allow</code> with a reason. An exemption whose rule would not have fired is itself an error, so exemptions cannot rot.</p>
+
+<h2 id="s9">9. Lint rules</h2>
+<p><code>lint(symbol)</code> runs on a flattened symbol and returns findings: <code>rule</code>, <code>severity</code>, <code>message</code>, optional <code>location</code>, optional <code>orientation</code>.
+Geometric rules run in all 8 orientations. Composition rules run in the resolver and are reported the same way. All are errors unless marked.
+Data repo gates require zero findings of either severity, so a warning is simply a finding that more often deserves a <code>lint_allow</code> entry; exemptions work the same for both.
+<code>slot-missing</code>, <code>through-missing</code> and <code>pitch-overflow</code> apply only to <code>kind = "symbol"</code>; every other rule applies to every kind.</p>
+<table>
+<tr><th>Group</th><th>Rule id</th><th>Fires when</th></tr>
+<tr><td rowspan="3">File</td><td><code>schema</code></td><td>the file fails JSON Schema validation</td></tr>
+<tr><td><code>metadata</code></td><td>empty name, <code>reference.standard</code> differs from <code>library.toml</code>, number not matching its <code>number_pattern</code>, or number differs from the file stem</td></tr>
+<tr><td><code>id-format</code></td><td>a port, anchor or part id does not match the id pattern</td></tr>
+<tr><td rowspan="3">Geometry</td><td><code>off-drawing-grid</code></td><td>any coordinate, radius, text height, anchor, slot point or slot box size is not a multiple of 0.125</td></tr>
+<tr><td><code>degenerate</code></td><td>zero-length line, non-positive radius, polyline with fewer than 2 points (3 when closed), arc with equal angles, exact duplicate element, slot box with a non-positive side</td></tr>
+<tr><td><code>text-too-large</code></td><td>a text element is taller than 1 M</td></tr>
+<tr><td rowspan="7">Ports</td><td><code>port-duplicate-id</code></td><td>two ports share an id</td></tr>
+<tr><td><code>port-off-wiring-grid</code></td><td>a port position is not a multiple of 1 M</td></tr>
+<tr><td><code>port-off-geometry</code></td><td>a port is not at a line or polyline endpoint, on a circle or arc, or on a closed outline</td></tr>
+<tr><td><code>port-on-body-edge</code></td><td>a port is not on the body-box side matching its direction</td></tr>
+<tr><td><code>port-lane-clear</code></td><td>an element or slot box overlaps a port's wire lane (section 8)</td></tr>
+<tr><td><code>port-spacing</code></td><td>two ports with the same <code>dir</code> are not a multiple of 2 M apart along their side</td></tr>
+<tr><td><code>port-position-shared</code></td><td>two ports of different nodes share a position</td></tr>
+<tr><td rowspan="6">Connectivity</td><td><code>node-invalid</code></td><td>a node names an unknown port, or a port is listed in two nodes</td></tr>
+<tr><td><code>path-invalid</code></td><td>a path names an unknown port, joins two ports of one node, or duplicates another path between the same nodes</td></tr>
+<tr><td><code>through-count</code></td><td>more than one through path</td></tr>
+<tr><td><code>through-axis</code></td><td>the through path's ports are not at <code>(0, -a)</code> N and <code>(0, a)</code> S in base orientation</td></tr>
+<tr><td><code>through-missing</code> (warning)</td><td>a <code>kind = "symbol"</code> file has two or more nodes, no potential, and no through path</td></tr>
+<tr><td><code>port-isolated</code> (warning)</td><td>a port is in no path, in no multi-port node, and its node has no potential</td></tr>
+<tr><td rowspan="5">Slots</td><td><code>slot-missing</code></td><td>a <code>kind = "symbol"</code> file lacks a <code>tag</code> slot or a marking slot for some port</td></tr>
+<tr><td><code>slot-unknown-port</code></td><td>a marking slot names a port that does not exist</td></tr>
+<tr><td><code>slot-overlap-body</code></td><td>a slot box overlaps an element, by the overlap definition in section 3</td></tr>
+<tr><td><code>slot-overlap-slot</code></td><td>two slot boxes overlap</td></tr>
+<tr><td><code>pitch-overflow</code></td><td>the extent defined in section 8 point 6 exceeds the pole pitch; or <code>pole_pitch</code> is not a positive multiple of 4</td></tr>
+<tr><td rowspan="2">Anchors</td><td><code>anchor-duplicate-id</code></td><td>two anchors share an id</td></tr>
+<tr><td><code>anchor-off-geometry</code> (warning)</td><td>an anchor lies on no element</td></tr>
+<tr><td rowspan="5">Composition</td><td><code>part-unknown</code></td><td><code>use</code> names a file that does not exist</td></tr>
+<tr><td><code>part-cycle</code></td><td>parts reference each other in a cycle</td></tr>
+<tr><td><code>part-anchor</code></td><td>an unknown anchor, or anchors that do not face each other</td></tr>
+<tr><td><code>part-port-unexported</code></td><td>a part's port is missing from the rename map</td></tr>
+<tr><td><code>export-unknown</code></td><td>the rename map or a slot reference names something that does not exist</td></tr>
+<tr><td rowspan="2">Exemptions</td><td><code>allow-unknown</code></td><td><code>lint_allow</code> names a rule that does not exist, or has an empty reason</td></tr>
+<tr><td><code>allow-unused</code></td><td>an exempted rule would not have fired</td></tr>
+</table>
+<p>Every rule ships with a deliberately broken fixture file that makes it fire, and a test that asserts it does.</p>
+
+<h2 id="s10">10. Resolved output</h2>
+<p>The build flattens every file and writes JSON. This is the interface for consumers that are not Python, and for simple consumers of any kind: they never implement composition.</p>
+<ul>
+  <li><code>build/resolved/&lt;number&gt;.json</code>: one flattened symbol. Same schema as the source, with <code>parts</code> gone, composite <code>ports</code> expanded to the array form, slot references expanded to tables, <code>nodes</code> listing every node explicitly, and two computed keys: <code>body_box</code> and <code>keepout_box</code>, each <code>[[min_x, min_y], [max_x, max_y]]</code> in base orientation.</li>
+  <li><code>src/&lt;package&gt;/bundle.json</code>: the bundle, shipped as package data: <code>{ "schema": 1, "standard": "IEC 60617", "symbols": { "S00227": { ... }, ... } }</code>. It is generated and tracked like <code>build/</code>, and <code>stale_build</code> covers it.</li>
+  <li>Output is deterministic: UTF-8, LF line endings, 2-space indent, object keys sorted, arrays in source order, a whole number written without a decimal point and any other number in its shortest exact decimal form, one trailing newline. A symbol change shows up as a reviewable diff.</li>
+</ul>
+<p>A consumer in another language needs the bundle, the schema, and the orientation and slot-box rules from sections 3 and 6. That is about thirty lines of code.</p>
+
+<h2 id="s11">11. Toolkit API and consumer usage</h2>
+<p>All types are frozen dataclasses. All functions are pure except those in <code>build</code>. Transforms are free functions, never methods.</p>
+<pre><code>Point(x, y)   Box(min, max)   Direction: N E S W   Orientation: R0 .. MR270
+PathKind: CONDUCTOR SWITCH_OPEN SWITCH_CLOSED IMPEDANCE SOURCE DIODE
+Line | Polyline | Circle | Arc | Text                      = Element
+Port(id, position, direction, description)
+Node(ports, potential)          Path(from_port, to_port, kind, through)
+Anchor(id, position, direction) Slot(id, position, side, box)
+Reference(standard, number, edition, form)
+Symbol(name, kind, status, reference, elements, ports, nodes, paths, anchors, slots, pole_pitch)
+Library(standard, title, number_pattern, symbols)    get(number), __iter__ (sorted by number), __len__
+Finding(rule, severity, message, location, orientation)
+
+load_library(root) -&gt; Library             read library.toml and symbols/*.toml, validate, resolve, flatten
+load_bundle(json_path) -&gt; Library         read a resolved bundle
+orient(symbol, orientation) -&gt; Symbol       ports, nodes, paths, anchors and slots all carried along
+translate(symbol, dx, dy) -&gt; Symbol         used by composition and repeat; consumers place symbols themselves
+repeat(symbol, n) -&gt; Symbol
+body_box(symbol) -&gt; Box    keepout_box(symbol) -&gt; Box    slot_box(slot) -&gt; Box
+lint(symbol) -&gt; tuple[Finding, ...]
+to_svg(symbol, *, module_mm=2.5, annotate=False, texts=None) -&gt; str
+write_build(library, root) -&gt; tuple[Path, ...]    writes build/ and the bundle
+stale_build(library, root) -&gt; tuple[Path, ...]    files that differ from what write_build would write, stale extras included</code></pre>
+<p><code>annotate=True</code> draws the grid, ports with ids and lanes, anchors, slot boxes, and both boxes. <code>texts</code> maps slot ids to sample strings so the gallery can show a filled-in symbol.</p>
+<p>The data repo's Python package is a thin wrapper: <code>from iec60617 import LIBRARY</code>, loaded from the bundled JSON shipped as package data.</p>
+<h3>What a drawing library does</h3>
+<pre><code>from graphical_symbols import Orientation, keepout_box, orient, repeat
+from iec60617 import LIBRARY
+
+breaker = orient(repeat(LIBRARY.get("S00287"), 3), Orientation.R0)
+
+# The placement is the consumer's own type. The symbol stays a definition.
+placed = Placement(
+    symbol=breaker,
+    at=Point(40, 120),
+    tag="-Q1",
+    markings={"1.in": "1", "1.out": "2", "2.in": "3", "2.out": "4", "3.in": "5", "3.out": "6"},
+)</code></pre>
+<ul>
+  <li><strong>Layout</strong> keeps <code>keepout_box</code> rectangles apart and aligns through axes.</li>
+  <li><strong>Routing</strong> starts each wire at a port, along its direction. The lane is guaranteed clear.</li>
+  <li><strong>Text</strong> is drawn into <code>slot_box(slot)</code> with the alignment given by the slot's side.</li>
+  <li><strong>Netlisting and checks</strong> read <code>nodes</code> and <code>paths</code>.</li>
+  <li><strong>Markings</strong> are keyed by port id. The keys are validated against the symbol's ports, so a marking for a port that does not exist fails loudly at placement.</li>
+</ul>
+
+<h2 id="s12">12. Repo layout, build and gates</h2>
+<pre><code>graphical-symbols/                       standard-agnostic toolkit
+  schema/symbol.schema.json              the published contract
+  src/graphical_symbols/
+    model.py geometry.py units.py        types
+    load.py resolve.py                   TOML and JSON in, flattening
+    orient.py repeat.py boxes.py         pure operations
+    lint/                                one module per rule group
+    svg.py                               rendering
+    build.py                             the only impure module
+  tests/fixtures/broken/                 one failing file per lint rule
+
+iec60617/                                data only
+  library.toml                           standard, title, number_pattern
+  symbols/S00227.toml ...                source of truth
+  src/iec60617/__init__.py               LIBRARY = load_bundle(bundle.json)
+  src/iec60617/bundle.json               generated, tracked
+  build/                                 generated by `just build`, tracked
+    resolved/  svg/  annotated/  README.md
+  tests/test_gates.py</code></pre>
+<p>The toolkit knows nothing about any standard. Everything standard-specific is in the data repo's <code>library.toml</code>:</p>
+<pre data-lang="toml-config"><code>standard = "IEC 60617"
+title = "IEC 60617 symbols"
+number_pattern = '^S\d{5}$'</code></pre>
+<p>Later standards (ISO 14617, ISA 5.1) are sibling data repos that reuse the toolkit and every gate.</p>
+<h3>Gates in a data repo (<code>just ci</code>)</h3>
+<ul>
+  <li>Every file validates against the schema and resolves.</li>
+  <li>Every flattened symbol lints with zero findings, warnings included, in all 8 orientations.</li>
+  <li>Every symbol with a through path also lints clean as <code>repeat(symbol, 3)</code>.</li>
+  <li><code>stale_build</code> reports nothing, so <code>build/</code> always matches <code>symbols/</code>.</li>
+  <li>Reference numbers are unique, match the standard's pattern and equal the file stems.</li>
+</ul>
+<h3>Gates in the toolkit</h3>
+<ul>
+  <li>Every lint rule has a fixture that makes it fire.</li>
+  <li><code>orient</code> round-trips: applying an orientation and its inverse returns the same symbol (property test).</li>
+  <li>The five example files in this guide load and, once the rules exist, lint clean.</li>
+  <li>The JSON Schema and the Python loader agree: a file accepted by one is accepted by the other (fixture-driven).</li>
+</ul>
+<h3>Constraints carried over</h3>
+<p>Python <code>&gt;=3.14</code>, <code>uv</code> only, every dependency pinned to the exact latest stable version, ruff, ty, pytest with hypothesis, vulture, deal. TOML is read with the standard library's <code>tomllib</code>.
+Geometry is unverified until compared with the IEC database drawings; the gallery shows the status next to each symbol.</p>
+
+<h2 id="s13">13. What survives from the existing code</h2>
+<p>As of 2026-09-19 <code>graphical-symbols</code> contains <code>units.py</code>, <code>geometry.py</code>, <code>symbol.py</code>, <code>transform.py</code> and <code>svg.py</code>, built from the older design. <code>iec60617</code> contains no code.</p>
+<ul>
+  <li><strong>Keep:</strong> <code>units.py</code> (<code>snap</code>, <code>on_grid</code>), the geometry primitives, <code>Direction</code>, <code>Box</code>, the arc-extent logic in <code>bbox</code>, <code>Reference</code>, <code>Status</code>, the affine point, direction and arc-angle mapping inside <code>transform.py</code>, the element rendering inside <code>svg.py</code>, the toolchain, the purity gate and the justfile.</li>
+  <li><strong>Rework:</strong> <code>Symbol</code> and <code>Port</code> gain the fields in section 11. Elements gain <code>style</code>. <code>bbox</code> becomes <code>body_box</code> and counts text by the extent rule in section 3. The public <code>rotate</code> and <code>mirror</code> are replaced by the single <code>orient</code>, which must also carry nodes, paths, anchors and slots; <code>translate</code> stays. <code>to_svg</code>'s annotated mode gains lanes, anchors, slot boxes and both boxes.</li>
+  <li><strong>Never build:</strong> Python symbol factories, a <code>kit</code> module, a <code>dashed_line</code> helper (dashed is a line style), a <code>Registry</code> of factories, or a <code>Ports:</code> docstring convention. The symbol file is the documentation.</li>
+</ul>
+
+<h2 id="s14">14. Deferred and open</h2>
+<ul>
+  <li><strong>Coupling between paths</strong> (a coil actuating contacts, magnetically coupled windings). In detached representation this lives between separately placed symbols, so it belongs to the consumer's device model. Revisit for attached composites such as a contactor drawn as one symbol.</li>
+  <li><strong>Conventional marking hints.</strong> EN 50005 function digits (make = 3/4, break = 1/2, change-over = 1/2/4) could be optional per-port data so consumers without a catalog get sensible defaults. Not in schema 1.</li>
+  <li><strong>Connections between parts</strong> inside a composite (merging two parts' nodes). Not needed for IEC composites found so far.</li>
+  <li><strong>Small symbols</strong> such as the terminal (S00017), whose natural port positions are on a 0.5 M circle. Decide per symbol: leads to the wiring grid, or a declared exemption as for the connection point.</li>
+  <li><strong>Reference numbers</strong> quoted here (S00230, S00171, S00287) come from memory of the IEC database overview and must be confirmed before use.</li>
+  <li><strong>Verification.</strong> The IEC drawings are behind a subscription. Until bought, every symbol stays <code>unverified</code>.</li>
+</ul>
+
+</main>
+</body>
+</html>

@@ -1,0 +1,106 @@
+[build-system]
+requires = ["hatchling==1.32.3"]
+build-backend = "hatchling.build"
+
+[project]
+name = "graphical-symbols"
+version = "0.1.0"
+description = "Standard-agnostic core for graphical symbols as strict, typed, immutable Python values"
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ole Johan Bondahl" }]
+# deal contracts (@deal.pure) run at import time, so deal is a runtime dependency.
+dependencies = [
+    "deal==4.24.6",
+]
+
+[dependency-groups]
+dev = [
+    "hypothesis==6.168.0",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.8",
+    "ty==0.0.82",
+    "vulture==2.16",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/graphical_symbols"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=graphical_symbols --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+# target-version is intentionally py313, not py314: ruff strips the parens from
+# `except (X, Y):` tuples under py314, producing invalid syntax. requires-python
+# stays ">=3.14"; only the lint/format target is held back.
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "C",    # flake8-comprehensions
+    "B",    # flake8-bugbear
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+    "FA",   # flake8-future-annotations
+    "N",    # pep8-naming
+    "D",    # pydocstyle
+    "ARG",  # flake8-unused-arguments
+    "PLR",  # pylint refactor
+    "PT",   # flake8-pytest-style
+    "RET",  # flake8-return
+    "C90",  # mccabe complexity
+    "RUF",  # Ruff-specific rules
+    "PERF", # perflint
+    "PIE",  # flake8-pie
+    "ICN",  # flake8-import-conventions
+    "ISC",  # flake8-implicit-str-concat
+    "T20",  # flake8-print
+    "LOG",  # flake8-logging
+    "G",    # flake8-logging-format
+    "Q",    # flake8-quotes
+    "BLE",  # flake8-blind-except
+    "RSE",  # flake8-raise
+    "TRY",  # tryceratops
+    "S",    # flake8-bandit (security)
+    "DTZ",  # flake8-datetimez
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # flake8-eradicate (commented-out code)
+    "FBT",  # flake8-boolean-trap
+    "EM",   # flake8-errmsg
+    "TC",   # flake8-type-checking
+    "TID",  # flake8-tidy-imports
+    "ANN",  # flake8-annotations
+]
+ignore = ["TRY003"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "PLR2004", "S101", "D"]
+# CLI scripts report through stdout.
+"scripts/**" = ["T20"]
+
+[tool.vulture]
+# Public data-model API that only downstream packages and the tests read. Vulture scans src
+# alone, so these dataclass fields, enum members and properties look unused to it. Names are
+# matched globally, so add a name here only when it is part of the public model.
+ignore_names = [
+    # Direction, Weight, Fill, Anchor, Status members
+    "N", "E", "S", "W", "THICK", "SOLID", "START", "END", "VERIFIED",
+    # Direction and Box properties
+    "opposite", "width", "height",
+    # dataclass fields
+    "weight", "closed", "fill", "content", "anchor",
+    "id", "direction", "description", "standard", "number", "edition", "form",
+    "reference", "ports", "status",
+]
