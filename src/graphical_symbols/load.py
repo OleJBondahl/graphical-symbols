@@ -31,6 +31,7 @@ from graphical_symbols.model import (
     Allow,
     Anchor,
     Finding,
+    Library,
     LibraryConfig,
     Node,
     Path,
@@ -461,6 +462,23 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
         pole_pitch=int(data["pole_pitch"]) if "pole_pitch" in data else None,
         lint_allow=tuple(Allow(a["rule"], a["reason"]) for a in data.get("lint_allow", ())),
     )
+
+
+@deal.pure
+def library_from_bundle(data: Mapping[str, Any]) -> Library:
+    """Build a library from a validated bundle (D7).
+
+    The bundle carries neither a title nor a number pattern, so the title is the standard and the
+    pattern is empty.
+
+    Args:
+        data: A decoded `bundle.json` for which `validate_bundle` returned no findings.
+
+    Returns:
+        The library, its symbols keyed by the bundle's keys.
+    """
+    symbols = {number: symbol_from_data(s) for number, s in data["symbols"].items()}
+    return Library(data["standard"], data["standard"], "", symbols)
 
 
 @deal.pure

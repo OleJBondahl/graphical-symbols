@@ -109,4 +109,5 @@ ignore_names = [
     "number_pattern",
     # functions and parameters that later tasks and downstream packages call
     "element_box", "nodes_of", "inverse", "texts", "validate", "symbol_from_data", "parse_config",
+    "library_from_bundle", "bundle_to_data", "to_json",
 ]

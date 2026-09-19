@@ -427,3 +427,21 @@ the 2 M step is horizontal; a 1.5 x 3 M box beside a lead lies across it after a
 Why: the guide names the rules, not their granularity or the corners.
 Cost if wrong: locations and message text change; the limit for a `pole_pitch` that is positive
 but not a multiple of 4 would be 4 instead.
+
+## D30. What resolved JSON writes where D11 and the guide are silent
+
+Decided: `ports`, `nodes`, `paths`, `anchors`, `elements` and `slots` are always written, as `[]` or
+`{}` when empty (`slots` because the schema requires it for `kind = "symbol"`; the rest so a
+consumer never tests for absence). `nodes` follows `nodes_of`: declared nodes in source order, then
+one node per port in none. A path always writes `through`. Slots are a table written in slot-id order,
+so a JSON object read back gives the slots in that order; a symbol's slot order is not preserved by
+the round trip, and neither is a node list that was implicit. Text is canonical as `json.dumps` writes it
+with `indent=2`, `sort_keys=True` and `ensure_ascii=False`, after every whole float has become an
+int (`-0.0` prints as `0`), so a point is four lines; control characters in strings are escaped, so
+no carriage return can occur. NaN and infinity have no JSON form: `to_json` writes `NaN`,
+`Infinity` and `-Infinity` as Python's `json` does and does not raise; both validators reject them
+(D22), so only a hand-built symbol can carry one.
+Why: the guide fixes the text rules and the two computed keys and nothing else; `json.dumps` with
+those options is what every language's standard pretty-printer produces plus a key sort.
+Cost if wrong: a byte-level diff of every generated file; compact point arrays would need a
+hand-written writer.
