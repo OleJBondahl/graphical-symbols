@@ -28,11 +28,17 @@ from graphical_symbols.model import (
     Allow,
     Anchor,
     Finding,
+    Node,
+    PathKind,
     Port,
+    Potential,
     Severity,
     Slot,
     Symbol,
+    SymbolKind,
 )
+from graphical_symbols.model import Path as SymbolPath
+from graphical_symbols.orient import orient
 
 P = Point
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
@@ -277,10 +283,14 @@ class TestRunChecks:
 
 finite = st.floats(allow_nan=False, allow_infinity=False, min_value=-1e6, max_value=1e6)
 odd = st.sampled_from([0, 0.125, 1, -1, 0.1, math.nan, math.inf, -math.inf, 1e300, 1e-300, -0.0])
-numbers = st.one_of(finite, odd)
+grid = st.integers(-8, 8).map(lambda n: n / 2)
+numbers = st.one_of(finite, odd, grid)
 points = st.builds(Point, numbers, numbers)
+grid_points = st.builds(Point, grid, grid)
+directions = st.sampled_from(list(Direction))
 elements = st.one_of(
     st.builds(Line, points, points),
+    st.builds(Line, grid_points, grid_points),
     st.builds(
         Polyline,
         st.lists(points, max_size=4).map(tuple),
@@ -291,31 +301,104 @@ elements = st.one_of(
     st.builds(Arc, points, numbers, numbers, numbers),
     st.builds(Text, st.text(max_size=3), points, numbers),
 )
-ids = st.text(alphabet="abAB1._ ", max_size=3)
-symbols = st.builds(
-    plain_symbol,
-    elements=st.lists(elements, max_size=5).map(tuple),
-    ports=st.lists(st.builds(Port, ids, points, st.sampled_from(list(Direction))), max_size=3).map(
-        tuple
+# Few port ids, so that nodes, paths and marking slots often name ports that exist.
+port_ids = st.sampled_from(["a", "b", "1.a", "in", "out", "", "ghost"])
+ids = st.one_of(port_ids, st.text(alphabet="abAB1._ ", max_size=3))
+slot_ids = st.one_of(
+    st.sampled_from(
+        ["tag", "value", "marking.a", "marking.b", "marking.1.a", "marking.in", "marking.out"]
     ),
-    anchors=st.lists(
-        st.builds(Anchor, ids, points, st.sampled_from(list(Direction))), max_size=3
+    st.sampled_from(["marking.", "marking.ghost", "other"]),
+    ids,
+)
+slots = st.builds(
+    Slot,
+    slot_ids,
+    st.one_of(points, grid_points),
+    directions,
+    st.tuples(st.one_of(numbers, grid), st.one_of(numbers, grid)),
+)
+nodes = st.builds(
+    Node,
+    st.lists(port_ids, max_size=3).map(tuple),
+    st.one_of(st.none(), st.sampled_from(list(Potential))),
+)
+paths = st.builds(SymbolPath, port_ids, port_ids, st.sampled_from(list(PathKind)), st.booleans())
+pole_pitches = st.one_of(
+    st.none(), st.sampled_from([0, 4, 8, -4, 6, 12]), st.integers(-20, 20), numbers
+)
+lint_allows = st.lists(
+    st.builds(Allow, st.sampled_from([*sorted(RULE_IDS), "x"]), st.text(max_size=2)), max_size=3
+).map(tuple)
+kinds = st.sampled_from(list(SymbolKind))
+
+garbage_symbols = st.builds(
+    plain_symbol,
+    kind=kinds,
+    elements=st.lists(elements, max_size=5).map(tuple),
+    ports=st.lists(st.builds(Port, ids, points, directions), max_size=3).map(tuple),
+    nodes=st.lists(nodes, max_size=3).map(tuple),
+    paths=st.lists(paths, max_size=3).map(tuple),
+    anchors=st.lists(st.builds(Anchor, ids, points, directions), max_size=3).map(tuple),
+    slots=st.lists(slots, max_size=3).map(tuple),
+    pole_pitch=pole_pitches,
+    lint_allow=lint_allows,
+)
+# Symbols shaped like real ones, so the rules that need exact coincidences get exercised: two ports
+# on the through axis (or nearly), paths and nodes over them, and the usual slots.
+through_symbols = st.builds(
+    plain_symbol,
+    kind=kinds,
+    elements=st.lists(
+        st.one_of(elements, st.builds(Line, grid_points, grid_points)), max_size=4
     ).map(tuple),
-    slots=st.lists(
+    ports=st.builds(
+        lambda a, dx, top, bottom: (
+            Port("in", Point(dx, -a), top),
+            Port("out", Point(0, a), bottom),
+        ),
+        st.sampled_from([0, 1, 2, 3, 0.5, -1, math.nan, math.inf]),
+        st.sampled_from([0, 0, 0, 1, -0.0]),
+        st.sampled_from([Direction.N, Direction.N, Direction.E]),
+        st.sampled_from([Direction.S, Direction.S, Direction.W]),
+    ),
+    nodes=st.lists(
         st.builds(
-            Slot,
-            ids,
-            points,
-            st.sampled_from(list(Direction)),
-            st.tuples(numbers, numbers),
+            Node,
+            st.lists(st.sampled_from(["in", "out", "ghost"]), max_size=2).map(tuple),
+            st.one_of(st.none(), st.sampled_from(list(Potential))),
+        ),
+        max_size=2,
+    ).map(tuple),
+    paths=st.lists(
+        st.builds(
+            SymbolPath,
+            st.sampled_from(["in", "out", "ghost"]),
+            st.sampled_from(["in", "out", "ghost"]),
+            st.sampled_from(list(PathKind)),
+            st.booleans(),
         ),
         max_size=3,
     ).map(tuple),
-    lint_allow=st.lists(
-        st.builds(Allow, st.sampled_from([*sorted(RULE_IDS), "x"]), st.text(max_size=2)),
-        max_size=3,
-    ).map(tuple),
+    slots=st.lists(slots, max_size=4).map(tuple),
+    pole_pitch=pole_pitches,
+    lint_allow=lint_allows,
 )
+symbols = st.one_of(garbage_symbols, through_symbols)
+NEW_RULES = sorted(r.id for r in RULES.values() if r.group in {"Connectivity", "Slots"})
+
+
+def rules_fired_by(strategy, examples=600):
+    """Return the rules whose check fires, in the base orientation, on some generated symbol."""
+    fired: set[str] = set()
+
+    @given(strategy)
+    @settings(max_examples=examples, deadline=None, database=None, derandomize=True)
+    def collect(symbol):
+        fired.update(rule_id for rule_id, check in CHECKS.items() if check(symbol))
+
+    collect()
+    return fired
 
 
 class TestTotality:
@@ -326,6 +409,22 @@ class TestTotality:
         assert found == lint(symbol)
         assert all(isinstance(f, Finding) for f in found)
         assert list(found) == list(ordered(found))
+
+    @given(symbols, st.sampled_from(list(Orientation)))
+    @settings(max_examples=300, deadline=None)
+    def test_no_rule_of_any_group_raises_on_the_symbol_in_any_orientation(
+        self, symbol, orientation
+    ):
+        turned = orient(symbol, orientation)
+        for rule_id, check in CHECKS.items():
+            assert all(f.rule == rule_id for f in check(turned))
+
+    def test_the_strategy_reaches_every_connectivity_and_slots_rule(self):
+        assert len(NEW_RULES) == 11
+        assert set(NEW_RULES) <= rules_fired_by(symbols)
+
+    def test_the_reach_check_can_fail(self):
+        assert not set(NEW_RULES) & rules_fired_by(st.just(plain_symbol()), examples=5)
 
 
 @pytest.fixture(scope="module")

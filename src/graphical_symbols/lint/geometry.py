@@ -169,7 +169,7 @@ def text_too_large(symbol: Symbol) -> tuple[Finding, ...]:
 
 
 @deal.pure
-def _segments(points: tuple[Point, ...], *, closed: bool) -> tuple[tuple[Point, Point], ...]:
+def segments(points: tuple[Point, ...], *, closed: bool) -> tuple[tuple[Point, Point], ...]:
     """Return the segments of a chain of points, plus the closing one; a lone point is a dot."""
     if len(points) == 1:
         return ((points[0], points[0]),)
@@ -203,7 +203,7 @@ def _inside(point: Point, corners: tuple[Point, ...]) -> bool:
     """Return whether a point is inside a polygon by the even-odd rule; the edge is not tested."""
     crossings = sum(
         1
-        for a, b in _segments(corners, closed=True)
+        for a, b in segments(corners, closed=True)
         if (a.y > point.y) != (b.y > point.y)
         and point.x < a.x + (point.y - a.y) * (b.x - a.x) / (b.y - a.y)
     )
@@ -229,7 +229,7 @@ def _on_chain(
     """Return whether a point is on a line or polyline; only at its ends if it is open and asked."""
     if endpoints_only and not closed:
         return bool(points) and (_near(point, points[0]) or _near(point, points[-1]))
-    return any(_near_segment(point, a, b) for a, b in _segments(points, closed=closed))
+    return any(_near_segment(point, a, b) for a, b in segments(points, closed=closed))
 
 
 @deal.pure

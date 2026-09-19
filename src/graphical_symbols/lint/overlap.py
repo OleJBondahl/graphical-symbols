@@ -33,7 +33,7 @@ from graphical_symbols.geometry import (
     arc_point,
     arc_sweep,
 )
-from graphical_symbols.lint.geometry import TOLERANCE
+from graphical_symbols.lint.geometry import TOLERANCE, segments
 
 # Half the width of a wire lane, in module units (guide section 8, point 3).
 LANE_HALF_WIDTH = 0.25
@@ -91,15 +91,6 @@ def wire_lane(position: Point, direction: Direction, frame: Box) -> Box:
 
 
 @deal.pure
-def _edges(points: tuple[Point, ...], *, closed: bool) -> tuple[tuple[Point, Point], ...]:
-    """Return the segments of a chain of points, plus the closing one; a lone point is a dot."""
-    if len(points) == 1:
-        return ((points[0], points[0]),)
-    chain = tuple(pairwise(points))
-    return (*chain, (points[-1], points[0])) if closed and points else chain
-
-
-@deal.pure
 def _clip(
     start: Fraction, step: Fraction, low: Fraction, high: Fraction
 ) -> tuple[Fraction, Fraction] | None:
@@ -137,7 +128,7 @@ def _inside(point: _Exact, corners: tuple[Point, ...]) -> bool:
     """Return whether an exact point is inside a polygon by the even-odd rule; edges not tested."""
     px, py = point
     inside = False
-    for a, b in _edges(corners, closed=True):
+    for a, b in segments(corners, closed=True):
         ay, by = Fraction(a.y), Fraction(b.y)
         if (ay > py) != (by > py):
             ax, bx = Fraction(a.x), Fraction(b.x)
@@ -154,7 +145,7 @@ def _polyline_meets(polyline: Polyline, rect: Box) -> bool:
     polyline is only a stroke, however it is filled.
     """
     points = polyline.points
-    if any(_segment_meets(a, b, rect) for a, b in _edges(points, closed=polyline.closed)):
+    if any(_segment_meets(a, b, rect) for a, b in segments(points, closed=polyline.closed)):
         return True
     numbers = (*_corners(rect), *(v for p in points for v in (p.x, p.y)))
     solid = polyline.closed and polyline.fill is Fill.SOLID and len(points) >= _MIN_POLYGON_POINTS

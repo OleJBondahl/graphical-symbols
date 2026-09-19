@@ -71,8 +71,7 @@ class Rule:
     orientation_dependent: bool = False
 
 
-# The rules implemented so far. `RULE_IDS` lists all 33 the guide names, so an exemption of a rule
-# that is not implemented yet is still known.
+# All 33 rules of the guide's section 9 table, with their group and severity.
 RULES: dict[str, Rule] = {
     rule.id: rule
     for rule in (

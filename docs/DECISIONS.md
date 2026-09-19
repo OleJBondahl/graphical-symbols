@@ -119,6 +119,10 @@ Concern: `S00254` declares no `pole_pitch`, so its pitch is 4. Its flattened bod
 x = -2.5 or further (the dashed link from the contact's `link` anchor at (-0.5, 0) runs 2 M west to
 (-2.5, 0), and the actuator sits at that end), and the inherited marking slots reach x = 1.75. The
 extent from section 8 point 6 is therefore at least 4.25 M, more than 4, so `pitch-overflow` fires.
+Computed with the fixture `S00171` (its geometry is ours, D10; its push bar runs 0.75 M west of its
+`link` anchor): the body box spans x from -3.25 to 0, the slot boxes other than `tag` reach
+x = 1.75, and the extent is exactly 5.0 M against the pitch of 4 (`tests/test_guide_lint.py`
+asserts this). With `pole_pitch = 8` the example lints clean.
 The guide says the five examples "must load and lint clean" and that only the four atomic ones were
 machine-checked. Implemented as written; the guide-verbatim fixture is expected to produce exactly
 that one finding, and a variant with `pole_pitch = 8` is clean. Owner to decide: add `pole_pitch = 8`
@@ -354,9 +358,9 @@ frame: the keep-out box united with every port position, grown by 1 M on every s
 Why: the guide defines overlap but not the arithmetic, and the lane is unbounded.
 Cost if wrong: the frame margin is one constant; a 1e-9 tolerance on segments would be a change in
 one function. Consequence to know: an element that overlaps a lane always also pushes the body box
-past its port, so `port-on-body-edge` fires with `port-lane-clear`; only a slot box (or a text
-element whose box is not rotated) can break the lane on its own, which is why the lane fixtures use
-slot boxes.
+past its port, so `port-on-body-edge` fires with `port-lane-clear`; a text element does the same, because its box
+is part of the body box too. Only a slot box can break the lane on its own, which is why the lane
+fixtures use slot boxes.
 
 ## D27. What the Ports rules count
 
