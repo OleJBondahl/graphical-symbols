@@ -14,3 +14,5 @@ lint_allow = { rule = "x", reason = "y" }
 elements = [
   { line = [[0, -2], [0, 2]] },
 ]
+
+[slots]

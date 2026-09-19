@@ -13,3 +13,5 @@ ports = [
 elements = [
   { weight = "thick" },
 ]
+
+[slots]

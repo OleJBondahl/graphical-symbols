@@ -11,7 +11,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from jsonschema import Draft202012Validator
 
-from graphical_symbols.load import validate
+from graphical_symbols.load import symbol_from_data, validate
 
 TESTS = Path(__file__).resolve().parent
 SCHEMA_PATH = TESTS.parent / "schema" / "symbol.schema.json"
@@ -114,6 +114,11 @@ ODD_VALUES = st.one_of(
     st.lists(st.lists(st.integers(-2, 2), max_size=3), max_size=3),
     st.dictionaries(st.sampled_from(["line", "at", "r", "id", "x"]), st.integers(0, 2), max_size=2),
 )
+# Integers past Python's 4300-digit str limit: repr() of one raises ValueError. jsonschema itself
+# formats them into its error messages, so only the totality test below uses them.
+HUGE_INTEGERS = st.integers(min_value=10**4301, max_value=10**4310) | st.integers(
+    min_value=-(10**4310), max_value=-(10**4301)
+)
 
 
 def walk(node: object, path: tuple = ()) -> list[tuple]:
@@ -131,15 +136,8 @@ def walk(node: object, path: tuple = ()) -> list[tuple]:
     return found
 
 
-@settings(max_examples=400, deadline=None)
-@given(
-    base=st.sampled_from(BASES),
-    pick=st.integers(min_value=0),
-    action=st.sampled_from(["replace", "delete", "add"]),
-    value=ODD_VALUES,
-    key=st.sampled_from(["extra", "line", "r", "weight", "at", "height", "elements"]),
-)
-def test_the_validators_agree_on_damaged_files(base, pick, action, value, key):
+def damage(base, pick, action, value, key):
+    """Return a copy of `base` with one value replaced, deleted, or added at a chosen place."""
     data = copy.deepcopy(base)
     paths = walk(data)
     path = paths[pick % len(paths)]
@@ -156,4 +154,27 @@ def test_the_validators_agree_on_damaged_files(base, pick, action, value, key):
             target[key] = value
         elif isinstance(target, list):
             target.append(value)
+    return data
+
+
+DAMAGE = {
+    "base": st.sampled_from(BASES),
+    "pick": st.integers(min_value=0),
+    "action": st.sampled_from(["replace", "delete", "add"]),
+    "key": st.sampled_from(["extra", "line", "r", "weight", "at", "height", "elements", "slots"]),
+}
+
+
+@settings(max_examples=400, deadline=None)
+@given(value=ODD_VALUES, **DAMAGE)
+def test_the_validators_agree_on_damaged_files(base, pick, action, value, key):
+    data = damage(base, pick, action, value, key)
     assert python_accepts(data) == schema_accepts(data), data
+
+
+@settings(max_examples=400, deadline=None)
+@given(value=ODD_VALUES | HUGE_INTEGERS, **DAMAGE)
+def test_reading_never_raises_on_damaged_files(base, pick, action, value, key):
+    data = damage(base, pick, action, value, key)
+    if not validate(data):
+        symbol_from_data(data)

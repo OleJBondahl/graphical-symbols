@@ -1,4 +1,4 @@
-# violates: /paths/0/from
+# violates: /
 schema = 1
 name = "Fixture"
 kind = "symbol"
@@ -10,9 +10,7 @@ ports = [
   { id = "out", at = [0, 2], dir = "S" },
 ]
 
-paths = [{ from = 1, to = "out", kind = "diode" }]
 elements = [
   { line = [[0, -2], [0, 2]] },
 ]
 
-[slots]

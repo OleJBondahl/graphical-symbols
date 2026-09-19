@@ -11,3 +11,5 @@ ports = [
 ]
 
 elements = { line = 1 }
+
+[slots]

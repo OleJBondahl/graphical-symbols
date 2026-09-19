@@ -10,3 +10,5 @@ ports = ["in", "out"]
 elements = [
   { line = [[0, -2], [0, 2]] },
 ]
+
+[slots]

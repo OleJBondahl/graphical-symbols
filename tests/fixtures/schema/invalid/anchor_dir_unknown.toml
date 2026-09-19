@@ -14,3 +14,5 @@ anchors = [{ id = "link", at = [0, 0], dir = "up" }]
 elements = [
   { line = [[0, -2], [0, 2]] },
 ]
+
+[slots]

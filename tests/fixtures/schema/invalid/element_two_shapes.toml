@@ -13,3 +13,5 @@ ports = [
 elements = [
   { line = [[0, -2], [0, 2]], circle = [0, 0], r = 1 },
 ]
+
+[slots]

@@ -55,6 +55,12 @@ def _finding(location: str, message: str) -> Finding:
 
 
 @deal.pure
+def _short(text: str, limit: int = 60) -> str:
+    """Cap text that comes from the input, so a finding stays readable whatever it was fed."""
+    return text if len(text) <= limit else text[:limit] + "..."
+
+
+@deal.pure
 def _child(location: str, key: str | int) -> str:
     """Extend a location by one key, escaping `~` and `/` as JSON Pointer does."""
     escaped = str(key).replace("~", "~0").replace("/", "~1")
@@ -112,7 +118,7 @@ def _enum(*allowed: str) -> _Check:
     def check(value: object, location: str) -> list[Finding]:
         if isinstance(value, str) and value in allowed:
             return []
-        return [_finding(location, f"must be one of {', '.join(allowed)}; got {value!r}")]
+        return [_finding(location, f"must be one of {', '.join(allowed)}")]
 
     return check
 
@@ -150,7 +156,7 @@ def _table(fields: Mapping[str, _Check], required: tuple[str, ...] = ()) -> _Che
             if key in fields:
                 found += fields[key](entry, _child(location, key))
             else:
-                found.append(_finding(_child(location, key), f"unknown key {key!r}"))
+                found.append(_finding(_child(location, key), f"unknown key {_short(key)!r}"))
         return found
 
     return check
@@ -316,11 +322,15 @@ _FILE = _table(
 
 @deal.pure
 def parse_toml(text: str) -> tuple[dict[str, Any] | None, tuple[Finding, ...]]:
-    """Decode TOML text; a syntax error becomes a `schema` finding instead of an exception."""
+    """Decode TOML text; input the parser rejects or cannot handle becomes a `schema` finding.
+
+    `TOMLDecodeError` is a `ValueError`, as is the error for an integer of more than 4300 digits;
+    absurdly deep nesting exhausts the stack instead.
+    """
     try:
         data = tomllib.loads(text)
-    except tomllib.TOMLDecodeError as error:
-        return None, (_finding("", f"invalid TOML: {error}"),)
+    except (ValueError, RecursionError) as error:
+        return None, (_finding("", _short(f"invalid TOML: {error}", 200)),)
     return data, ()
 
 
@@ -336,8 +346,13 @@ def validate(data: object) -> tuple[Finding, ...]:
         `None` for the whole file). Empty when the data is acceptable to the JSON Schema.
     """
     found = _FILE(data, "")
-    if isinstance(data, dict) and "elements" not in data and "parts" not in data:
-        found.append(_finding("", "a file needs elements, parts, or both"))
+    if isinstance(data, dict):
+        if "elements" not in data and "parts" not in data:
+            found.append(_finding("", "a file needs elements, parts, or both"))
+        if data.get("kind") == "symbol" and "slots" not in data:
+            found.append(
+                _finding("", "missing required key 'slots' (required when kind is symbol)")
+            )
     return tuple(found)
 
 
@@ -392,6 +407,7 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
         The symbol.
     """
     reference = data["reference"]
+    ports = data.get("ports")
     return Symbol(
         name=data["name"],
         kind=SymbolKind(data["kind"]),
@@ -405,7 +421,7 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
         elements=tuple(_element_from_data(e) for e in data.get("elements", ())),
         ports=tuple(
             Port(p["id"], _point(p["at"]), Direction[p["dir"]], p.get("description", ""))
-            for p in data.get("ports", ())
+            for p in (ports if isinstance(ports, list) else ())
         ),
         nodes=tuple(
             Node(tuple(n["ports"]), Potential(n["potential"]) if "potential" in n else None)
@@ -421,6 +437,7 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
         slots=tuple(
             Slot(key, _point(s["at"]), Direction[s["side"]], (s["box"][0], s["box"][1]))
             for key, s in data.get("slots", {}).items()
+            if isinstance(s, dict)
         ),
         pole_pitch=int(data["pole_pitch"]) if "pole_pitch" in data else None,
         lint_allow=tuple(Allow(a["rule"], a["reason"]) for a in data.get("lint_allow", ())),
@@ -450,9 +467,11 @@ def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
     if isinstance(pattern, str):
         try:
             re.compile(pattern)
-        except re.error as error:
+        except (re.error, OverflowError, RecursionError) as error:
             problems.append(
-                _finding("/number_pattern", f"must be a valid regular expression: {error}")
+                _finding(
+                    "/number_pattern", _short(f"must be a valid regular expression: {error}", 200)
+                )
             )
     if problems:
         return None, tuple(problems)

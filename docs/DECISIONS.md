@@ -140,8 +140,11 @@ Cost if wrong: a slot-only symbol's keep-out box grows to the origin; a symbol w
 
 Decided: the schema (and `validate`) require `height` on a text element; `fill` on a circle,
 `closed` and `fill` on a polyline, `weight` and `style` are optional with the defaults the model
-already has. A file must contain `elements`, `parts` or both. `ports` and `slots` are never required
-by the schema (a `kind = "symbol"` file without them is a `slot-missing` lint, not a `schema` one).
+already has. A file must contain `elements`, `parts` or both. `ports` is never required. `slots` is
+required when `kind = "symbol"`, as section 4's key table says (an empty `[slots]` table satisfies
+it; a symbol whose `[slots]` lacks `tag` or a marking still reads and trips the `slot-missing` lint).
+Reversal: the first version of this entry made `slots` never required, which deviated from the guide
+without need; the schema now has `if kind = "symbol" then required slots`, and `validate` the same.
 `schema`, `pole_pitch` and `repeat` accept integral floats (`8.0`), as JSON Schema's `integer` does.
 `repeat >= 1` is not a schema rule; the resolver must report it. Unknown keys are errors on every
 table; the only extra top-level keys are the resolved form's `body_box` and `keepout_box`.

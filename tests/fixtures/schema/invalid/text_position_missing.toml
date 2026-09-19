@@ -13,3 +13,5 @@ ports = [
 elements = [
   { text = "M", height = 1 },
 ]
+
+[slots]

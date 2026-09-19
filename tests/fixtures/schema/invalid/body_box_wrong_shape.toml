@@ -14,3 +14,5 @@ body_box = [[0, 0]]
 elements = [
   { line = [[0, -2], [0, 2]] },
 ]
+
+[slots]

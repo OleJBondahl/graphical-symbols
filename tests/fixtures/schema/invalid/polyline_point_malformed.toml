@@ -13,3 +13,5 @@ ports = [
 elements = [
   { polyline = [[0, 0], 5] },
 ]
+
+[slots]

@@ -5,6 +5,12 @@
   "type": "object",
   "required": ["schema", "name", "kind", "status", "reference"],
   "anyOf": [{ "required": ["elements"] }, { "required": ["parts"] }],
+  "if": {
+    "description": "Guide section 4: slots is required when kind is symbol; an empty table satisfies it.",
+    "properties": { "kind": { "const": "symbol" } },
+    "required": ["kind"]
+  },
+  "then": { "required": ["slots"] },
   "additionalProperties": false,
   "properties": {
     "schema": { "const": 1 },

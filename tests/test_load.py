@@ -1,7 +1,11 @@
 import copy
 import re
+import tomllib
+from pathlib import Path as FilePath
 
 import pytest
+from hypothesis import given
+from hypothesis import strategies as st
 
 from graphical_symbols.geometry import (
     Arc,
@@ -79,6 +83,7 @@ def atomic():
         "status": "unverified",
         "reference": {"standard": "IEC 60617", "number": "S00001"},
         "elements": [{"line": [[0, 0], [1, 0]]}],
+        "slots": {},
     }
 
 
@@ -209,7 +214,7 @@ def test_a_finding_is_a_schema_error_with_a_pointer_location():
     assert finding.rule == "schema"
     assert finding.severity is Severity.ERROR
     assert finding.location == "/kind"
-    assert "widget" in finding.message
+    assert "symbol, element, qualifier" in finding.message
 
 
 def test_the_root_has_no_location():
@@ -587,3 +592,156 @@ def test_parse_config_reports_every_problem():
         ("/title", "must"),
         ("/number_pattern", "must"),
     }
+
+
+# The slots table is required for kind = "symbol" (guide section 4); its content is a lint matter
+
+FIXTURES = FilePath(__file__).resolve().parent / "fixtures"
+SOURCE_FIXTURES = sorted(
+    [
+        *(FIXTURES / "schema" / "valid").glob("*.toml"),
+        *(FIXTURES / "guide" / "symbols").glob("*.toml"),
+    ]
+)
+
+
+def test_a_symbol_needs_a_slots_table():
+    for data in (atomic(), composite()):
+        del data["slots"]
+        (finding,) = validate(data)
+        assert finding.rule == "schema"
+        assert finding.location is None
+        assert "slots" in finding.message
+
+
+@pytest.mark.parametrize("kind", ["element", "qualifier"])
+def test_other_kinds_need_no_slots_table(kind):
+    data = atomic()
+    del data["slots"]
+    data["kind"] = kind
+    assert validate(data) == ()
+
+
+def test_an_empty_slots_table_satisfies_the_rule():
+    assert atomic()["slots"] == {}
+    assert validate(atomic()) == ()
+
+
+def test_a_symbol_with_slots_but_no_tag_still_validates():
+    data = atomic()
+    data["slots"] = {"value": {"at": [0, -3], "side": "N", "box": [3, 1]}}
+    assert validate(data) == ()
+
+
+def test_a_bad_kind_is_reported_once_and_does_not_demand_slots():
+    data = atomic()
+    del data["slots"]
+    data["kind"] = "widget"
+    assert locations(data) == {"/kind"}
+
+
+# symbol_from_data is total on validated data and reads the atomic form
+
+
+def atomic_fixture_data():
+    for path in SOURCE_FIXTURES:
+        data = tomllib.loads(path.read_text(encoding="utf-8"))
+        if "parts" not in data and isinstance(data.get("ports", []), list):
+            yield path.stem, data
+
+
+def test_symbol_from_data_builds_every_valid_atomic_fixture():
+    built = 0
+    for name, data in atomic_fixture_data():
+        symbol = symbol_from_data(data)
+        assert len(symbol.ports) == len(data.get("ports", [])), name
+        assert len(symbol.elements) == len(data.get("elements", [])), name
+        assert len(symbol.slots) == len(data.get("slots", {})), name
+        built += 1
+    assert built >= 14
+
+
+def test_symbol_from_data_leaves_composite_only_forms_to_the_resolver():
+    symbol = symbol_from_data(composite())
+    assert symbol.ports == ()
+    assert symbol.elements == ()
+    assert [slot.id for slot in symbol.slots] == ["tag"]
+
+
+# The pure core never raises: hostile input becomes findings
+
+
+def assert_total(function, value):
+    try:
+        function(value)
+    except Exception as error:
+        message = f"{function.__name__} raised {type(error).__name__}"
+        raise AssertionError(message) from error
+
+
+def test_the_totality_check_can_fail():
+    def raising(_value):
+        raise ValueError
+
+    def repr_of_the_value(value):
+        return repr(value)
+
+    with pytest.raises(AssertionError, match="raising raised ValueError"):
+        assert_total(raising, 1)
+    with pytest.raises(AssertionError, match="ValueError"):
+        assert_total(repr_of_the_value, 10**4301)
+    assert_total(repr_of_the_value, 10**4299)
+
+
+JSON_KEYS = st.sampled_from(
+    ["schema", "name", "kind", "status", "reference", "ports", "elements", "slots", "line", "at"]
+) | st.text(max_size=3)
+JSON_LIKE = st.recursive(
+    st.none()
+    | st.booleans()
+    | st.integers()
+    | st.integers(min_value=10**4301, max_value=10**4310)
+    | st.floats()
+    | st.text(max_size=8),
+    lambda children: (
+        st.lists(children, max_size=4) | st.dictionaries(JSON_KEYS, children, max_size=5)
+    ),
+    max_leaves=25,
+)
+
+
+@given(JSON_LIKE)
+def test_validate_never_raises_on_arbitrary_values(value):
+    assert_total(validate, value)
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["a = " + "[" * 3000 + "]" * 3000, "a = " + "9" * 4301],
+    ids=["nesting", "long-decimal"],
+)
+def test_parse_toml_reports_input_that_exhausts_the_parser(text):
+    data, findings = parse_toml(text)
+    assert data is None
+    assert [f.rule for f in findings] == ["schema"]
+    assert findings[0].severity is Severity.ERROR
+
+
+def test_a_huge_hex_integer_is_a_finding_not_a_crash():
+    data, findings = parse_toml("kind = 0x" + "F" * 4301)
+    assert data is not None
+    assert findings == ()
+    found = validate(data)
+    assert "/kind" in {f.location for f in found}
+    assert all(len(f.message) < 200 for f in found)
+
+
+@pytest.mark.parametrize(
+    "pattern",
+    ["a{99999999999}", "(" * 3000 + ")" * 3000],
+    ids=["overflow", "nesting"],
+)
+def test_parse_config_reports_patterns_the_regex_engine_cannot_compile(pattern):
+    config, findings = parse_config(CONFIG.replace(r"^S\d{5}$", pattern))
+    assert config is None
+    assert [(f.rule, f.location) for f in findings] == [("schema", "/number_pattern")]

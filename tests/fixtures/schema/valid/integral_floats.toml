@@ -8,3 +8,5 @@ pole_pitch = 8.0
 parts = [
   { as = "main", use = "S00227", repeat = 3.0 },
 ]
+
+[slots]

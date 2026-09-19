@@ -14,3 +14,5 @@ paths = [{ from = "in", kind = "diode" }]
 elements = [
   { line = [[0, -2], [0, 2]] },
 ]
+
+[slots]

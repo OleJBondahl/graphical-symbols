@@ -15,3 +15,5 @@ elements = [
 paths = [
   { from = "in", to = "out", kind = "switch_open", through = true },
 ]
+
+[slots]
