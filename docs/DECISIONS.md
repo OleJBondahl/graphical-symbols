@@ -296,10 +296,11 @@ anchor position, slot point and slot box side; port positions are `port-off-wiri
 gives one finding per element, anchor or slot, naming every value off the grid, located at
 `elements[i]`, `anchors[i]` or `slots.<id>`. `degenerate` also covers a circle or arc radius of
 zero or less, an arc whose angles are equal modulo 360, and an element equal to an earlier one,
-which is reported at the later copy (three copies give two findings); an element can have more
-than one finding. Symbol-level `id-format` checks port ids and anchor ids (`ports[i]`,
-`anchors[i]`; part ids stay the resolver's). `point_on_geometry(point, elements, *, endpoints_only)`
-in `lint/geometry.py` is the one test of "on geometry", tolerance 1e-9: on a line or polyline
+which is reported at the later copy (three copies give two findings); "equal" is the dataclass
+equality of the whole element, so `weight` and `style` count (a reversed line or a dashed copy is
+not a duplicate); an element can have more than one finding. Symbol-level `id-format` checks port
+ids and anchor ids (`ports[i]`, `anchors[i]`; part ids stay the resolver's).
+`point_on_geometry(point, elements, *, endpoints_only)` in `lint/geometry.py` is the one test of "on geometry", tolerance 1e-9: on a line or polyline
 segment, on a circle or arc curve (an arc's ends included), on a closed polyline's outline, inside
 a filled circle or filled closed polyline (D5); text is not geometry. `anchor-off-geometry` uses
 it whole; `endpoints_only` keeps only the ends of a line and of an open polyline, for
@@ -313,8 +314,11 @@ count a polyline's interior vertices.
 Concern: section 3 says port ids match `^[a-z][a-z0-9_]*$` and the dot is reserved for namespacing,
 section 7 says `repeat` makes the ports `1.in`, `2.in`, and section 12 says every symbol with a
 through path lints clean as `repeat(symbol, 3)`. `1.in` does not match the pattern, so the three
-cannot all hold as written. Implemented: a port id is valid if it matches the pattern or is a
-pole number (`[1-9][0-9]*`), a dot and such an id, the form `repeat` produces; anchor ids and part
-ids get no such form. A source file with an authored port `2.in` therefore passes `id-format`. Owner
+cannot all hold as written. `repeat` also accepts its own result (it has a through path), and
+prefixes `<k>.` again, so `repeat(repeat(S, 2), 2)` has the ports `1.1.in`, `1.2.in`, `2.1.in`,
+`2.2.in`. Implemented: a port id is valid if it matches the pattern or is one or more pole numbers
+(`[1-9][0-9]*`), each followed by a dot, and then such an id (`(?:[1-9][0-9]*\.)+` and the
+pattern, matched in full); anchor ids and part ids get no such form. A source file with an
+authored port `2.in` or `1.2.in` therefore passes `id-format`. Owner
 to decide: keep this, or have `repeat` be exempt from the id rule some other way (a `lint` that knows
 a symbol was repeated, which its signature cannot).

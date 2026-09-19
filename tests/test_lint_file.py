@@ -1,12 +1,15 @@
 """File-group helpers: the id pattern, the registry, and the `metadata` checks."""
 
+from pathlib import Path
+
 import pytest
 from build_symbol import plain_symbol
 from hypothesis import given
 from hypothesis import strategies as st
 
+from graphical_symbols.build import load_library
 from graphical_symbols.geometry import Direction, Point
-from graphical_symbols.lint import RULES, Rule
+from graphical_symbols.lint import RULES, Rule, lint
 from graphical_symbols.lint.file import (
     is_valid_id,
     metadata_findings,
@@ -15,8 +18,10 @@ from graphical_symbols.lint.file import (
 )
 from graphical_symbols.lint.registry import quote, rule_finding
 from graphical_symbols.model import Anchor, LibraryConfig, Port, Severity
+from graphical_symbols.repeat import repeat
 
 P = Point
+GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
 CONFIG = LibraryConfig("IEC 60617", "IEC 60617 symbols", r"^S\d{5}$")
 
 
@@ -137,6 +142,11 @@ class TestPartIdFindings:
         ]
 
 
+@pytest.fixture(scope="module")
+def library():
+    return load_library(GUIDE)
+
+
 class TestSymbolIdFindings:
     def test_clean_and_empty(self):
         assert symbol_id_findings(plain_symbol()) == ()
@@ -165,17 +175,41 @@ class TestSymbolIdFindings:
         ]
         assert "'In'" in found[0].message
 
-    @pytest.mark.parametrize("port_id", ["1.in", "2.out", "10.pri_in", "3.a"])
+    @pytest.mark.parametrize(
+        "port_id", ["1.in", "2.out", "10.pri_in", "3.a", "1.2.in", "2.1.in", "1.10.2.out"]
+    )
     def test_the_pole_prefix_that_repeat_adds_to_a_port_id_is_allowed(self, port_id):
         symbol = plain_symbol(ports=(Port(port_id, P(0, 0), Direction.N),))
         assert symbol_id_findings(symbol) == ()
 
     @pytest.mark.parametrize(
-        "port_id", ["0.in", "01.in", "1.In", "1.", ".in", "1.a.b", "1.2.in", "a.in", "1.1"]
+        "port_id",
+        ["0.in", "01.in", "1.0.in", "1.In", "1.", ".in", "1.a.b", "a.in", "1.1", "1.2.", "1.in\n"],
     )
     def test_any_other_dotted_port_id_is_still_reported(self, port_id):
         symbol = plain_symbol(ports=(Port(port_id, P(0, 0), Direction.N),))
         assert len(symbol_id_findings(symbol)) == 1
+
+    def test_the_ports_of_repeat_lint_clean_however_often_it_is_nested(self, library):
+        contact, changeover = library.get("S00227"), library.get("S00230")
+        for symbol in (
+            repeat(repeat(contact, 2), 2),
+            repeat(contact, 3),
+            repeat(changeover, 2),
+            repeat(repeat(repeat(contact, 2), 2), 2),
+        ):
+            assert symbol_id_findings(symbol) == ()
+            assert not [f for f in lint(symbol) if f.rule == "id-format"]
+        assert [p.id for p in repeat(repeat(contact, 2), 2).ports] == [
+            "1.1.in",
+            "1.1.out",
+            "1.2.in",
+            "1.2.out",
+            "2.1.in",
+            "2.1.out",
+            "2.2.in",
+            "2.2.out",
+        ]
 
     def test_an_anchor_id_gets_no_such_allowance(self):
         symbol = plain_symbol(anchors=(Anchor("1.link", P(0, 0), Direction.W),))
