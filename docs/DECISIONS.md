@@ -263,3 +263,58 @@ integers of up to 4300 digits, which overflowed `int + float` in placement and m
 64 poles is far beyond any real switching device.
 Cost if wrong: a larger bound is a one-constant change in `load.py` and the schema; a symbol beyond
 2.5 km or a 65-pole device cannot be written until then.
+
+## D23. How `lint` runs the rules, orders findings and treats exemptions
+
+Decided: a rule is one function `(Symbol) -> tuple[Finding, ...]`, one `Rule(id, severity, group,
+orientation_dependent)` row in `lint/registry.py` and one entry in `CHECKS` in `lint/__init__.py`.
+`run_checks` calls an orientation-dependent rule on `orient(symbol, o)` for the 8 orientations and
+stamps `o` on its findings; any other rule runs once, with no orientation. `RULE_IDS` and the sort
+order derive from `GUIDE_ORDER`, the 33 ids in the guide table's order (a test reads the table out
+of the guide and compares). Findings sort by rule order, then orientation (none first, then R0 to
+MR270), then location with numbers as numbers (`anchors[2]` before `elements[0]`, `elements[2]`
+before `elements[10]`), then generation order. `lint_allow` removes a rule's findings, of both
+severities and in every orientation, and an entry counts as used when the rule fired in any of
+them before the removal. `allow-unknown` (a rule id outside the 33, or a reason that is empty
+or only whitespace; two findings if both) and `allow-unused` (a known rule that did not fire) are
+added afterwards, so they cannot be exempted; an unknown rule is never also unused; a rule of
+another task counts as known but has not fired, so it is unused; duplicate entries for one rule are
+each judged alone; an entry with an empty reason still exempts and is reported once. A rule the
+resolver reports (`schema`, `metadata`, `part-*`, `export-unknown`, and `id-format` of a part id)
+never fires in `lint`, so `allow-unused` reports an exemption of it. The package exports the
+function `lint`, which shadows the subpackage as an attribute of `graphical_symbols`: write
+`from graphical_symbols.lint import ...`, never `import graphical_symbols.lint as m`.
+Why: the guide says who loops over orientations nowhere (D6) and leaves the exemption corners open.
+Cost if wrong: a change in `ordered`, in `exempt` or in the two exemption functions; a rule row and
+a `CHECKS` entry per rule instead of one registration if the two are ever merged.
+
+## D24. What the geometry, id and anchor rules count
+
+Decided: `off-drawing-grid` tests exactly (`value * 8` is integral) every line, polyline and
+closed-outline point, circle and arc centre and radius (not arc angles), text position and height,
+anchor position, slot point and slot box side; port positions are `port-off-wiring-grid`'s. It
+gives one finding per element, anchor or slot, naming every value off the grid, located at
+`elements[i]`, `anchors[i]` or `slots.<id>`. `degenerate` also covers a circle or arc radius of
+zero or less, an arc whose angles are equal modulo 360, and an element equal to an earlier one,
+which is reported at the later copy (three copies give two findings); an element can have more
+than one finding. Symbol-level `id-format` checks port ids and anchor ids (`ports[i]`,
+`anchors[i]`; part ids stay the resolver's). `point_on_geometry(point, elements, *, endpoints_only)`
+in `lint/geometry.py` is the one test of "on geometry", tolerance 1e-9: on a line or polyline
+segment, on a circle or arc curve (an arc's ends included), on a closed polyline's outline, inside
+a filled circle or filled closed polyline (D5); text is not geometry. `anchor-off-geometry` uses
+it whole; `endpoints_only` keeps only the ends of a line and of an open polyline, for
+`port-off-geometry`. A polyline of one point is a dot; a filled open polyline has no area.
+Why: the guide names the quantities but not the granularity of a finding or the corners.
+Cost if wrong: locations and message text change; `endpoints_only` moves if ports are meant to
+count a polyline's interior vertices.
+
+## C2. `id-format` and `repeat` disagree about port ids
+
+Concern: section 3 says port ids match `^[a-z][a-z0-9_]*$` and the dot is reserved for namespacing,
+section 7 says `repeat` makes the ports `1.in`, `2.in`, and section 12 says every symbol with a
+through path lints clean as `repeat(symbol, 3)`. `1.in` does not match the pattern, so the three
+cannot all hold as written. Implemented: a port id is valid if it matches the pattern or is a
+pole number (`[1-9][0-9]*`), a dot and such an id, the form `repeat` produces; anchor ids and part
+ids get no such form. A source file with an authored port `2.in` therefore passes `id-format`. Owner
+to decide: keep this, or have `repeat` be exempt from the id rule some other way (a `lint` that knows
+a symbol was repeated, which its signature cannot).

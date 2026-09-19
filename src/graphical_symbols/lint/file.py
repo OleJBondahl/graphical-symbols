@@ -1,4 +1,4 @@
-"""File-group rules that read decoded file data: `metadata` and part ids for `id-format`."""
+"""File-group rules: `metadata` and part ids from decoded data; port and anchor ids of a symbol."""
 
 import re
 from collections.abc import Mapping
@@ -7,9 +7,10 @@ from typing import Any
 import deal
 
 from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Finding, LibraryConfig
+from graphical_symbols.model import Finding, LibraryConfig, Symbol
 
 _ID = re.compile(r"[a-z][a-z0-9_]*")
+_POLE_PORT = re.compile(r"[1-9][0-9]*\.[a-z][a-z0-9_]*")
 
 
 @deal.pure
@@ -90,4 +91,33 @@ def part_id_findings(data: Mapping[str, Any]) -> tuple[Finding, ...]:
         )
         for index, part in enumerate(data.get("parts", ()))
         if not is_valid_id(part["as"])
+    )
+
+
+@deal.pure
+def symbol_id_findings(symbol: Symbol) -> tuple[Finding, ...]:
+    """Return an `id-format` finding for every port id and anchor id that is not a valid id.
+
+    A port id may also be a valid id with a pole number in front, `2.out`: that is what `repeat`
+    makes of the ports, and a repeated symbol must lint clean. Anchor ids get no such form.
+    """
+    return (
+        *(
+            rule_finding(
+                "id-format",
+                f"the port id {quote(port.id)} must match ^[a-z][a-z0-9_]*$",
+                f"ports[{index}]",
+            )
+            for index, port in enumerate(symbol.ports)
+            if not (is_valid_id(port.id) or _POLE_PORT.fullmatch(port.id))
+        ),
+        *(
+            rule_finding(
+                "id-format",
+                f"the anchor id {quote(anchor.id)} must match ^[a-z][a-z0-9_]*$",
+                f"anchors[{index}]",
+            )
+            for index, anchor in enumerate(symbol.anchors)
+            if not is_valid_id(anchor.id)
+        ),
     )

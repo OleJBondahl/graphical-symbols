@@ -1,0 +1,13 @@
+schema = 1
+name = "Anchor in the air"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+anchors = [
+  { id = "link", at = [1, 0.5], dir = "W" },
+]
+
+elements = [
+  { line = [[0, 0], [0, 1]] },
+]

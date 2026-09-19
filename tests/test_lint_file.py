@@ -1,14 +1,22 @@
 """File-group helpers: the id pattern, the registry, and the `metadata` checks."""
 
 import pytest
+from build_symbol import plain_symbol
 from hypothesis import given
 from hypothesis import strategies as st
 
+from graphical_symbols.geometry import Direction, Point
 from graphical_symbols.lint import RULES, Rule
-from graphical_symbols.lint.file import is_valid_id, metadata_findings, part_id_findings
+from graphical_symbols.lint.file import (
+    is_valid_id,
+    metadata_findings,
+    part_id_findings,
+    symbol_id_findings,
+)
 from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import LibraryConfig, Severity
+from graphical_symbols.model import Anchor, LibraryConfig, Port, Severity
 
+P = Point
 CONFIG = LibraryConfig("IEC 60617", "IEC 60617 symbols", r"^S\d{5}$")
 
 
@@ -41,7 +49,7 @@ class TestIsValidId:
 
 class TestRegistry:
     def test_registers_the_eight_rules_of_the_resolver_with_their_guide_group(self):
-        assert {r.id: r.group for r in RULES.values()} == {
+        resolver_rules = {
             "schema": "File",
             "metadata": "File",
             "id-format": "File",
@@ -51,7 +59,8 @@ class TestRegistry:
             "part-port-unexported": "Composition",
             "export-unknown": "Composition",
         }
-        assert all(r.severity is Severity.ERROR for r in RULES.values())
+        assert {i: RULES[i].group for i in resolver_rules} == resolver_rules
+        assert all(RULES[i].severity is Severity.ERROR for i in resolver_rules)
 
     def test_keys_are_rule_ids(self):
         assert all(key == rule.id for key, rule in RULES.items())
@@ -126,3 +135,48 @@ class TestPartIdFindings:
             ("id-format", "/parts/1/as"),
             ("id-format", "/parts/2/as"),
         ]
+
+
+class TestSymbolIdFindings:
+    def test_clean_and_empty(self):
+        assert symbol_id_findings(plain_symbol()) == ()
+        symbol = plain_symbol(
+            ports=(Port("in", P(0, 0), Direction.N), Port("pri_in2", P(0, 1), Direction.S)),
+            anchors=(Anchor("link", P(0, 0), Direction.W),),
+        )
+        assert symbol_id_findings(symbol) == ()
+
+    def test_bad_port_and_anchor_ids_fire_at_their_position(self):
+        symbol = plain_symbol(
+            ports=(
+                Port("ok", P(0, 0), Direction.N),
+                Port("In", P(0, 1), Direction.S),
+                Port("a.b", P(0, 2), Direction.S),
+                Port("", P(0, 3), Direction.S),
+            ),
+            anchors=(Anchor("1st", P(0, 0), Direction.W), Anchor("link", P(0, 0), Direction.W)),
+        )
+        found = symbol_id_findings(symbol)
+        assert [(f.rule, f.severity, f.location) for f in found] == [
+            ("id-format", Severity.ERROR, "ports[1]"),
+            ("id-format", Severity.ERROR, "ports[2]"),
+            ("id-format", Severity.ERROR, "ports[3]"),
+            ("id-format", Severity.ERROR, "anchors[0]"),
+        ]
+        assert "'In'" in found[0].message
+
+    @pytest.mark.parametrize("port_id", ["1.in", "2.out", "10.pri_in", "3.a"])
+    def test_the_pole_prefix_that_repeat_adds_to_a_port_id_is_allowed(self, port_id):
+        symbol = plain_symbol(ports=(Port(port_id, P(0, 0), Direction.N),))
+        assert symbol_id_findings(symbol) == ()
+
+    @pytest.mark.parametrize(
+        "port_id", ["0.in", "01.in", "1.In", "1.", ".in", "1.a.b", "1.2.in", "a.in", "1.1"]
+    )
+    def test_any_other_dotted_port_id_is_still_reported(self, port_id):
+        symbol = plain_symbol(ports=(Port(port_id, P(0, 0), Direction.N),))
+        assert len(symbol_id_findings(symbol)) == 1
+
+    def test_an_anchor_id_gets_no_such_allowance(self):
+        symbol = plain_symbol(anchors=(Anchor("1.link", P(0, 0), Direction.W),))
+        assert len(symbol_id_findings(symbol)) == 1

@@ -18,6 +18,7 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
+from graphical_symbols.lint import lint
 from graphical_symbols.model import (
     Allow,
     Anchor,
@@ -78,6 +79,7 @@ __all__ = [
     "Weight",
     "body_box",
     "keepout_box",
+    "lint",
     "load_library",
     "on_grid",
     "orient",
