@@ -1,7 +1,8 @@
 """Fail when a module-level function in a pure module lacks @deal.pure.
 
-Pure modules are every `.py` file in `src/graphical_symbols/` except `build.py` (the impure
-shell) and `__init__.py`.
+Pure modules are every `.py` file under `src/graphical_symbols/`, subpackages included, except
+the top-level `build.py` (the impure shell) and the top-level `__init__.py`. Modules are
+identified by their path relative to the package, so `lint/__init__.py` is scanned.
 
 Usage:
     uv run python scripts/fp_purity_gate.py
@@ -13,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGE_DIR = ROOT / "src" / "graphical_symbols"
-IMPURE_MODULES = frozenset({"build.py", "__init__.py"})
+IMPURE_MODULES = frozenset({"build.py", "__init__.py"})  # paths relative to the package
 
 
 def _decorator_name(dec: ast.expr) -> str:
@@ -32,8 +33,8 @@ def _decorator_name(dec: ast.expr) -> str:
 def scan(package_dir: Path) -> list[tuple[Path, int, str]]:
     """Return (file, lineno, name) for module-level defs in pure modules lacking @deal.pure."""
     missing: list[tuple[Path, int, str]] = []
-    for py in sorted(package_dir.glob("*.py")):
-        if py.name in IMPURE_MODULES:
+    for py in sorted(package_dir.rglob("*.py")):
+        if py.relative_to(package_dir).as_posix() in IMPURE_MODULES:
             continue
         tree = ast.parse(py.read_text(encoding="utf-8"))
         for node in tree.body:
