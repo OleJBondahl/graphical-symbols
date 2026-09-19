@@ -229,3 +229,15 @@ the same two nodes. Elements are ordered part by part, a part's `via` link line 
 elements, then the composite's own elements.
 Why: the guide states the rules of inheritance, not these corners.
 Cost if wrong: an order change in resolved JSON; nothing else.
+
+## D21. `load_library` reports what it read, by file
+
+Decided: `load_library` reads `library.toml` and `symbols/*.toml` as UTF-8, files in stem order; a
+file that cannot be read (missing, unreadable, not UTF-8, a directory named `x.toml`) and a
+missing `symbols/` directory are `schema` findings located at the file or directory name. It
+raises one `LibraryError` holding every finding: `library.toml` first, then per file, each message
+prefixed `<file name>: ` because a finding has no file of its own. Rule severity comes from the
+registry (`lint/registry.py`, `rule_finding`); the eight rules of the resolver are registered, the
+remaining 25 come with the linter.
+Why: a data repo gate needs to know which file a finding is about.
+Cost if wrong: a `file` field on `Finding` instead of a message prefix.

@@ -1,0 +1,13 @@
+schema = 1
+name = "One-port element"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00010" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+]
+
+elements = [
+  { line = [[0, -2], [0, 0]] },
+]

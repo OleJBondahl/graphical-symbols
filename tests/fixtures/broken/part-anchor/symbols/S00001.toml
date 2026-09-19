@@ -1,0 +1,10 @@
+schema = 1
+name = "Anchors that do not face each other"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+parts = [
+  { as = "a", use = "S00010" },
+  { as = "b", use = "S00010", attach = "link", to = "a.link", length = 1 },
+]

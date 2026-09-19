@@ -1,0 +1,11 @@
+schema = 1
+name = "Leaves a port out of the rename map"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+parts = [
+  { as = "a", use = "S00010" },
+]
+
+ports = { in = "a.in" }
