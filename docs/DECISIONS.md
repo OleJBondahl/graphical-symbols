@@ -175,3 +175,57 @@ Why: the guide names `tag` and `value` and the `marking.` prefix, and says "node
 per pole" without saying how implicit nodes are treated.
 Cost if wrong: an unknown slot id that should repeat is lost on poles 2..n; resolved JSON of a
 repeated symbol lists nodes that were implicit before.
+
+## D17. Structural problems `validate` cannot see are `schema` findings from the resolver
+
+Decided: `validate` does not know a composite from an atomic file, and `repeat` states preconditions
+as contracts, so `resolve_library` reports these itself, all as rule `schema`: `repeat` below 1 or
+on a part whose file has no through path (at `/parts/<i>/repeat`); `ports` as an array of tables in
+a file with `parts` (`/ports`); `ports` as a rename table, or a slot given as a string reference,
+in a file without `parts` (`/ports`, `/slots/<id>`); two parts with the same `as`
+(`/parts/<i>/as`, the later one). A file with any of them has no symbol.
+Why: the guide names one rule, `schema`, for "the file fails validation", and `repeat` must not be
+called in violation of its contracts.
+Cost if wrong: a separate rule id and a fixture for it; a second `validate` pass in the schema.
+
+## D18. What `part-anchor` covers, and where it points
+
+Decided: besides an unknown anchor and anchors that do not face each other (`dA == -dT` after
+`orient`), `part-anchor` covers the malformed placements: `to` that is not `part.anchor`, names no
+earlier part, or names an anchor the part lacks (`/parts/<i>/to`); an unknown `attach` anchor or
+`attach` without `to` (`/parts/<i>/attach`); `via` without `length > 0` (`/parts/<i>/via`); a part
+after the first with neither or both of `attach` and `at`, `at` together with `to`, `length` or
+`via`, and `to`, `length` or `via` without `attach` (`/parts/<i>`). The first part with none of
+these sits at the origin. A negative `length` is placed as written (the guide only bounds it with
+`via`). A target that is an anchor of a part that itself failed to place adds no finding.
+Why: the guide gives the rule one line; every one of these makes the placement undefined.
+Cost if wrong: a finding moves to another rule or location.
+
+## D19. Findings are keyed by file stem, never cascade, and sort deterministically
+
+Decided: `Resolution.symbols` and `.findings` are keyed by file stem (the number, when the
+`metadata` rule is clean); `findings` lists only stems that have some. A symbol with only `metadata`
+or `id-format` findings still resolves. A file whose part file is unknown, in a cycle, or itself
+failed has no symbol, and only the file at fault reports: its users get no finding of their own.
+`part-cycle` is reported on every file of the cycle, at the part that leads on, so the result does
+not depend on which file the walk reaches first. Order: stems sorted, then rule id, then location
+with numbers compared as numbers (`/parts/2` before `/parts/10`), generation order after that.
+`metadata` uses `re.search` with the config's pattern, since the guide's pattern anchors itself; a
+pattern that does not compile matches nothing.
+Why: findings on a user of a broken file only repeat what the broken file already says.
+Cost if wrong: users of broken files also list a finding; a stricter `fullmatch` for patterns
+without anchors.
+
+## D20. Composite inheritance where the guide is silent
+
+Decided: a composite's own `nodes` entry that restates an inherited node (same port set, in the
+composite's port ids) replaces it and carries its `potential`, or the inherited one if it has none;
+any other own node is appended, so the linter's `node-invalid` reports it (D12). A part port
+exported under two names yields two ports at the same place in one node; paths use the first name.
+When several inherited paths are `through` and the composite redeclares none with `through = true`,
+the result has no through path (the linter then warns `through-missing`). Inherited paths keep
+part order; the composite's own paths follow, and an own path removes the inherited path between
+the same two nodes. Elements are ordered part by part, a part's `via` link line before its own
+elements, then the composite's own elements.
+Why: the guide states the rules of inheritance, not these corners.
+Cost if wrong: an order change in resolved JSON; nothing else.
