@@ -6,8 +6,9 @@ marked `orientation_dependent`; the driver then calls it once per orientation.
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from types import MappingProxyType
 
 import deal
 
@@ -67,13 +68,14 @@ RESOLVER_RULES: frozenset[str] = frozenset(
         "export-unknown",
     }
 )
-GUIDE_INDEX: dict[str, int] = {rule_id: index for index, rule_id in enumerate(GUIDE_ORDER)}
+GUIDE_INDEX: Mapping[str, int] = MappingProxyType(
+    {rule_id: index for index, rule_id in enumerate(GUIDE_ORDER)}
+)
 
 # No orientation sorts first, then R0 to MR270.
-_ORIENTATION_INDEX: dict[Orientation | None, int] = {
-    None: -1,
-    **{orientation: index for index, orientation in enumerate(Orientation)},
-}
+_ORIENTATION_INDEX: Mapping[Orientation | None, int] = MappingProxyType(
+    {None: -1, **{orientation: index for index, orientation in enumerate(Orientation)}}
+)
 
 Check = Callable[[Symbol], tuple[Finding, ...]]
 
@@ -93,44 +95,46 @@ class Rule:
 
 
 # All 33 rules of the guide's section 9 table, with their group and severity.
-RULES: dict[str, Rule] = {
-    rule.id: rule
-    for rule in (
-        Rule("schema", Severity.ERROR, "File"),
-        Rule("metadata", Severity.ERROR, "File"),
-        Rule("id-format", Severity.ERROR, "File"),
-        Rule("off-drawing-grid", Severity.ERROR, "Geometry"),
-        Rule("degenerate", Severity.ERROR, "Geometry"),
-        Rule("text-too-large", Severity.ERROR, "Geometry"),
-        Rule("port-duplicate-id", Severity.ERROR, "Ports"),
-        Rule("port-off-wiring-grid", Severity.ERROR, "Ports"),
-        Rule("port-off-geometry", Severity.ERROR, "Ports"),
-        Rule("port-on-body-edge", Severity.ERROR, "Ports", orientation_dependent=True),
-        Rule("port-lane-clear", Severity.ERROR, "Ports", orientation_dependent=True),
-        Rule("port-spacing", Severity.ERROR, "Ports"),
-        Rule("port-position-shared", Severity.ERROR, "Ports"),
-        Rule("node-invalid", Severity.ERROR, "Connectivity"),
-        Rule("path-invalid", Severity.ERROR, "Connectivity"),
-        Rule("through-count", Severity.ERROR, "Connectivity"),
-        Rule("through-axis", Severity.ERROR, "Connectivity"),
-        Rule("through-missing", Severity.WARNING, "Connectivity"),
-        Rule("port-isolated", Severity.WARNING, "Connectivity"),
-        Rule("slot-missing", Severity.ERROR, "Slots"),
-        Rule("slot-unknown-port", Severity.ERROR, "Slots"),
-        Rule("slot-overlap-body", Severity.ERROR, "Slots", orientation_dependent=True),
-        Rule("slot-overlap-slot", Severity.ERROR, "Slots", orientation_dependent=True),
-        Rule("pitch-overflow", Severity.ERROR, "Slots"),
-        Rule("anchor-duplicate-id", Severity.ERROR, "Anchors"),
-        Rule("anchor-off-geometry", Severity.WARNING, "Anchors"),
-        Rule("part-unknown", Severity.ERROR, "Composition"),
-        Rule("part-cycle", Severity.ERROR, "Composition"),
-        Rule("part-anchor", Severity.ERROR, "Composition"),
-        Rule("part-port-unexported", Severity.ERROR, "Composition"),
-        Rule("export-unknown", Severity.ERROR, "Composition"),
-        Rule("allow-unknown", Severity.ERROR, "Exemptions"),
-        Rule("allow-unused", Severity.ERROR, "Exemptions"),
-    )
-}
+RULES: Mapping[str, Rule] = MappingProxyType(
+    {
+        rule.id: rule
+        for rule in (
+            Rule("schema", Severity.ERROR, "File"),
+            Rule("metadata", Severity.ERROR, "File"),
+            Rule("id-format", Severity.ERROR, "File"),
+            Rule("off-drawing-grid", Severity.ERROR, "Geometry"),
+            Rule("degenerate", Severity.ERROR, "Geometry"),
+            Rule("text-too-large", Severity.ERROR, "Geometry"),
+            Rule("port-duplicate-id", Severity.ERROR, "Ports"),
+            Rule("port-off-wiring-grid", Severity.ERROR, "Ports"),
+            Rule("port-off-geometry", Severity.ERROR, "Ports"),
+            Rule("port-on-body-edge", Severity.ERROR, "Ports", orientation_dependent=True),
+            Rule("port-lane-clear", Severity.ERROR, "Ports", orientation_dependent=True),
+            Rule("port-spacing", Severity.ERROR, "Ports"),
+            Rule("port-position-shared", Severity.ERROR, "Ports"),
+            Rule("node-invalid", Severity.ERROR, "Connectivity"),
+            Rule("path-invalid", Severity.ERROR, "Connectivity"),
+            Rule("through-count", Severity.ERROR, "Connectivity"),
+            Rule("through-axis", Severity.ERROR, "Connectivity"),
+            Rule("through-missing", Severity.WARNING, "Connectivity"),
+            Rule("port-isolated", Severity.WARNING, "Connectivity"),
+            Rule("slot-missing", Severity.ERROR, "Slots"),
+            Rule("slot-unknown-port", Severity.ERROR, "Slots"),
+            Rule("slot-overlap-body", Severity.ERROR, "Slots", orientation_dependent=True),
+            Rule("slot-overlap-slot", Severity.ERROR, "Slots", orientation_dependent=True),
+            Rule("pitch-overflow", Severity.ERROR, "Slots"),
+            Rule("anchor-duplicate-id", Severity.ERROR, "Anchors"),
+            Rule("anchor-off-geometry", Severity.WARNING, "Anchors"),
+            Rule("part-unknown", Severity.ERROR, "Composition"),
+            Rule("part-cycle", Severity.ERROR, "Composition"),
+            Rule("part-anchor", Severity.ERROR, "Composition"),
+            Rule("part-port-unexported", Severity.ERROR, "Composition"),
+            Rule("export-unknown", Severity.ERROR, "Composition"),
+            Rule("allow-unknown", Severity.ERROR, "Exemptions"),
+            Rule("allow-unused", Severity.ERROR, "Exemptions"),
+        )
+    }
+)
 
 
 @deal.pure

@@ -36,10 +36,14 @@ A data repo has `library.toml` and `symbols/<number>.toml`; `root` below is its 
 
 ```python
 from graphical_symbols import lint, load_library
+from graphical_symbols.lint import RULES
 
 library = load_library(root)  # raises LibraryError, listing every problem in the files
 contact = library.get("S00227")  # by number; iterating a library is sorted by number
-for finding in lint(contact):  # all 33 rules, geometric ones in all 8 orientations
+assert len(RULES) == 33  # the guide's rule table
+findings = lint(contact)  # all 33 rules, geometric ones in all 8 orientations
+assert findings == ()  # the guide's make contact lints clean
+for finding in findings:  # each has .rule, .severity, .message, .location, .orientation
     print(finding.rule, finding.location, finding.message)
 ```
 
@@ -56,7 +60,9 @@ svg = to_svg(breaker, annotate=True, texts={"tag": "-Q1"})
 
 `write_build` writes `build/` and `src/<package>/bundle.json` under the repo; `stale_build` lists
 the files that differ from what it would write, so a test can fail when a committed build is out
-of date. `load_bundle` reads a bundle back without the sources.
+of date. `load_bundle` reads a bundle back without the sources. `<package>` is the standard's
+normalised name (lowercase letters and digits, D8): the example's standard is `IEC 60617`, so its
+package is `iec60617`.
 
 ```python
 from graphical_symbols import load_bundle, stale_build, write_build

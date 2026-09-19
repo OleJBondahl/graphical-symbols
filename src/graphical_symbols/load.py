@@ -63,9 +63,13 @@ def _finding(location: str, message: str) -> Finding:
 
 
 @deal.pure
-def _short(text: str, limit: int = 60) -> str:
-    """Cap text that comes from the input, so a finding stays readable whatever it was fed."""
-    return text if len(text) <= limit else text[:limit] + "..."
+def _short(text: object, limit: int = 60) -> str:
+    """Cap text that comes from the input, so a finding stays readable whatever it was fed.
+
+    A mapping key that is not a string is shown as `str` shows it.
+    """
+    shown = str(text)
+    return shown if len(shown) <= limit else shown[:limit] + "..."
 
 
 @deal.pure
@@ -486,9 +490,12 @@ _STEM = re.compile(r"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*")
 
 
 @deal.pure
-def is_file_stem(text: str) -> bool:
-    """Return whether a reference number is safe to use as a file name in a build."""
-    return _STEM.fullmatch(text) is not None
+def is_file_stem(text: object) -> bool:
+    """Return whether a reference number is safe to use as a file name in a build.
+
+    Anything that is not a string is not.
+    """
+    return isinstance(text, str) and _STEM.fullmatch(text) is not None
 
 
 @deal.pure

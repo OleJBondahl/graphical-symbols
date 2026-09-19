@@ -66,3 +66,27 @@ def test_methods_are_not_module_level(tmp_path):
     source = "class C:\n    def m(self):\n        return 1\n"
     root = package(tmp_path, {"mod.py": source})
     assert gate.scan(root) == []
+
+
+def test_main_passes_on_the_real_tree(capsys):
+    assert gate.main() == 0
+    assert "every module-level function in pure modules has @deal.pure" in capsys.readouterr().out
+
+
+def test_main_fails_on_a_tree_with_an_undecorated_function(tmp_path, monkeypatch, capsys):
+    package(tmp_path, {"src/graphical_symbols/mod.py": UNDECORATED})
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+    monkeypatch.setattr(gate, "PACKAGE_DIR", tmp_path / "src" / "graphical_symbols")
+
+    assert gate.main() == 1
+
+    out = capsys.readouterr().out
+    assert "1 function(s) missing @deal.pure" in out
+    assert "src/graphical_symbols/mod.py:1 f" in out
+
+
+def test_main_fails_when_the_package_is_missing(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(gate, "PACKAGE_DIR", tmp_path / "nowhere")
+
+    assert gate.main() == 2
+    assert "not found" in capsys.readouterr().err

@@ -6,7 +6,7 @@ from pathlib import Path
 
 README = Path(__file__).resolve().parent.parent / "README.md"
 GUIDE_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "guide"
-BLOCK = re.compile(r"^```python\n(.*?)^```$", re.MULTILINE | re.DOTALL)
+BLOCK = re.compile(r"^```python[^\n]*\n(.*?)^```$", re.MULTILINE | re.DOTALL)
 
 
 def examples() -> list[str]:
@@ -16,6 +16,11 @@ def examples() -> list[str]:
 
 def test_the_readme_has_examples():
     assert len(examples()) >= 3
+
+
+def test_a_fence_with_an_info_string_after_python_is_an_example():
+    text = "```python title=x\nprint(1)\n```\n\n```py\nprint(2)\n```\n"
+    assert BLOCK.findall(text) == ["print(1)\n"]
 
 
 def test_the_readme_examples_run_in_order_on_a_data_repo(tmp_path):

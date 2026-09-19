@@ -284,9 +284,10 @@ class TestEdgeCases:
         assert tuple(s.id for s in result.slots) == ("marking.1.c.in", "marking.2.c.in")
 
     def test_input_is_not_mutated(self, s227):
-        before = s227
+        rebuilt = guide_symbol("S00227")  # read again, so it is not the object `repeat` gets
+        assert rebuilt is not s227
         repeat(s227, 3)
-        assert s227 == before
+        assert s227 == rebuilt
 
 
 class TestPreconditions:

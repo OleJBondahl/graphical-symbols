@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 from dataclasses import replace
+from types import MappingProxyType
 
 import deal
 
@@ -46,32 +47,34 @@ from graphical_symbols.orient import orient
 
 # One entry per rule that inspects a symbol; the rule's `Rule` row is in `registry.RULES`. The
 # rest of `RULES` is computed elsewhere: the resolver's rules, and the two exemption rules below.
-CHECKS: dict[str, Check] = {
-    "id-format": symbol_id_findings,
-    "off-drawing-grid": off_drawing_grid,
-    "degenerate": degenerate,
-    "text-too-large": text_too_large,
-    "port-duplicate-id": port_duplicate_id,
-    "port-off-wiring-grid": port_off_wiring_grid,
-    "port-off-geometry": port_off_geometry,
-    "port-on-body-edge": port_on_body_edge,
-    "port-lane-clear": port_lane_clear,
-    "port-spacing": port_spacing,
-    "port-position-shared": port_position_shared,
-    "node-invalid": node_invalid,
-    "path-invalid": path_invalid,
-    "through-count": through_count,
-    "through-axis": through_axis,
-    "through-missing": through_missing,
-    "port-isolated": port_isolated,
-    "slot-missing": slot_missing,
-    "slot-unknown-port": slot_unknown_port,
-    "slot-overlap-body": slot_overlap_body,
-    "slot-overlap-slot": slot_overlap_slot,
-    "pitch-overflow": pitch_overflow,
-    "anchor-duplicate-id": anchor_duplicate_id,
-    "anchor-off-geometry": anchor_off_geometry,
-}
+CHECKS: Mapping[str, Check] = MappingProxyType(
+    {
+        "id-format": symbol_id_findings,
+        "off-drawing-grid": off_drawing_grid,
+        "degenerate": degenerate,
+        "text-too-large": text_too_large,
+        "port-duplicate-id": port_duplicate_id,
+        "port-off-wiring-grid": port_off_wiring_grid,
+        "port-off-geometry": port_off_geometry,
+        "port-on-body-edge": port_on_body_edge,
+        "port-lane-clear": port_lane_clear,
+        "port-spacing": port_spacing,
+        "port-position-shared": port_position_shared,
+        "node-invalid": node_invalid,
+        "path-invalid": path_invalid,
+        "through-count": through_count,
+        "through-axis": through_axis,
+        "through-missing": through_missing,
+        "port-isolated": port_isolated,
+        "slot-missing": slot_missing,
+        "slot-unknown-port": slot_unknown_port,
+        "slot-overlap-body": slot_overlap_body,
+        "slot-overlap-slot": slot_overlap_slot,
+        "pitch-overflow": pitch_overflow,
+        "anchor-duplicate-id": anchor_duplicate_id,
+        "anchor-off-geometry": anchor_off_geometry,
+    }
+)
 
 __all__ = ["CHECKS", "RULES", "RULE_IDS", "Rule", "lint", "ordered", "run_checks"]
 

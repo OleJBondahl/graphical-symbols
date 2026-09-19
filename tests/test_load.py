@@ -20,7 +20,14 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
-from graphical_symbols.load import parse_config, parse_toml, symbol_from_data, validate
+from graphical_symbols.load import (
+    is_file_stem,
+    parse_config,
+    parse_toml,
+    symbol_from_data,
+    validate,
+    validate_bundle,
+)
 from graphical_symbols.model import (
     Allow,
     Anchor,
@@ -793,3 +800,20 @@ def test_the_schema_constant_and_repeat_are_not_widened_by_the_bound():
     data["parts"][0]["repeat"] = 1_000_001
     assert locations(data) == {"/parts/0/repeat"}
     assert locations(edited(atomic(), "schema", value=2)) == {"/schema"}
+
+
+class TestNonStringKeys:
+    """Keys that are not strings cannot come from TOML or JSON, but `validate` takes any object."""
+
+    def test_an_unknown_non_string_key_is_a_finding_not_a_raise(self):
+        findings = validate({1: 2})
+        assert [(f.rule, f.location) for f in findings if "unknown key" in f.message] == [
+            ("schema", "/1")
+        ]
+
+    def test_a_non_string_bundle_key_is_a_finding_not_a_raise(self):
+        data = {"schema": 1, "standard": "X", "symbols": {1: {}}}
+        assert any("file name" in f.message for f in validate_bundle(data))
+
+    def test_a_non_string_is_not_a_file_stem(self):
+        assert not is_file_stem(1)

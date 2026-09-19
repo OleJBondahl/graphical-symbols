@@ -132,6 +132,15 @@ class TestWriteBuild:
         assert not (tmp_path / "repo").exists()
         assert list(tmp_path.rglob("*")) == []
 
+    @pytest.mark.parametrize("standard", ["", "...", " - ", "—"])
+    def test_it_refuses_a_standard_with_no_package_name_and_writes_nothing(
+        self, tmp_path, standard
+    ):
+        assert package_name(standard) == ""
+        with pytest.raises(ValueError, match="package"):
+            write_build(replace(LIBRARY, standard=standard), tmp_path / "repo")
+        assert list(tmp_path.rglob("*")) == []
+
     def test_it_accepts_numbers_with_interior_dots(self, tmp_path):
         symbols = {"5.1": LIBRARY.get("S00227"), "ISO-14617-1.1": LIBRARY.get("S00016")}
         written = write_build(replace(LIBRARY, symbols=symbols), tmp_path)
@@ -273,6 +282,11 @@ class TestStaleBuild:
         symbols = {**LIBRARY.symbols, number: LIBRARY.get("S00227")}
         with pytest.raises(ValueError, match="file name"):
             stale_build(replace(LIBRARY, symbols=symbols), tmp_path)
+
+    @pytest.mark.parametrize("standard", ["", "..."])
+    def test_it_refuses_a_standard_with_no_package_name(self, tmp_path, standard):
+        with pytest.raises(ValueError, match="package"):
+            stale_build(replace(LIBRARY, standard=standard), tmp_path)
 
     def test_the_result_is_sorted_under_the_root_and_writing_clears_it(self, built):
         (built / SVG).unlink()

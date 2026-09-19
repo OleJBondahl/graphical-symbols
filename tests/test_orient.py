@@ -3,6 +3,7 @@ import math
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
+from orientations import inverse
 
 from graphical_symbols.geometry import (
     Arc,
@@ -32,7 +33,6 @@ from graphical_symbols.model import (
     SymbolKind,
 )
 from graphical_symbols.orient import (
-    inverse,
     orient,
     orient_direction,
     orient_point,

@@ -33,7 +33,6 @@ _PARTS: dict[Orientation, tuple[bool, int]] = {
     Orientation.MR180: (True, 2),
     Orientation.MR270: (True, 3),
 }
-_INVERSES = {Orientation.R90: Orientation.R270, Orientation.R270: Orientation.R90}
 
 _Move = Callable[[Point], Point]
 _Turn = Callable[[Direction], Direction]
@@ -98,12 +97,6 @@ def orient_direction(direction: Direction, orientation: Orientation) -> Directio
     for _ in range(turns):
         x, y = -y, x
     return Direction((x, y))
-
-
-@deal.pure
-def inverse(orientation: Orientation) -> Orientation:
-    """Return the orientation that undoes this one; only R90 and R270 are not their own."""
-    return _INVERSES.get(orientation, orientation)
 
 
 @deal.pure

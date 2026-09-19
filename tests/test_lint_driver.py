@@ -282,6 +282,10 @@ class TestRunChecks:
             ("allow-unused", None, "lint_allow[0]"),
         ]
 
+    def test_a_rule_that_is_not_registered_sorts_after_the_registered_ones_by_id(self):
+        found = tuple(Finding(rule, Severity.ERROR, "m") for rule in ("zzz", "allow-unused", "aaa"))
+        assert [f.rule for f in ordered(found)] == ["allow-unused", "aaa", "zzz"]
+
     def test_ordering_keeps_generation_order_for_equal_keys(self):
         first = Finding("degenerate", Severity.ERROR, "b", "elements[0]")
         second = Finding("degenerate", Severity.ERROR, "a", "elements[0]")

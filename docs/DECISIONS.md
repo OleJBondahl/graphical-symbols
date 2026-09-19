@@ -37,8 +37,9 @@ Cost if wrong: a consumer wanting exceptions wraps the result.
 Decided: `schema/symbol.schema.json` checks types, required keys, enums, array shapes and "exactly
 one shape key". It does not check the id pattern, the grid, positive sizes or the number pattern.
 Why: those are lint rules (`id-format`, `off-drawing-grid`, `degenerate`, `metadata`); enforcing
-them in the schema would make those rules unreachable from a file.
-Cost if wrong: a stricter schema is a compatible tightening later.
+them in the schema would make those rules unreachable from a file. The schema carries no `$id`,
+because the guide names no canonical host for it; a consumer refers to the file by path.
+Cost if wrong: a stricter schema is a compatible tightening later; an `$id` is one added key.
 
 ## D5. A port on a filled circle or filled closed outline counts as "on geometry"
 
@@ -84,6 +85,10 @@ Cost if wrong: an optional `package` key in `library.toml`; a rename of the outp
 - The old `Anchor` text-anchor enum is removed; `Anchor` is the composition attachment point.
 - `InvalidSymbolError` and `DuplicateSymbolError` are removed with the registry they served.
   `UnknownSymbolError` stays for `Library.get`.
+- `Library` is a frozen dataclass that holds a mutable `Mapping`, so `hash(library)` raises
+  `TypeError`. A library is never used as a key or in a set, so it stays as it is; the mapping a
+  caller hands in stays theirs to change. Cost if wrong: `MappingProxyType` in `load_library` and
+  `library_from_bundle`.
 
 ## D10. Fixture layout
 
@@ -230,7 +235,12 @@ When several inherited paths are `through` and the composite redeclares none wit
 the result has no through path (the linter then warns `through-missing`). Inherited paths keep
 part order; the composite's own paths follow, and an own path removes the inherited path between
 the same two nodes. Elements are ordered part by part, a part's `via` link line before its own
-elements, then the composite's own elements.
+elements, then the composite's own elements. The composite keeps its own `lint_allow`,
+`pole_pitch`, `status` and `kind` and drops its parts' (`resolve._compose`): guide section 7's
+inheritance list covers ports, nodes and paths, anchors, slots and elements and is silent on these
+four. Section 7 also says the composite "must redeclare the one that stays" when several inherited
+paths are `through`; that is enforced only as the `through-missing` warning, which is what the
+guide's own rule table makes of it (a warning), not as an error.
 Why: the guide states the rules of inheritance, not these corners.
 Cost if wrong: an order change in resolved JSON; nothing else.
 
@@ -241,8 +251,8 @@ file that cannot be read (missing, unreadable, not UTF-8, a directory named `x.t
 missing `symbols/` directory are `schema` findings located at the file or directory name. It
 raises one `LibraryError` holding every finding: `library.toml` first, then per file, each message
 prefixed `<file name>: ` because a finding has no file of its own. Rule severity comes from the
-registry (`lint/registry.py`, `rule_finding`); the eight rules of the resolver were registered
-first, and the linter registers rules 9 to 33.
+registry (`lint/registry.py`, `rule_finding`): the eight resolver rules were registered with the
+resolver, the linter's other 25 rules were added later, and all 33 are in one table.
 Why: a data repo gate needs to know which file a finding is about.
 Cost if wrong: a `file` field on `Finding` instead of a message prefix.
 
@@ -301,7 +311,9 @@ a `CHECKS` entry per rule instead of one registration if the two are ever merged
 
 Decided: `off-drawing-grid` tests exactly (`value * 8` is integral) every line, polyline and
 closed-outline point, circle and arc centre and radius (not arc angles), text position and height,
-anchor position, slot point and slot box side; port positions are `port-off-wiring-grid`'s. It
+anchor position, slot point and slot box side; port positions are `port-off-wiring-grid`'s. The
+exact test is deliberately not `units.on_grid`, which is public and tolerant (1e-9): a consumer that
+pre-checks with `on_grid` can accept a value the rule then rejects. It
 gives one finding per element, anchor or slot, naming every value off the grid, located at
 `elements[i]`, `anchors[i]` or `slots.<id>`. `degenerate` also covers a circle or arc radius of
 zero or less, an arc whose angles are equal modulo 360, and an element equal to an earlier one,
@@ -574,3 +586,14 @@ findings, and reporting an entry there as unused when the rule did not fire; the
 functions in `lint/exemptions.py` would then serve both places. Owner to decide whether these rules
 are formally non-exemptable or the resolver should apply `lint_allow`.
 
+## D35. A standard with no letter or digit cannot be built
+
+Decided: `write_build` and `stale_build` raise `ValueError` when `package_name(library.standard)`
+is empty (a standard such as `...` or `-`), before reading or writing anything, the same error
+type as for a number that is not a file stem (D31). `load_library` and `validate` still accept such
+a standard: the check is in the impure shell (`_check_names` in `build.py`), not in `validate`,
+`parse_config` and the bundle validator, which would each need a rule for it.
+Why: D8 makes the package the standard with everything but letters and digits removed, so an empty
+package would write `src/bundle.json` instead of `src/<package>/bundle.json`, silently.
+Cost if wrong: a `schema` finding on `standard` in `parse_config` and `validate_bundle`, so
+`load_library` reports it, and a matching key in the JSON Schema.

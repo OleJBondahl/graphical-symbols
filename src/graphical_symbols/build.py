@@ -16,7 +16,7 @@ from graphical_symbols.load import (
 )
 from graphical_symbols.model import Finding, Library, LibraryConfig
 from graphical_symbols.resolve import resolve_library
-from graphical_symbols.serialize import GENERATED_DIRS, build_files
+from graphical_symbols.serialize import GENERATED_DIRS, build_files, package_name
 
 
 def _named(name: str, findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
@@ -114,12 +114,18 @@ def load_bundle(json_path: Path) -> Library:
     return library_from_bundle(data)
 
 
-def _check_numbers(library: Library) -> None:
-    """Refuse a library with a number that cannot name a file, before any file is touched."""
+def _check_names(library: Library) -> None:
+    """Refuse a library that would need an unsafe file or directory name, before any file is made.
+
+    A number must be a file stem, and the standard must give a package name (D8, D35).
+    """
     for number in library.symbols:
         if not is_file_stem(number):
             msg = f"symbol number {number!r} cannot be used as a file name"
             raise ValueError(msg)
+    if not package_name(library.standard):
+        msg = f"the standard {library.standard!r} has no letter or digit to make a package name of"
+        raise ValueError(msg)
 
 
 def write_build(library: Library, root: Path) -> tuple[Path, ...]:
@@ -138,10 +144,11 @@ def write_build(library: Library, root: Path) -> tuple[Path, ...]:
         of their `/`-separated relative paths.
 
     Raises:
-        ValueError: If a symbol number is not a file stem (`is_file_stem`); nothing is written.
+        ValueError: If a symbol number is not a file stem (`is_file_stem`) or the standard has no
+            letter or digit to make a package name of; nothing is written.
         OSError: If a path cannot be written; files already written stay.
     """
-    _check_numbers(library)
+    _check_names(library)
     written = []
     for relative, data in build_files(library).items():
         target = root / relative
@@ -167,10 +174,11 @@ def stale_build(library: Library, root: Path) -> tuple[Path, ...]:
         their `/`-separated relative paths.
 
     Raises:
-        ValueError: If a symbol number is not a file stem (`is_file_stem`).
+        ValueError: If a symbol number is not a file stem (`is_file_stem`) or the standard has no
+            letter or digit to make a package name of.
         OSError: If a file cannot be read; it is not treated as stale.
     """
-    _check_numbers(library)
+    _check_names(library)
     files = build_files(library)
     stale = {
         relative

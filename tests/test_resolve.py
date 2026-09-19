@@ -8,6 +8,7 @@ import pytest
 from damage import HUGE_INTEGERS, ODD_VALUES, damage
 from hypothesis import given, settings
 from hypothesis import strategies as st
+from orientations import inverse
 
 from graphical_symbols.geometry import Direction, Line, Orientation, Point, Style, Weight
 from graphical_symbols.lint import lint
@@ -23,7 +24,7 @@ from graphical_symbols.model import (
     Severity,
     Slot,
 )
-from graphical_symbols.orient import inverse, orient_direction, orient_point
+from graphical_symbols.orient import orient_direction, orient_point
 from graphical_symbols.resolve import Resolution, resolve_library
 
 GUIDE = FilePath(__file__).resolve().parent / "fixtures" / "guide"
