@@ -1,3 +1,5 @@
+import math
+
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -155,3 +157,34 @@ def test_body_box_of_lines_follows_orient_for_a_rigid_transform(pairs, o):
     s = sym(*(Line(a, b) for a, b in pairs))
     before, after = body_box(s), body_box(orient(s, o))
     assert sorted((after.width, after.height)) == sorted((before.width, before.height))
+
+
+_ODD = [math.nan, math.inf, -math.inf, 1e300, -1e300, 720.0, -450.0]
+
+
+@pytest.mark.parametrize("angle", _ODD)
+@pytest.mark.parametrize("field", ["start_deg", "end_deg"])
+def test_an_arc_with_an_odd_angle_has_a_box_and_never_raises(angle, field):
+    angles = {"start_deg": 10.0, "end_deg": 100.0, field: angle}
+    arc = Arc(Point(1, 1), 2, angles["start_deg"], angles["end_deg"])
+    element_box(arc)
+    body_box(sym(arc))
+
+
+@pytest.mark.parametrize("angle", [math.nan, math.inf, -math.inf])
+def test_an_arc_with_a_non_finite_angle_counts_as_its_centre(angle):
+    assert element_box(Arc(Point(1, 2), 3, angle, 90)) == box(1, 2, 1, 2)
+    assert element_box(Arc(Point(1, 2), 3, 0, angle)) == box(1, 2, 1, 2)
+
+
+def test_arc_angles_beyond_a_turn_give_the_box_of_their_normalised_angles():
+    assert element_box(Arc(Point(0, 0), 2, 720, 810)) == element_box(Arc(Point(0, 0), 2, 0, 90))
+    assert element_box(Arc(Point(0, 0), 2, -90, 90)) == element_box(Arc(Point(0, 0), 2, 270, 90))
+
+
+_any = st.sampled_from([*_ODD, 0.0, 0.5, 90.0, -3.0, 1e6, 1e-300])
+
+
+@given(_any, _any, _any, _any, _any)
+def test_element_box_of_an_arc_is_total_for_any_floats(x, y, r, start, end):
+    element_box(Arc(Point(x, y), r, start, end))

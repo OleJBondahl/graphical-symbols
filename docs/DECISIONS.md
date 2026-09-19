@@ -322,3 +322,15 @@ pattern, matched in full); anchor ids and part ids get no such form. A source fi
 authored port `2.in` or `1.2.in` therefore passes `id-format`. Owner
 to decide: keep this, or have `repeat` be exempt from the id rule some other way (a `lint` that knows
 a symbol was repeated, which its signature cannot).
+
+## D25. An arc with a non-finite angle counts as its centre in the boxes
+
+Decided: `element_box` and `body_box` reduce an arc's start and end angle modulo 360 before they
+compute its extent, and an arc whose start or end angle is NaN or infinite has no swept extent, so
+its extent points are just its centre. Finite angles behave as before.
+Why: `arc_point` calls `math.cos` on the angle, which raises for infinity; `body_box` is called by
+the linter on hand-built symbols and must be total (D3, D22).
+Cost if wrong: a garbage arc shrinks a box to a point instead of being an error; files cannot carry
+such angles (D22), so only hand-built symbols are affected. `arc_point` itself still raises for an
+infinite angle; the boxes and the linter reduce it first, `svg.py` does not (a bundle cannot carry such an
+angle, so only a hand-built symbol could make `to_svg` raise).

@@ -1,5 +1,7 @@
 """The body, slot and keep-out boxes of a symbol."""
 
+import math
+
 import deal
 
 from graphical_symbols.geometry import (
@@ -25,7 +27,10 @@ _ORIGIN_BOX = Box(Point(0, 0), Point(0, 0))
 
 @deal.pure
 def _extent_points(element: Element) -> tuple[Point, ...]:
-    """Return points whose bounding box is the element's extent, ignoring stroke width."""
+    """Return points whose bounding box is the element's extent, ignoring stroke width.
+
+    An arc with a non-finite angle has no swept extent and counts as its centre.
+    """
     match element:
         case Line(start=start, end=end):
             return (start, end)
@@ -34,9 +39,12 @@ def _extent_points(element: Element) -> tuple[Point, ...]:
         case Circle(center=c, radius=r):
             return (Point(c.x - r, c.y - r), Point(c.x + r, c.y + r))
         case Arc() as arc:
+            if not (math.isfinite(arc.start_deg) and math.isfinite(arc.end_deg)):
+                return (arc.center,)
+            start, end = arc.start_deg % _FULL_TURN, arc.end_deg % _FULL_TURN
             sweep = arc_sweep(arc)
-            extremes = tuple(a for a in _AXIS_ANGLES if (a - arc.start_deg) % _FULL_TURN <= sweep)
-            return tuple(arc_point(arc, a) for a in (arc.start_deg, arc.end_deg, *extremes))
+            extremes = tuple(a for a in _AXIS_ANGLES if (a - start) % _FULL_TURN <= sweep)
+            return tuple(arc_point(arc, a) for a in (start, end, *extremes))
         case Text(content=content, position=at, height=height):
             half_w = _TEXT_WIDTH_PER_HEIGHT * height * len(content) / 2
             return (
