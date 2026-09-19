@@ -79,5 +79,7 @@ uv sync
 just ci        # format check, ruff, ty, vulture, purity gate, pytest with coverage
 ```
 
+Coverage must stay at 100% (`--cov-fail-under=100`), so a partial run such as
+`uv run pytest tests/test_units.py` fails on coverage alone: add `--no-cov` for one.
 `tests/test_readme.py` runs the examples above, so they stay true. Agents: read
 [CLAUDE.md](CLAUDE.md) first.
