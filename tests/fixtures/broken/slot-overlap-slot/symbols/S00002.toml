@@ -1,0 +1,26 @@
+# Clean in the base orientation, broken in others: slot boxes do not rotate with the symbol.
+# Both boxes are 3 M wide and 1 M tall and stand 2 M apart vertically, so they miss each other in
+# R0. Turned by 90 degrees the 2 M step is horizontal and the boxes overlap by 1 M.
+schema = 1
+name = "Slot boxes that overlap when turned"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00002" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "conductor" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+]
+
+[slots]
+"marking.in" = { at = [2, 2], side = "E", box = [3, 1] }
+value        = { at = [2, 4], side = "E", box = [3, 1] }

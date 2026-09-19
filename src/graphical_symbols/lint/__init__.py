@@ -35,6 +35,13 @@ from graphical_symbols.lint.registry import (
     Rule,
     natural_key,
 )
+from graphical_symbols.lint.slots import (
+    pitch_overflow,
+    slot_missing,
+    slot_overlap_body,
+    slot_overlap_slot,
+    slot_unknown_port,
+)
 from graphical_symbols.model import Finding, Symbol
 from graphical_symbols.orient import orient
 
@@ -58,6 +65,11 @@ CHECKS: dict[str, Check] = {
     "through-axis": through_axis,
     "through-missing": through_missing,
     "port-isolated": port_isolated,
+    "slot-missing": slot_missing,
+    "slot-unknown-port": slot_unknown_port,
+    "slot-overlap-body": slot_overlap_body,
+    "slot-overlap-slot": slot_overlap_slot,
+    "pitch-overflow": pitch_overflow,
     "anchor-duplicate-id": anchor_duplicate_id,
     "anchor-off-geometry": anchor_off_geometry,
 }

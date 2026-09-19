@@ -1,0 +1,25 @@
+schema = 1
+name = "Slot box on top of a stroke"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "conductor" },
+]
+
+# The box of "value" lies across the third line. It stays in one quadrant, clear of every wire
+# lane, so no other rule fires in any orientation.
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+  { line = [[1, -1.5], [2, -1.5]] },
+]
+
+[slots]
+value = { at = [1, -1.5], side = "E", box = [1, 1] }

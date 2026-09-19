@@ -1,0 +1,23 @@
+schema = 1
+name = "Marking slot for a port that does not exist"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "conductor" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+]
+
+[slots]
+"marking.in"    = { at = [0.25, -1.5], side = "E", box = [1.5, 1] }
+"marking.ghost" = { at = [0.25, 1.5],  side = "E", box = [1.5, 1] }

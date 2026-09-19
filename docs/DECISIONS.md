@@ -400,3 +400,26 @@ Why: the guide names the rules, not the granularity, the corners, or which of tw
 rules reports a malformed path.
 Cost if wrong: locations and message text change; a per-symbol `through-count` finding instead of
 one per extra path.
+
+## D29. What the Slots rules count
+
+Decided: `slot-missing` (kind symbol only) gives one finding per missing slot, at that slot
+(`slots.tag`, `slots.marking.<port id>`); ports that share an id need one marking slot, and
+`value` is never required. `slot-unknown-port` (every kind) takes a slot whose id starts `marking.`
+and looks up the rest of the id (only the first prefix is removed, so `marking.1.in` names the
+port `1.in`); an empty rest is unknown. `slot-overlap-body` gives one finding per slot at
+`slots.<id>` naming the first three overlapped elements, using `overlaps_rect` (D26).
+`slot-overlap-slot` gives one finding per overlapping pair, at the later slot, naming both; boxes
+without area overlap nothing. `pitch-overflow` (kind symbol only, base orientation, run once) has
+two parts. A `pole_pitch` that is not a positive multiple of 4 is a finding at `pole_pitch`. For a
+symbol with at least one through path the extent is `max.x - min.x` of `body_box` united with every
+slot box whose id is neither `tag` nor `value`, and it must be at most the limit: `pole_pitch` if it
+is positive (even when it is not a multiple of 4, so a pitch of 6 with an extent of 7 gives both
+findings), otherwise 4. A symbol without a through path has no extent to check, as the guide
+says "for a symbol with a through path". A through-path symbol with no elements has the origin
+box (D13) as its body box. The two orientation-only fixtures rely on the box being upright: two
+boxes 3 M wide and 1 M tall that stand 2 M apart vertically miss each other and overlap by 1 M once
+the 2 M step is horizontal; a 1.5 x 3 M box beside a lead lies across it after a quarter turn.
+Why: the guide names the rules, not their granularity or the corners.
+Cost if wrong: locations and message text change; the limit for a `pole_pitch` that is positive
+but not a multiple of 4 would be 4 instead.
