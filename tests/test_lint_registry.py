@@ -3,9 +3,16 @@
 import re
 from pathlib import Path
 
+from graphical_symbols.geometry import Orientation
 from graphical_symbols.lint import RULES
-from graphical_symbols.lint.registry import GUIDE_INDEX, GUIDE_ORDER, RULE_IDS, natural_key
-from graphical_symbols.model import Severity
+from graphical_symbols.lint.registry import (
+    GUIDE_INDEX,
+    GUIDE_ORDER,
+    RULE_IDS,
+    finding_key,
+    natural_key,
+)
+from graphical_symbols.model import Finding, Severity
 
 GUIDE = Path(__file__).resolve().parent.parent / "docs" / "SYMBOL_INTERFACE.html"
 _ROW = re.compile(
@@ -78,4 +85,39 @@ def test_natural_key_orders_numbers_as_numbers():
         "elements[1]",
         "elements[2]",
         "elements[10]",
+    ]
+
+
+def test_finding_key_orders_by_rule_then_orientation_then_natural_location():
+    def at(rule, location=None, orientation=None):
+        return Finding(rule, Severity.ERROR, "m", location, orientation)
+
+    shuffled = [
+        at("id-format", "/parts/10/as"),
+        at("id-format", "/parts/2/as"),
+        at("slot-overlap-body", "elements[0]", Orientation.R90),
+        at("slot-overlap-body", "elements[0]"),
+        at("metadata", "/name"),
+        at("schema"),
+    ]
+    assert [(f.rule, f.orientation, f.location) for f in sorted(shuffled, key=finding_key)] == [
+        ("schema", None, None),
+        ("metadata", None, "/name"),
+        ("id-format", None, "/parts/2/as"),
+        ("id-format", None, "/parts/10/as"),
+        ("slot-overlap-body", None, "elements[0]"),
+        ("slot-overlap-body", Orientation.R90, "elements[0]"),
+    ]
+
+
+def test_finding_key_puts_an_unregistered_rule_after_all_registered_ones_by_id():
+    def at(rule):
+        return Finding(rule, Severity.ERROR, "m")
+
+    shuffled = [at("zzz"), at("allow-unused"), at("aaa"), at("schema")]
+    assert [f.rule for f in sorted(shuffled, key=finding_key)] == [
+        "schema",
+        "allow-unused",
+        "aaa",
+        "zzz",
     ]

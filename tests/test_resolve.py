@@ -10,6 +10,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from graphical_symbols.geometry import Direction, Line, Orientation, Point, Style, Weight
+from graphical_symbols.lint import lint
+from graphical_symbols.lint.registry import GUIDE_INDEX, finding_key
 from graphical_symbols.load import symbol_from_data
 from graphical_symbols.model import (
     LibraryConfig,
@@ -947,9 +949,43 @@ class TestDeterminism:
         resolution = resolve(LINK_E, wrong, broken)
         assert list(resolution.findings) == ["S00095", "S00096"]
         assert located(resolution, "S00096") == [
-            *[("id-format", f"/parts/{i}/as") for i in range(12)],
             ("metadata", "/name"),
+            *[("id-format", f"/parts/{i}/as") for i in range(12)],
         ]
+
+    def test_rules_follow_the_guide_table_not_the_alphabet(self):
+        # The table has `part-port-unexported` before `export-unknown`; the alphabet has it after.
+        top = composite(
+            "S00098",
+            'parts = [{ as = "a", use = "S00012" }]\nports = { p = "a.in", x = "a.nope" }\n',
+        )
+        assert located(resolve(TWO_PORT, top), "S00098") == [
+            ("part-port-unexported", "/ports"),
+            ("export-unknown", "/ports/x"),
+        ]
+
+    def test_resolver_and_lint_findings_of_one_library_merge_in_guide_table_order(self):
+        # S00099 has resolver findings (`metadata`, `id-format`) and lint findings
+        # (`off-drawing-grid`, `allow-unknown`) at once; the merged order is the table's.
+        top = composite(
+            "S00099",
+            'parts = [{ as = "A0", use = "S00010" }]\n'
+            "elements = [{ line = [[0, 0], [0.1, 0]] }]\n"
+            'lint_allow = [{ rule = "nonsense", reason = "r" }]\n',
+        ).replace("Composite S00099", "")
+        resolution = resolve(LINK_E, top)
+        found = resolution.findings["S00099"]
+        linted = lint(resolution.symbols["S00099"])
+        assert [f.rule for f in found] == ["metadata", "id-format"]
+        assert [f.rule for f in linted] == ["off-drawing-grid", "allow-unknown"]
+        merged = sorted((*linted, *found), key=finding_key)
+        assert [f.rule for f in merged] == [
+            "metadata",
+            "id-format",
+            "off-drawing-grid",
+            "allow-unknown",
+        ]
+        assert [GUIDE_INDEX[f.rule] for f in merged] == sorted(GUIDE_INDEX[f.rule] for f in merged)
 
     def test_the_result_does_not_depend_on_the_order_of_the_sources(self):
         forward = files(

@@ -212,8 +212,8 @@ Decided: `Resolution.symbols` and `.findings` are keyed by file stem (the number
 or `id-format` findings still resolves. A file whose part file is unknown, in a cycle, or itself
 failed has no symbol, and only the file at fault reports: its users get no finding of their own.
 `part-cycle` is reported on every file of the cycle, at the part that leads on, so the result does
-not depend on which file the walk reaches first. Order: stems sorted, then rule id, then location
-with numbers compared as numbers (`/parts/2` before `/parts/10`), generation order after that.
+not depend on which file the walk reaches first. Order: stems sorted, then the finding order of
+D34, generation order after that.
 `metadata` uses `re.search` with the config's pattern, since the guide's pattern anchors itself; a
 pattern that does not compile matches nothing.
 Why: findings on a user of a broken file only repeat what the broken file already says.
@@ -539,3 +539,16 @@ Cost if wrong: every annotated SVG changes (colours, sizes, label places are con
 different sample changes every annotated file; the 0.6 M per character width is the guide's own
 text extent, and a real font is a little wider for some strings (`marking.out` at size 0.3 fits
 its label box only about).
+
+## D34. One finding order for the resolver and the linter
+
+Decided: `finding_key` in `lint/registry.py` is the one sort key for a `Finding`, used by
+`resolve_library` (per file) and by `lint.ordered`. It sorts by the rule's place in the guide's
+section 9 table (`GUIDE_INDEX`; a rule outside the table after all of them, by id), then by
+orientation (none first, then R0 to MR270), then by location with numbers compared as numbers
+(`/parts/2` before `/parts/10`, `elements[2]` before `elements[10]`), then by generation order.
+A data repo that concatenates `LibraryError.findings` and `lint` results and sorts them with
+`finding_key` gets the table's order across both. The resolver used to sort by rule id in
+alphabetical order (`id-format` before `metadata`, `export-unknown` before `part-port-unexported`).
+Why: two orders for the same rules had no single rationale, and the table is the guide's own.
+Cost if wrong: a change in one function; resolver findings of different rules swap places.

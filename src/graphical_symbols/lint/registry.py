@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 import deal
 
+from graphical_symbols.geometry import Orientation
 from graphical_symbols.model import Finding, Severity, Symbol
 
 _QUOTE_LIMIT = 60
@@ -53,6 +54,12 @@ GUIDE_ORDER: tuple[str, ...] = (
 )
 RULE_IDS: frozenset[str] = frozenset(GUIDE_ORDER)
 GUIDE_INDEX: dict[str, int] = {rule_id: index for index, rule_id in enumerate(GUIDE_ORDER)}
+
+# No orientation sorts first, then R0 to MR270.
+_ORIENTATION_INDEX: dict[Orientation | None, int] = {
+    None: -1,
+    **{orientation: index for index, orientation in enumerate(Orientation)},
+}
 
 Check = Callable[[Symbol], tuple[Finding, ...]]
 
@@ -128,3 +135,18 @@ def quote(text: str) -> str:
 def natural_key(text: str) -> str:
     """Return a sort key that puts numbers in natural order: `elements[2]` before `[10]`."""
     return re.sub(r"\d+", lambda m: f"{len(m.group()):04d}{m.group()}", text)
+
+
+@deal.pure
+def finding_key(finding: Finding) -> tuple[int, str, int, str]:
+    """Return the sort key of the one finding order, shared by the resolver and the linter.
+
+    Findings sort by the guide table's rule order (a rule outside the table after all of them, by
+    id), then orientation (none first, then R0 to MR270), then location with numbers as numbers.
+    """
+    return (
+        GUIDE_INDEX.get(finding.rule, len(GUIDE_ORDER)),
+        finding.rule,
+        _ORIENTATION_INDEX[finding.orientation],
+        natural_key(finding.location or ""),
+    )

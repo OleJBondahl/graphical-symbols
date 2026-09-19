@@ -5,7 +5,6 @@ Problems are returned as findings per file stem, never raised. A file whose part
 is at fault reports; the files that use it say nothing.
 """
 
-import re
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Any
@@ -14,7 +13,7 @@ import deal
 
 from graphical_symbols.geometry import Element, Line, Orientation, Point, Style, Weight
 from graphical_symbols.lint.file import metadata_findings, part_id_findings
-from graphical_symbols.lint.registry import quote, rule_finding
+from graphical_symbols.lint.registry import finding_key, quote, rule_finding
 from graphical_symbols.load import symbol_from_data, validate
 from graphical_symbols.model import (
     Anchor,
@@ -54,13 +53,6 @@ class Resolution:
 def _at(*keys: str | int) -> str:
     """Make a JSON Pointer, escaping `~` and `/` in the keys."""
     return "".join("/" + str(key).replace("~", "~0").replace("/", "~1") for key in keys)
-
-
-@deal.pure
-def _order(finding: Finding) -> tuple[str, str]:
-    """Sort by rule, then by location with numbers in natural order (`/parts/2` before `/10`)."""
-    location = re.sub(r"\d+", lambda m: f"{len(m.group()):04d}{m.group()}", finding.location or "")
-    return finding.rule, location
 
 
 @deal.pure
@@ -560,5 +552,5 @@ def resolve_library(config: LibraryConfig, sources: Mapping[str, Mapping[str, An
         problems[stem].append(finding)
     return Resolution(
         {stem: symbol for stem in stems if (symbol := resolved.get(stem)) is not None},
-        {stem: tuple(sorted(found, key=_order)) for stem, found in problems.items() if found},
+        {stem: tuple(sorted(found, key=finding_key)) for stem, found in problems.items() if found},
     )

@@ -28,12 +28,11 @@ from graphical_symbols.lint.ports import (
     port_spacing,
 )
 from graphical_symbols.lint.registry import (
-    GUIDE_INDEX,
     RULE_IDS,
     RULES,
     Check,
     Rule,
-    natural_key,
+    finding_key,
 )
 from graphical_symbols.lint.slots import (
     pitch_overflow,
@@ -74,11 +73,6 @@ CHECKS: dict[str, Check] = {
     "anchor-off-geometry": anchor_off_geometry,
 }
 
-_ORIENTATION_INDEX: dict[Orientation | None, int] = {
-    None: -1,
-    **{orientation: index for index, orientation in enumerate(Orientation)},
-}
-
 __all__ = ["CHECKS", "RULES", "RULE_IDS", "Rule", "lint", "ordered", "run_checks"]
 
 
@@ -113,16 +107,7 @@ def ordered(findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
     No orientation comes first, then R0 to MR270; locations sort with numbers as numbers. Findings
     that are equal on all three keep the order they came in.
     """
-    return tuple(
-        sorted(
-            findings,
-            key=lambda f: (
-                GUIDE_INDEX[f.rule],
-                _ORIENTATION_INDEX[f.orientation],
-                natural_key(f.location or ""),
-            ),
-        )
-    )
+    return tuple(sorted(findings, key=finding_key))
 
 
 @deal.pure
