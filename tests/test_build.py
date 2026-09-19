@@ -104,10 +104,37 @@ class TestWriteBuild:
         write_build(LIBRARY, first)
         write_build(LIBRARY, first)
         write_build(LIBRARY, second)
-        for path in (first).rglob("*"):
-            if path.is_file():
-                other = second / path.relative_to(first)
-                assert path.read_bytes() == other.read_bytes()
+        files = {p.relative_to(first) for p in first.rglob("*") if p.is_file()}
+        assert files == {p.relative_to(second) for p in second.rglob("*") if p.is_file()}
+        assert files
+        for relative_path in files:
+            assert (first / relative_path).read_bytes() == (second / relative_path).read_bytes()
+
+    def test_paths_are_under_the_root_as_given_relative_if_the_root_is(self, tmp_path, monkeypatch):
+        monkeypatch.chdir(tmp_path)
+        root = Path("out")
+        written = write_build(LIBRARY, root)
+        assert written == tuple(root / rel for rel in sorted(build_files(LIBRARY)))
+        assert not any(p.is_absolute() for p in written)
+        (root / SVG).unlink()
+        assert stale_build(LIBRARY, root) == (root / SVG,)
+
+    @pytest.mark.parametrize(
+        "number", ["../../x", "a/b", "a\\b", "", "..", "a..b", ".a", "a.", "S 1"]
+    )
+    def test_it_refuses_a_number_that_is_not_a_file_name_stem_and_writes_nothing(
+        self, tmp_path, number
+    ):
+        symbols = {**LIBRARY.symbols, number: LIBRARY.get("S00227")}
+        with pytest.raises(ValueError, match="file name"):
+            write_build(replace(LIBRARY, symbols=symbols), tmp_path / "repo")
+        assert not (tmp_path / "repo").exists()
+        assert list(tmp_path.rglob("*")) == []
+
+    def test_it_accepts_numbers_with_interior_dots(self, tmp_path):
+        symbols = {"5.1": LIBRARY.get("S00227"), "ISO-14617-1.1": LIBRARY.get("S00016")}
+        written = write_build(replace(LIBRARY, symbols=symbols), tmp_path)
+        assert tmp_path / "build" / "resolved" / "5.1.json" in written
 
     def test_the_bundle_goes_to_the_package_of_the_standard(self, built):
         assert (built / BUNDLE).is_file()
@@ -223,7 +250,13 @@ class TestStaleBuild:
         (built / "symbols" / "S00227.toml").write_bytes(b"")
         assert stale_build(LIBRARY, built) == ()
 
-    def test_the_result_is_sorted_absolute_under_the_root_and_writing_clears_it(self, built):
+    @pytest.mark.parametrize("number", ["../../x", "a/b", "", "a..b"])
+    def test_it_refuses_a_number_that_is_not_a_file_name_stem(self, tmp_path, number):
+        symbols = {**LIBRARY.symbols, number: LIBRARY.get("S00227")}
+        with pytest.raises(ValueError, match="file name"):
+            stale_build(replace(LIBRARY, symbols=symbols), tmp_path)
+
+    def test_the_result_is_sorted_under_the_root_and_writing_clears_it(self, built):
         (built / SVG).unlink()
         (built / RESOLVED).write_bytes(b"x")
         stale = stale_build(LIBRARY, built)

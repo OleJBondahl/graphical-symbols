@@ -30,7 +30,7 @@ def _row(number: str, library: Library) -> str:
     """Return the table row of one symbol: its facts, then the plain and annotated images."""
     symbol = library.symbols[number]
     label = _cell(number)
-    link = quote(number, safe="")
+    link = quote(number, safe="", errors="replace")
     cells = (
         f"[{label}](resolved/{link}.json)",
         _cell(symbol.name),

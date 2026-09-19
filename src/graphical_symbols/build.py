@@ -7,6 +7,7 @@ from typing import Any
 from graphical_symbols.errors import LibraryError
 from graphical_symbols.lint.registry import rule_finding
 from graphical_symbols.load import (
+    is_file_stem,
     library_from_bundle,
     parse_config,
     parse_json,
@@ -113,6 +114,14 @@ def load_bundle(json_path: Path) -> Library:
     return library_from_bundle(data)
 
 
+def _check_numbers(library: Library) -> None:
+    """Refuse a library with a number that cannot name a file, before any file is touched."""
+    for number in library.symbols:
+        if not is_file_stem(number):
+            msg = f"symbol number {number!r} cannot be used as a file name"
+            raise ValueError(msg)
+
+
 def write_build(library: Library, root: Path) -> tuple[Path, ...]:
     """Write the build of a library under a data repo: `build/` and `src/<package>/bundle.json`.
 
@@ -125,8 +134,14 @@ def write_build(library: Library, root: Path) -> tuple[Path, ...]:
         root: The data repo's directory.
 
     Returns:
-        Every path written, under `root`, in the order of their `/`-separated relative paths.
+        Every path written, as `root / <relative path>` (so relative if `root` is), in the order
+        of their `/`-separated relative paths.
+
+    Raises:
+        ValueError: If a symbol number is not a file stem (`is_file_stem`); nothing is written.
+        OSError: If a path cannot be written; files already written stay.
     """
+    _check_numbers(library)
     written = []
     for relative, data in build_files(library).items():
         target = root / relative
@@ -148,8 +163,14 @@ def stale_build(library: Library, root: Path) -> tuple[Path, ...]:
         root: The data repo's directory.
 
     Returns:
-        The stale paths, under `root`, in the order of their `/`-separated relative paths.
+        The stale paths, as `root / <relative path>` (so relative if `root` is), in the order of
+        their `/`-separated relative paths.
+
+    Raises:
+        ValueError: If a symbol number is not a file stem (`is_file_stem`).
+        OSError: If a file cannot be read; it is not treated as stale.
     """
+    _check_numbers(library)
     files = build_files(library)
     stale = {
         relative

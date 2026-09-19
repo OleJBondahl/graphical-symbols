@@ -137,13 +137,34 @@ class TestValidateBundle:
             "/symbols/S00227/slots/tag",
         }
 
-    @pytest.mark.parametrize("key", ["../x", "a/b", "a\\b", "", "S 1", "a.b", ".."])
+    @pytest.mark.parametrize(
+        "key",
+        ["../x", "a/b", "a\\b", "", "S 1", "..", ".", ".a", "a.", "a..b", "a.b.", "a/../b"],
+    )
     def test_a_key_that_is_not_a_file_name_stem_is_reported(self, key):
         data = bundle_data()
-        data["symbols"][key] = data["symbols"].pop("S00227")
+        symbol = data["symbols"].pop("S00227")
+        symbol["reference"]["number"] = key
+        data["symbols"][key] = symbol
         (finding,) = validate_bundle(data)
         assert finding.location == f"/symbols/{key.replace('/', '~1')}"
         assert "file name" in finding.message
+
+    @pytest.mark.parametrize("key", ["a.b", "5.1", "ISO-14617-1.1", "A_b-c.d.e", "S00227"])
+    def test_a_key_with_interior_dots_is_a_file_name_stem(self, key):
+        data = bundle_data()
+        symbol = data["symbols"].pop("S00227")
+        symbol["reference"]["number"] = key
+        data["symbols"][key] = symbol
+        assert validate_bundle(data) == ()
+
+    def test_a_key_must_equal_the_reference_number_of_its_symbol(self):
+        data = bundle_data()
+        data["symbols"]["S00227"]["reference"]["number"] = "S00228"
+        (finding,) = validate_bundle(data)
+        assert finding.rule == "schema"
+        assert finding.location == "/symbols/S00227/reference/number"
+        assert "S00227" in finding.message
 
     @pytest.mark.parametrize("value", [float("nan"), float("inf"), 1e7])
     def test_numbers_are_bounded_like_in_a_source_file(self, value):
@@ -161,6 +182,28 @@ class TestLoadBundle:
         assert sorted(loaded.symbols) == sorted(LIBRARY.symbols)
         for number, symbol in LIBRARY.symbols.items():
             assert loaded.get(number) == normalised(symbol)
+
+    def test_numbers_with_dots_survive_write_build_then_load_bundle(self, tmp_path):
+        repo = tmp_path / "repo"
+        (repo / "symbols").mkdir(parents=True)
+        (repo / "library.toml").write_text(
+            "standard = 'ISA 5.1'\ntitle = 't'\nnumber_pattern = '^[0-9A-Za-z.-]+$'\n",
+            encoding="utf-8",
+        )
+        source = (GUIDE / "symbols" / "S00227.toml").read_text(encoding="utf-8")
+        for number in ("5.1", "ISO-14617-1.1"):
+            text = source.replace('"S00227"', f'"{number}"').replace("IEC 60617", "ISA 5.1")
+            (repo / "symbols" / f"{number}.toml").write_text(text, encoding="utf-8")
+        library = load_library(repo)
+        assert sorted(library.symbols) == ["5.1", "ISO-14617-1.1"]
+        write_build(library, repo)
+        bundle = repo / "src" / "isa51" / "bundle.json"
+        assert bundle.is_file()
+        loaded = load_bundle(bundle)
+        assert sorted(loaded.symbols) == ["5.1", "ISO-14617-1.1"]
+        for number, symbol in library.symbols.items():
+            assert loaded.get(number) == normalised(symbol)
+        assert stale_build(loaded, repo) == ()
 
     def test_a_loaded_bundle_builds_the_same_files(self, tmp_path):
         write_build(LIBRARY, tmp_path)

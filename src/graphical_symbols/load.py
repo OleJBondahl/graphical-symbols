@@ -480,8 +480,15 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
     )
 
 
-# A bundle key becomes a file name in `write_build`, so it may hold no separator or dot.
-_STEM = re.compile(r"[A-Za-z0-9_-]+")
+# A number is a file stem (`5.1.toml`, `ISO-14617-1.1.toml`) and `write_build` names files after
+# it: letters, digits, `_` and `-`, in parts joined by single dots, so no separator, no `..`.
+_STEM = re.compile(r"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*")
+
+
+@deal.pure
+def is_file_stem(text: str) -> bool:
+    """Return whether a reference number is safe to use as a file name in a build."""
+    return _STEM.fullmatch(text) is not None
 
 
 @deal.pure
@@ -520,16 +527,28 @@ def validate_bundle(data: object) -> tuple[Finding, ...]:
     Returns:
         One `schema` error per violation, located inside the bundle (`/symbols/S00227/ports/0`).
         A symbol is checked by `validate` and must also be resolved (no `parts`, `ports` an array,
-        slots tables); its key must be safe as a file name (letters, digits, `_` and `-`).
-        Empty when `library_from_bundle` may be called.
+        slots tables). Its key must be safe as a file name (`is_file_stem`: letters, digits, `_`
+        and `-`, joined by single dots) and equal its `reference.number`, as a number equals
+        its file stem. Empty when `library_from_bundle` may be called.
     """
     found = list(_BUNDLE(data, ""))
     if isinstance(data, dict) and isinstance(data.get("symbols"), dict):
-        found.extend(
-            _finding(_child("/symbols", key), f"{_short(key)!r} cannot be used as a file name")
-            for key in data["symbols"]
-            if not _STEM.fullmatch(key)
-        )
+        for key, symbol in data["symbols"].items():
+            if not is_file_stem(key):
+                found.append(
+                    _finding(
+                        _child("/symbols", key), f"{_short(key)!r} cannot be used as a file name"
+                    )
+                )
+            reference = symbol.get("reference") if isinstance(symbol, dict) else None
+            number = reference.get("number") if isinstance(reference, dict) else None
+            if isinstance(number, str) and number != key:
+                found.append(
+                    _finding(
+                        _child(_child(_child("/symbols", key), "reference"), "number"),
+                        f"must equal the symbol's key {_short(key)!r}, got {_short(number)!r}",
+                    )
+                )
     return tuple(found)
 
 

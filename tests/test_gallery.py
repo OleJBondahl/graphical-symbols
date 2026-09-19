@@ -66,6 +66,12 @@ def test_a_name_cannot_break_the_table():
     assert "\r" not in text
 
 
+def test_a_lone_surrogate_in_a_number_does_not_raise():
+    symbol = LIBRARY.get("S00227")
+    (row,) = readme(Library("X", "t", "", {"S\ud800": symbol})).splitlines()[6:]
+    assert "resolved/S%3F.json" in row
+
+
 def test_a_library_without_symbols_has_the_header_only():
     lines = readme(Library("X", "t", "", {})).splitlines()
     assert lines[4:] == [

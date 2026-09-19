@@ -438,7 +438,8 @@ so a JSON object read back gives the slots in that order; a symbol's slot order 
 the round trip, and neither is a node list that was implicit. Text is canonical as `json.dumps` writes it
 with `indent=2`, `sort_keys=True` and `ensure_ascii=False`, after every whole float has become an
 int (`-0.0` prints as `0`), so a point is four lines; control characters in strings are escaped, so
-no carriage return can occur. NaN and infinity have no JSON form: `to_json` writes `NaN`,
+no carriage return can occur. Floats print in Python `repr` form (`0.1`, `1e-05`), which is
+valid JSON; grid values (multiples of 0.125) never take an exponent form. NaN and infinity have no JSON form: `to_json` writes `NaN`,
 `Infinity` and `-Infinity` as Python's `json` does and does not raise; both validators reject them
 (D22), so only a hand-built symbol can carry one.
 Why: the guide fixes the text rules and the two computed keys and nothing else; `json.dumps` with
@@ -451,8 +452,8 @@ hand-written writer.
 Decided: `serialize.py` holds `build_files(library) -> dict[str, bytes]` (path relative to the
 repo root with `/`, in path order), `package_name` (D8) and `GENERATED_DIRS`; `gallery.py` holds
 `readme`. `write_build` and `stale_build` in `build.py` both call `build_files`, so they cannot
-disagree; both return absolute paths under the `root` they were given, ordered by their relative
-`/` path. `write_build` creates directories, writes bytes (never text mode, so no `\r` on Windows)
+disagree; both return `root / <relative path>` (relative if `root` is), ordered by their
+relative `/` path; an unreadable file or unwritable path raises `OSError`. `write_build` creates directories, writes bytes (never text mode, so no `\r` on Windows)
 and deletes nothing. `stale_build` reports a missing file, a directory where a file belongs, a
 file with other bytes, and any file, at any depth, under `build/resolved`, `build/svg` or
 `build/annotated` that the library does not produce; it looks at nothing else. Text UTF-8 cannot
@@ -462,10 +463,15 @@ plain and annotated image); it uses `standard` and never `title`, so a library l
 bundle builds the same bytes as the one loaded from the sources. A bundle is read by `parse_json`
 and `validate_bundle` (both in `load.py`, pure) and `library_from_bundle`; `validate_bundle` checks
 every symbol with `validate` and requires the resolved form (no `parts`, `ports` an array, slots
-tables) and a key made of letters, digits, `_` and `-`, because a bundle key becomes a file name
-in `write_build`.
+tables) and a key that is a file stem and equals the symbol's `reference.number`. A file stem is
+letters, digits, `_` and `-` in parts joined by single dots (`5.1`, `ISO-14617-1.1`): the guide
+says the number is the file stem and later standards (ISA 5.1, ISO 14617) have dots in theirs, so
+dots must load; a leading, trailing or doubled dot, a separator, a space or an empty name cannot
+name a file safely. `write_build` and `stale_build` raise `ValueError` for a library with a
+number that is not a file stem, before reading or writing anything (`is_file_stem` in `load.py`
+is the one test).
 Why: the guide names the two functions and the layout; the rest keeps output byte-exact and keeps
 a bundle from a stranger from writing outside the repo.
-Cost if wrong: a number that contains a dot or another character cannot be a bundle key (relax
-`_STEM`); extras outside the three directories stay unreported (add a directory to
+Cost if wrong: a number with another character (a space, `+`) cannot be a bundle key (relax
+`_STEM` in `load.py`); extras outside the three directories stay unreported (add a directory to
 `GENERATED_DIRS`); a data repo that wants stale extras removed writes that loop itself.
