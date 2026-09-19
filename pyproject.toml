@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "hypothesis==6.168.0",
+    "jsonschema==4.26.0",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "ruff==0.16.8",
@@ -107,5 +108,5 @@ ignore_names = [
     "to_port", "through", "reason", "pole_pitch", "lint_allow", "severity", "location", "title",
     "number_pattern",
     # functions and parameters that later tasks and downstream packages call
-    "element_box", "nodes_of", "inverse", "texts",
+    "element_box", "nodes_of", "inverse", "texts", "validate", "symbol_from_data", "parse_config",
 ]

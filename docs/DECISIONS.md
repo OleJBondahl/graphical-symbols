@@ -135,3 +135,27 @@ Why: `body_box` must not raise on malformed symbols (the linter reports them), a
 angles are normalised to [0, 360) without exempting `R0`.
 Cost if wrong: a slot-only symbol's keep-out box grows to the origin; a symbol with an arc at
 -90 or 360 reads back as 270 or 0 after `orient(symbol, R0)`.
+
+## D14. File-format gaps the schema had to close
+
+Decided: the schema (and `validate`) require `height` on a text element; `fill` on a circle,
+`closed` and `fill` on a polyline, `weight` and `style` are optional with the defaults the model
+already has. A file must contain `elements`, `parts` or both. `ports` and `slots` are never required
+by the schema (a `kind = "symbol"` file without them is a `slot-missing` lint, not a `schema` one).
+`schema`, `pole_pitch` and `repeat` accept integral floats (`8.0`), as JSON Schema's `integer` does.
+`repeat >= 1` is not a schema rule; the resolver must report it. Unknown keys are errors on every
+table; the only extra top-level keys are the resolved form's `body_box` and `keepout_box`.
+Why: the guide shows `height` in every text example and gives it no default; the rest follows
+section 4 and D4.
+Cost if wrong: `height` optional (default 1) is a compatible loosening; the rest is unchanged.
+
+## D15. Reading reports through `schema` findings with pointer locations
+
+Decided: every reading problem is a `Finding(rule="schema", ERROR)`: TOML syntax errors, schema
+violations, and `library.toml` problems (missing or non-string `standard`, `title`,
+`number_pattern`; a pattern that does not compile). `location` is a JSON Pointer such as
+`/ports/0/dir`, with `~` and `/` in keys escaped; a problem with the whole file has `location =
+None`. `library.toml` may carry unknown keys; they are ignored.
+Why: the guide names only the `schema` rule for "the file fails validation" and says nothing of the
+config file; one rule keeps `LibraryError` messages uniform.
+Cost if wrong: a separate `config` rule id and a check that ignores unknown keys becoming strict.
