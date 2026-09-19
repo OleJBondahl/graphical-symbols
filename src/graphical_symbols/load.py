@@ -7,9 +7,11 @@ is that every number is finite with an absolute value of at most 1e6 module unit
 all later arithmetic total.
 """
 
+import json
 import re
 import tomllib
 from collections.abc import Callable, Mapping
+from dataclasses import replace
 from typing import Any
 
 import deal
@@ -377,6 +379,20 @@ def validate(data: object) -> tuple[Finding, ...]:
 
 
 @deal.pure
+def parse_json(text: str) -> tuple[Any, tuple[Finding, ...]]:
+    """Decode JSON text; input the parser rejects or cannot handle becomes a `schema` finding.
+
+    Like `parse_toml`, `ValueError` covers a syntax error and an integer of more than 4300
+    digits; absurdly deep nesting exhausts the stack instead. The data is `None` on a finding
+    (and also when the text is the JSON `null`, which `validate_bundle` then rejects).
+    """
+    try:
+        return json.loads(text), ()
+    except (ValueError, RecursionError) as error:
+        return None, (_finding("", _short(f"invalid JSON: {error}", 200)),)
+
+
+@deal.pure
 def _point(value: list[float]) -> Point:
     """Build a point from an `[x, y]` array."""
     return Point(value[0], value[1])
@@ -462,6 +478,59 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
         pole_pitch=int(data["pole_pitch"]) if "pole_pitch" in data else None,
         lint_allow=tuple(Allow(a["rule"], a["reason"]) for a in data.get("lint_allow", ())),
     )
+
+
+# A bundle key becomes a file name in `write_build`, so it may hold no separator or dot.
+_STEM = re.compile(r"[A-Za-z0-9_-]+")
+
+
+@deal.pure
+def _bundle_symbol(value: object, location: str) -> list[Finding]:
+    """Check one bundle symbol: `validate` and the resolved form (no `parts`, arrays, tables)."""
+    found = [replace(f, location=location + (f.location or "")) for f in validate(value)]
+    if not isinstance(value, dict):
+        return found
+    if "parts" in value:
+        found.append(_finding(_child(location, "parts"), "a bundle symbol has no parts"))
+    if "ports" in value and not isinstance(value["ports"], list):
+        found.append(_finding(_child(location, "ports"), "must be an array in a bundle"))
+    slots = value.get("slots")
+    if isinstance(slots, dict):
+        found.extend(
+            _finding(_child(_child(location, "slots"), key), "must be a table in a bundle")
+            for key, slot in slots.items()
+            if isinstance(slot, str)
+        )
+    return found
+
+
+_BUNDLE = _table(
+    {"schema": _schema_version, "standard": _string, "symbols": _map_of(_bundle_symbol)},
+    required=("schema", "standard", "symbols"),
+)
+
+
+@deal.pure
+def validate_bundle(data: object) -> tuple[Finding, ...]:
+    """Check a decoded `bundle.json`: its three keys, and every symbol as a resolved symbol.
+
+    Args:
+        data: A decoded JSON document.
+
+    Returns:
+        One `schema` error per violation, located inside the bundle (`/symbols/S00227/ports/0`).
+        A symbol is checked by `validate` and must also be resolved (no `parts`, `ports` an array,
+        slots tables); its key must be safe as a file name (letters, digits, `_` and `-`).
+        Empty when `library_from_bundle` may be called.
+    """
+    found = list(_BUNDLE(data, ""))
+    if isinstance(data, dict) and isinstance(data.get("symbols"), dict):
+        found.extend(
+            _finding(_child("/symbols", key), f"{_short(key)!r} cannot be used as a file name")
+            for key in data["symbols"]
+            if not _STEM.fullmatch(key)
+        )
+    return tuple(found)
 
 
 @deal.pure

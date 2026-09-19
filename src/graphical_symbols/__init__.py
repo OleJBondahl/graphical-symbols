@@ -1,7 +1,7 @@
 """Standard-agnostic core for graphical symbols."""
 
 from graphical_symbols.boxes import body_box, keepout_box, slot_box
-from graphical_symbols.build import load_library
+from graphical_symbols.build import load_bundle, load_library, stale_build, write_build
 from graphical_symbols.errors import GraphicalSymbolsError, LibraryError, UnknownSymbolError
 from graphical_symbols.geometry import (
     Arc,
@@ -80,12 +80,15 @@ __all__ = [
     "body_box",
     "keepout_box",
     "lint",
+    "load_bundle",
     "load_library",
     "on_grid",
     "orient",
     "repeat",
     "slot_box",
     "snap",
+    "stale_build",
     "to_svg",
     "translate",
+    "write_build",
 ]

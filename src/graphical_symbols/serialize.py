@@ -1,4 +1,4 @@
-"""Resolved output: a symbol or a library as plain data, and that data as canonical JSON text.
+"""Resolved output and the files of a build: symbols as plain data, canonical JSON, file bytes.
 
 The resolved form is explicit (D11): every key that has a default is written, so a consumer in
 another language needs no defaults and no composition. `to_json` is deterministic: UTF-8 text with
@@ -12,10 +12,15 @@ from typing import Any
 import deal
 
 from graphical_symbols.boxes import body_box, keepout_box
+from graphical_symbols.gallery import readme
 from graphical_symbols.geometry import Arc, Box, Circle, Element, Line, Point, Polyline, Text
 from graphical_symbols.model import Library, Slot, Symbol, nodes_of
+from graphical_symbols.svg import to_svg
 
 _SCHEMA_VERSION = 1
+
+# Directories of a build that hold one file per symbol; `stale_build` treats extras there as stale.
+GENERATED_DIRS = ("build/resolved", "build/svg", "build/annotated")
 
 type JsonValue = bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
 
@@ -193,3 +198,28 @@ def to_json(data: JsonValue) -> str:
     """
     text = json.dumps(_whole_as_int(data), indent=2, sort_keys=True, ensure_ascii=False)
     return text + "\n"
+
+
+@deal.pure
+def package_name(standard: str) -> str:
+    """Return the data repo package: the standard lowercased, letters and digits only (D8)."""
+    return "".join(c for c in standard.lower() if c.isalnum())
+
+
+@deal.pure
+def build_files(library: Library) -> dict[str, bytes]:
+    """Return every file `write_build` writes, by path relative to the repo root (with `/`).
+
+    `build/resolved/<n>.json`, `build/svg/<n>.svg`, `build/annotated/<n>.svg`, `build/README.md`
+    and `src/<package>/bundle.json`, as UTF-8 bytes in path order. Text that UTF-8 cannot encode
+    (a lone surrogate in a name) is written as `?`, so the result never depends on the input being
+    well formed. `write_build` and `stale_build` both use this, so they cannot disagree.
+    """
+    files = {"build/README.md": readme(library)}
+    for number in sorted(library.symbols):
+        symbol = library.symbols[number]
+        files[f"build/resolved/{number}.json"] = to_json(symbol_to_data(symbol))
+        files[f"build/svg/{number}.svg"] = to_svg(symbol)
+        files[f"build/annotated/{number}.svg"] = to_svg(symbol, annotate=True)
+    files[f"src/{package_name(library.standard)}/bundle.json"] = to_json(bundle_to_data(library))
+    return {path: files[path].encode("utf-8", errors="replace") for path in sorted(files)}

@@ -445,3 +445,27 @@ Why: the guide fixes the text rules and the two computed keys and nothing else; 
 those options is what every language's standard pretty-printer produces plus a key sort.
 Cost if wrong: a byte-level diff of every generated file; compact point arrays would need a
 hand-written writer.
+
+## D31. What the build writes, what stale means, what a bundle may contain
+
+Decided: `serialize.py` holds `build_files(library) -> dict[str, bytes]` (path relative to the
+repo root with `/`, in path order), `package_name` (D8) and `GENERATED_DIRS`; `gallery.py` holds
+`readme`. `write_build` and `stale_build` in `build.py` both call `build_files`, so they cannot
+disagree; both return absolute paths under the `root` they were given, ordered by their relative
+`/` path. `write_build` creates directories, writes bytes (never text mode, so no `\r` on Windows)
+and deletes nothing. `stale_build` reports a missing file, a directory where a file belongs, a
+file with other bytes, and any file, at any depth, under `build/resolved`, `build/svg` or
+`build/annotated` that the library does not produce; it looks at nothing else. Text UTF-8 cannot
+encode (a lone surrogate, which JSON can carry) is written as `?`. The README has the standard, a
+one-line note on status and a table (number linking to the resolved JSON, name, kind, status,
+plain and annotated image); it uses `standard` and never `title`, so a library loaded from a
+bundle builds the same bytes as the one loaded from the sources. A bundle is read by `parse_json`
+and `validate_bundle` (both in `load.py`, pure) and `library_from_bundle`; `validate_bundle` checks
+every symbol with `validate` and requires the resolved form (no `parts`, `ports` an array, slots
+tables) and a key made of letters, digits, `_` and `-`, because a bundle key becomes a file name
+in `write_build`.
+Why: the guide names the two functions and the layout; the rest keeps output byte-exact and keeps
+a bundle from a stranger from writing outside the repo.
+Cost if wrong: a number that contains a dot or another character cannot be a bundle key (relax
+`_STEM`); extras outside the three directories stay unreported (add a directory to
+`GENERATED_DIRS`); a data repo that wants stale extras removed writes that loop itself.

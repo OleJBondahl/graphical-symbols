@@ -6,9 +6,16 @@ from typing import Any
 
 from graphical_symbols.errors import LibraryError
 from graphical_symbols.lint.registry import rule_finding
-from graphical_symbols.load import parse_config, parse_toml
+from graphical_symbols.load import (
+    library_from_bundle,
+    parse_config,
+    parse_json,
+    parse_toml,
+    validate_bundle,
+)
 from graphical_symbols.model import Finding, Library, LibraryConfig
 from graphical_symbols.resolve import resolve_library
+from graphical_symbols.serialize import GENERATED_DIRS, build_files
 
 
 def _named(name: str, findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
@@ -77,3 +84,81 @@ def load_library(root: Path) -> Library:
     if problems:
         raise LibraryError(problems)
     return Library(config.standard, config.title, config.number_pattern, resolution.symbols)
+
+
+def load_bundle(json_path: Path) -> Library:
+    """Read a resolved bundle (`bundle.json`) into a library.
+
+    The library has the bundle's standard for both `standard` and `title`, and no number pattern
+    (D7). Symbols are checked like a source file, plus the resolved form (`validate_bundle`).
+
+    Args:
+        json_path: The bundle file.
+
+    Returns:
+        The library, its symbols keyed by the bundle's keys.
+
+    Raises:
+        LibraryError: If the file cannot be read, is not JSON or is not a valid bundle. Every
+            finding is a `schema` finding, its message prefixed with the file name.
+    """
+    text, found = _read(json_path)
+    if text is None:
+        raise LibraryError(found)
+    data, problems = parse_json(text)
+    if not problems:
+        problems = validate_bundle(data)
+    if problems:
+        raise LibraryError(_named(json_path.name, problems))
+    return library_from_bundle(data)
+
+
+def write_build(library: Library, root: Path) -> tuple[Path, ...]:
+    """Write the build of a library under a data repo: `build/` and `src/<package>/bundle.json`.
+
+    Files are written as bytes, so line endings are LF on every platform, and missing directories
+    are created. Nothing is deleted: a file that an earlier build wrote and this one does not
+    (a removed symbol) stays, and `stale_build` reports it; removing it is the caller's job.
+
+    Args:
+        library: The library to build.
+        root: The data repo's directory.
+
+    Returns:
+        Every path written, under `root`, in the order of their `/`-separated relative paths.
+    """
+    written = []
+    for relative, data in build_files(library).items():
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
+        written.append(target)
+    return tuple(written)
+
+
+def stale_build(library: Library, root: Path) -> tuple[Path, ...]:
+    """Return the files under `root` that differ from what `write_build` would write.
+
+    A file is stale if it is missing or has other bytes, or if it sits anywhere under
+    `build/resolved`, `build/svg` or `build/annotated` and the library does not produce it.
+    Nothing else under `root` is looked at.
+
+    Args:
+        library: The library the build should match.
+        root: The data repo's directory.
+
+    Returns:
+        The stale paths, under `root`, in the order of their `/`-separated relative paths.
+    """
+    files = build_files(library)
+    stale = {
+        relative
+        for relative, data in files.items()
+        if not (root / relative).is_file() or (root / relative).read_bytes() != data
+    }
+    for directory in GENERATED_DIRS:
+        for path in (root / directory).rglob("*"):
+            relative = path.relative_to(root).as_posix()
+            if path.is_file() and relative not in files:
+                stale.add(relative)
+    return tuple(root / relative for relative in sorted(stale))
