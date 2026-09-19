@@ -1,0 +1,16 @@
+schema = 1
+name = "Port short of the body edge"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -1], dir = "N" },
+]
+
+# The port is at the end of its lead but not on the top side of the body box, which the second
+# line pushes up to y = -2. That line is off to the side, so the lane of "in" stays clear.
+elements = [
+  { line = [[0, -1], [0, 0]] },
+  { line = [[1, -2], [2, -2]] },
+]

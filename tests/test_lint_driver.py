@@ -105,7 +105,8 @@ class TestLint:
             ),
             lint_allow=(Allow("nope", "x"), Allow("port-isolated", "x")),
         )
-        assert [(f.rule, f.location) for f in lint(symbol)] == [
+        found = [f for f in lint(symbol) if f.rule in THIS_TASK]  # the ports rules fire too
+        assert [(f.rule, f.location) for f in found] == [
             ("id-format", "anchors[2]"),
             ("id-format", "ports[0]"),
             ("off-drawing-grid", "elements[0]"),
@@ -197,7 +198,7 @@ class TestExemptions:
         ]
 
     def test_a_rule_of_a_later_task_is_known_but_not_used_yet(self):
-        symbol = plain_symbol(lint_allow=(Allow("port-lane-clear", "later"),))
+        symbol = plain_symbol(lint_allow=(Allow("slot-missing", "later"),))
         assert [f.rule for f in lint(symbol)] == ["allow-unused"]
 
     def test_duplicate_exemptions_are_checked_independently(self):

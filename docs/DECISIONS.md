@@ -334,3 +334,44 @@ Cost if wrong: a garbage arc shrinks a box to a point instead of being an error;
 such angles (D22), so only hand-built symbols are affected. `arc_point` itself still raises for an
 infinite angle; the boxes and the linter reduce it first, `svg.py` does not (a bundle cannot carry such an
 angle, so only a hand-built symbol could make `to_svg` raise).
+
+## D26. How overlap is computed and what the wire lane is clipped to
+
+Decided: `lint/overlap.py` tests a shape against an open rectangle (a slot box or a lane). A line and
+each segment of a polyline are tested exactly, with `Fraction`s, so touching is decided without
+rounding; a circle is tested by squared distances (outline: nearest point closer than the radius,
+farthest point farther; filled: nearest point closer), which are exact on the grid; an arc is cut at
+the angles where its circle crosses the four lines of the rectangle and at its ends, and the middle
+of each piece must be more than 1e-9 inside every edge (only the arc uses the tolerance). A closed
+polyline is its outline, and if filled also its area by the even-odd rule (an outline that misses
+the rectangle leaves the rectangle wholly inside or wholly outside, so its centre decides); an open
+polyline is only its segments, however it is filled; a polyline of one point is a dot. A circle or
+arc whose radius is not positive draws nothing. A text element is `element_box` shrunk by 1e-9 on
+every side, because the width factor 0.6 is not a binary fraction and an edge that only touches
+must stay touching. A rectangle with no area is overlapped by nothing, and any non-finite number
+makes a shape overlap nothing. The lane of a port is the rectangle from the port to the edge of a
+frame: the keep-out box united with every port position, grown by 1 M on every side (per symbol).
+Why: the guide defines overlap but not the arithmetic, and the lane is unbounded.
+Cost if wrong: the frame margin is one constant; a 1e-9 tolerance on segments would be a change in
+one function. Consequence to know: an element that overlaps a lane always also pushes the body box
+past its port, so `port-on-body-edge` fires with `port-lane-clear`; only a slot box (or a text
+element whose box is not rotated) can break the lane on its own, which is why the lane fixtures use
+slot boxes.
+
+## D27. What the Ports rules count
+
+Decided: `port-duplicate-id`, `port-off-wiring-grid`, `port-off-geometry`, `port-on-body-edge` and
+`port-lane-clear` give one finding per port at `ports[i]` (the later port for a duplicate id); the
+lane finding names the first three offending elements or slots and counts the rest.
+`port-spacing` and `port-position-shared` give one finding per later port, naming the first earlier
+port it is out of step with (same `dir`, gap not a multiple of 2 M; same position, different node).
+The grid and spacing tests are exact (`% 1`, `% 2`), so NaN and infinity fail them.
+`port-off-geometry` is `point_on_geometry` with `endpoints_only=True` (D24): a bend of an open
+polyline is not an end. `port-on-body-edge` compares exactly and requires the other coordinate to
+lie in the side's closed extent. Nodes come from `nodes_of`; a port id listed by two nodes belongs
+to the first, and two ports with one id are one node. `port-on-body-edge` and `port-lane-clear` are
+orientation dependent (text boxes and slot boxes do not turn); the other five are invariant, which
+a property test checks for random grid-multiple symbols in all 8 orientations.
+Why: the guide names the rules, not their granularity.
+Cost if wrong: locations and message text change; a per-pair report for spacing and shared
+positions would list more findings for three or more ports on one side.

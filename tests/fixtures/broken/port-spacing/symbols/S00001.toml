@@ -1,0 +1,15 @@
+schema = 1
+name = "Two ports not a multiple of two modules apart"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "a", at = [0, -2], dir = "N" },
+  { id = "b", at = [1, -2], dir = "N" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[1, -2], [1, -1]] },
+]

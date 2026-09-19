@@ -10,6 +10,15 @@ from graphical_symbols.lint.anchors import anchor_duplicate_id, anchor_off_geome
 from graphical_symbols.lint.exemptions import allow_unknown, allow_unused, exempt
 from graphical_symbols.lint.file import symbol_id_findings
 from graphical_symbols.lint.geometry import degenerate, off_drawing_grid, text_too_large
+from graphical_symbols.lint.ports import (
+    port_duplicate_id,
+    port_lane_clear,
+    port_off_geometry,
+    port_off_wiring_grid,
+    port_on_body_edge,
+    port_position_shared,
+    port_spacing,
+)
 from graphical_symbols.lint.registry import (
     GUIDE_INDEX,
     RULE_IDS,
@@ -28,6 +37,13 @@ CHECKS: dict[str, Check] = {
     "off-drawing-grid": off_drawing_grid,
     "degenerate": degenerate,
     "text-too-large": text_too_large,
+    "port-duplicate-id": port_duplicate_id,
+    "port-off-wiring-grid": port_off_wiring_grid,
+    "port-off-geometry": port_off_geometry,
+    "port-on-body-edge": port_on_body_edge,
+    "port-lane-clear": port_lane_clear,
+    "port-spacing": port_spacing,
+    "port-position-shared": port_position_shared,
     "anchor-duplicate-id": anchor_duplicate_id,
     "anchor-off-geometry": anchor_off_geometry,
 }

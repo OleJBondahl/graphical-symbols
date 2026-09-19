@@ -1,0 +1,17 @@
+schema = 1
+name = "Port on the body edge only in some orientations"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00002" }
+
+# Text does not turn with the symbol. In R0 its box (4.8 M by 1 M, centred at (1, -1)) stays
+# below the top of the lead, so "in" is on the top side of the body box. After R90 the box is
+# centred at (1, 1) and reaches x = 3.4, past the port at x = 2, but stays clear of its lane.
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+]
+
+elements = [
+  { line = [[0, -2], [0, 0]] },
+  { text = "ABCDEFGH", at = [1, -1], height = 1 },
+]
