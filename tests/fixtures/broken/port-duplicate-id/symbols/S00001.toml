@@ -9,6 +9,10 @@ ports = [
   { id = "in", at = [0, 2],  dir = "S" },
 ]
 
+nodes = [
+  { ports = ["in"], potential = "earth" },
+]
+
 elements = [
   { line = [[0, -2], [0, -1]] },
   { line = [[0, 2], [0, 1]] },

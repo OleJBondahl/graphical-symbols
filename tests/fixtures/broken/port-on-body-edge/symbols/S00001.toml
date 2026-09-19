@@ -8,6 +8,10 @@ ports = [
   { id = "in", at = [0, -1], dir = "N" },
 ]
 
+nodes = [
+  { ports = ["in"], potential = "earth" },
+]
+
 # The port is at the end of its lead but not on the top side of the body box, which the second
 # line pushes up to y = -2. That line is off to the side, so the lane of "in" stays clear.
 elements = [

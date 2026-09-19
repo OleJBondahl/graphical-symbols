@@ -12,6 +12,10 @@ ports = [
   { id = "out", at = [0, 2],  dir = "S" },
 ]
 
+paths = [
+  { from = "in", to = "out", kind = "conductor" },
+]
+
 elements = [
   { line = [[0, -2], [0, -1]] },
   { line = [[0, 2], [0, 1]] },

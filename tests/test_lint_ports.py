@@ -32,7 +32,8 @@ from graphical_symbols.lint.ports import (
     port_position_shared,
     port_spacing,
 )
-from graphical_symbols.model import Allow, Node, Port, Severity, Slot
+from graphical_symbols.model import Allow, Node, PathKind, Port, Severity, Slot
+from graphical_symbols.model import Path as SymbolPath
 from graphical_symbols.orient import orient
 
 P = Point
@@ -218,6 +219,7 @@ def orientations_of(findings):
 # box does not turn with the symbol and lands in a wire lane after R90.
 TURNED_INTO_A_LANE = plain_symbol(
     ports=(port("in", 0, -2, N), port("out", 0, 2, S)),
+    paths=(SymbolPath("in", "out", PathKind.CONDUCTOR),),
     elements=(Line(P(0, -2), P(0, -1)), Line(P(0, 2), P(0, 1))),
     slots=(slot("marking.in", 0.75, -3, N, (1, 3)),),
 )

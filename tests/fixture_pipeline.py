@@ -17,7 +17,11 @@ BROKEN = Path(__file__).resolve().parent / "fixtures" / "broken"
 # The rules a fixture may fire besides its own; every other fixture must fire its own rule and
 # nothing else. Add an entry only when the broken input cannot be built without also breaking
 # another rule, and say why.
-TOLERATED_EXTRA: dict[str, frozenset[str]] = {}
+TOLERATED_EXTRA: dict[str, frozenset[str]] = {
+    # Every through path must run from (0, -a) N to (0, a) S, so two of them that are both right on
+    # the axis join the same two nodes, and the second is a duplicate path.
+    "through-count": frozenset({"path-invalid"}),
+}
 
 
 def run_fixture_by_file(rule_id: str, root: Path = BROKEN) -> dict[str, tuple[Finding, ...]]:

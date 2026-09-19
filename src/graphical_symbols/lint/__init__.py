@@ -7,6 +7,14 @@ import deal
 
 from graphical_symbols.geometry import Orientation
 from graphical_symbols.lint.anchors import anchor_duplicate_id, anchor_off_geometry
+from graphical_symbols.lint.connectivity import (
+    node_invalid,
+    path_invalid,
+    port_isolated,
+    through_axis,
+    through_count,
+    through_missing,
+)
 from graphical_symbols.lint.exemptions import allow_unknown, allow_unused, exempt
 from graphical_symbols.lint.file import symbol_id_findings
 from graphical_symbols.lint.geometry import degenerate, off_drawing_grid, text_too_large
@@ -44,6 +52,12 @@ CHECKS: dict[str, Check] = {
     "port-lane-clear": port_lane_clear,
     "port-spacing": port_spacing,
     "port-position-shared": port_position_shared,
+    "node-invalid": node_invalid,
+    "path-invalid": path_invalid,
+    "through-count": through_count,
+    "through-axis": through_axis,
+    "through-missing": through_missing,
+    "port-isolated": port_isolated,
     "anchor-duplicate-id": anchor_duplicate_id,
     "anchor-off-geometry": anchor_off_geometry,
 }

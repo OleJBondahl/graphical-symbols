@@ -375,3 +375,28 @@ a property test checks for random grid-multiple symbols in all 8 orientations.
 Why: the guide names the rules, not their granularity.
 Cost if wrong: locations and message text change; a per-pair report for spacing and shared
 positions would list more findings for three or more ports on one side.
+
+## D28. What the Connectivity rules count
+
+Decided: nodes come from `nodes_of` (D27); a port id listed by two nodes belongs to the first.
+`node-invalid` gives one finding per offending name at `nodes[i]`: an unknown port, or a port that
+an earlier node lists already; a port named twice inside one node counts as listed twice.
+`path-invalid` gives one finding per path at `paths[i]`, the first of: an unknown port (both
+named), two ports of one node (`from == to` included), a repeat of an earlier path between the same
+unordered pair of nodes (the earlier one is named). A path that joins one node to itself is not an
+"earlier path". `through-count` gives one finding per through path after the first, at the later
+path. `through-axis` checks every through path on its own, whatever `through-count` says: `a` is
+the `to` port's y, which must be positive and whole (`a > 0`, `a % 1 == 0`), `from` must be at
+`(0, -a)` facing N and `to` at `(0, a)` facing S, all compared exactly (`-0.0` is `0`); a path that
+names an unknown port has no through-axis finding (`path-invalid` reports it), and the first port
+with an id is the one used. `through-missing` is one finding for the whole file (no location):
+`kind = "symbol"`, at least two nodes in `nodes_of`, no potential on any node, no through path.
+`port-isolated` gives one finding per port at `ports[i]`: the port is named by no path (valid or
+not), no declared node lists it together with another existing port, and its (first) node has no
+potential. The fixtures of the Ports and Composition rules gained a `potential` on their single node
+or a conductor path so the new warnings do not fire on them; the `through-count` fixture tolerates
+`path-invalid`, because two through paths that are both right on the axis join the same two nodes.
+Why: the guide names the rules, not the granularity, the corners, or which of two overlapping
+rules reports a malformed path.
+Cost if wrong: locations and message text change; a per-symbol `through-count` finding instead of
+one per extra path.

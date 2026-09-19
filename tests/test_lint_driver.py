@@ -78,9 +78,9 @@ class TestRegistration:
     def test_the_rules_of_this_task_are_registered(self):
         assert set(RULES) >= THIS_TASK
 
-    def test_only_the_anchor_rule_of_this_task_is_a_warning(self):
+    def test_only_three_rules_are_warnings(self):
         warnings = {r.id for r in RULES.values() if r.severity is Severity.WARNING}
-        assert warnings == {"anchor-off-geometry"}
+        assert warnings == {"anchor-off-geometry", "through-missing", "port-isolated"}
 
     def test_none_of_this_tasks_rules_depends_on_the_orientation(self):
         assert not any(RULES[rule_id].orientation_dependent for rule_id in THIS_TASK)
@@ -103,7 +103,7 @@ class TestLint:
                 Anchor("a", P(5, 5), Direction.W),
                 Anchor("B", P(0, 0), Direction.W),
             ),
-            lint_allow=(Allow("nope", "x"), Allow("port-isolated", "x")),
+            lint_allow=(Allow("nope", "x"), Allow("through-count", "x")),
         )
         found = [f for f in lint(symbol) if f.rule in THIS_TASK]  # the ports rules fire too
         assert [(f.rule, f.location) for f in found] == [
@@ -197,8 +197,10 @@ class TestExemptions:
             ("allow-unused", "lint_allow[1]"),
         ]
 
-    def test_a_rule_of_a_later_task_is_known_but_not_used_yet(self):
-        symbol = plain_symbol(lint_allow=(Allow("slot-missing", "later"),))
+    def test_a_rule_that_does_not_apply_to_the_kind_is_known_but_unused(self):
+        symbol = plain_symbol(
+            lint_allow=(Allow("slot-missing", "an element has no slots to miss"),)
+        )
         assert [f.rule for f in lint(symbol)] == ["allow-unused"]
 
     def test_duplicate_exemptions_are_checked_independently(self):

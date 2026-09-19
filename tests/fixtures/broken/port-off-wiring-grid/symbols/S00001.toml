@@ -8,6 +8,10 @@ ports = [
   { id = "in", at = [0.5, -2], dir = "N" },
 ]
 
+nodes = [
+  { ports = ["in"], potential = "earth" },
+]
+
 elements = [
   { line = [[0.5, -2], [0.5, -1]] },
 ]
