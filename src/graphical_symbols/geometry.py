@@ -161,11 +161,14 @@ def arc_point(arc: Arc, degrees: float) -> Point:
 
     Args:
         arc: Supplies the centre and radius; its own angles are ignored.
-        degrees: Angle clockwise on screen from +x.
+        degrees: Angle clockwise on screen from +x. A NaN or infinite angle has no direction, so
+            it gives the centre (D32); files cannot carry one, only a hand-built arc can.
 
     Returns:
         The point, with trig-derived coordinates rounded to 12 decimal places.
     """
+    if not math.isfinite(degrees):
+        return arc.center
     if degrees % 90 == 0:
         cos, sin = _RIGHT_ANGLE_COS_SIN[int(degrees % 360)]
     else:

@@ -335,9 +335,8 @@ its extent points are just its centre. Finite angles behave as before.
 Why: `arc_point` calls `math.cos` on the angle, which raises for infinity; `body_box` is called by
 the linter on hand-built symbols and must be total (D3, D22).
 Cost if wrong: a garbage arc shrinks a box to a point instead of being an error; files cannot carry
-such angles (D22), so only hand-built symbols are affected. `arc_point` itself still raises for an
-infinite angle; the boxes and the linter reduce it first, `svg.py` does not (a bundle cannot carry such an
-angle, so only a hand-built symbol could make `to_svg` raise).
+such angles (D22), so only hand-built symbols are affected. `arc_point` used to raise for an
+infinite angle; since D32 it returns the centre, and the rule above stays in the boxes.
 
 ## D26. How overlap is computed and what the wire lane is clipped to
 
@@ -475,3 +474,25 @@ a bundle from a stranger from writing outside the repo.
 Cost if wrong: a number with another character (a space, `+`) cannot be a bundle key (relax
 `_STEM` in `load.py`); extras outside the three directories stay unreported (add a directory to
 `GENERATED_DIRS`); a data repo that wants stale extras removed writes that loop itself.
+
+## D32. `to_svg` and `arc_point` are total; what the SVG does with input XML cannot carry
+
+Decided: `arc_point` returns the arc's centre for a NaN or infinite angle (it used to raise from
+`math.cos`), so `to_svg` never raises for a hand-built symbol. The boxes keep their own rule
+(D25): an arc with a non-finite angle counts as its centre there even when its other angle is
+finite, which `arc_point` alone would not give, so `_extent_points` still checks it. The number
+formatter writes NaN and infinity as `0`; finite numbers are unchanged (at most 4 decimals, no
+`-0`), so a huge value such as 1e300 is written out in full. Text in `<title>` and in every `<text>`
+goes through one function: a character XML 1.0 cannot carry (C0 controls except tab, line feed and
+carriage return, lone surrogates, U+FFFE, U+FFFF) becomes U+FFFD, not dropped, so the text keeps
+its length; `&`, `<` and `>` become entities; a carriage return becomes `&#13;` (a parser reads
+`\r` back, no `\r` byte reaches the file and `stale_build` stays stable on every platform). A line
+feed and a tab stay as they are, because XML keeps both in character data. The annotation grid is
+left out when the view is not finite or would hold more than 10 000 dots (100 by 100 M, 250 mm
+square at the default module), because a dot per module of a 1e300 symbol would never finish.
+Why: CLAUDE.md wants every module-level function pure and non-raising; a symbol name can carry
+`"\r"` or a NUL from TOML, and a build the sibling repo compares byte for byte must be well-formed
+XML with LF-only bytes.
+Cost if wrong: a garbage symbol draws garbage numbers instead of an error; a real symbol above
+100 by 100 M gets no grid in its annotated SVG (one constant); a `\r` in a name shows as `&#13;`
+in the file.

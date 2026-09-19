@@ -1,6 +1,7 @@
 """Deterministic SVG rendering of symbols."""
 
 import math
+import re
 from collections.abc import Mapping
 from xml.sax.saxutils import escape
 
@@ -29,14 +30,34 @@ _HALF_TURN = 180
 _FULL_TURN = 360
 _MARGIN = 1.0
 _DASHED = ' stroke-dasharray="0.5 0.25"'
+_MAX_GRID_DOTS = 10_000
+# What XML 1.0 cannot carry: most C0 controls, lone surrogates, U+FFFE and U+FFFF.
+_XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\U0000fffe\U0000ffff]")
 _GROUP_OPEN = '<g fill="none" stroke="#000" stroke-linecap="butt" stroke-linejoin="miter">'
 
 
 @deal.pure
 def _num(value: float) -> str:
-    """Format a number with at most 4 decimals, no trailing zeros and no negative zero."""
+    """Format a number with at most 4 decimals, no trailing zeros and no negative zero.
+
+    NaN and infinity have no SVG spelling and are written as `0` (D32), so the output stays
+    well formed for a hand-built symbol.
+    """
+    if not math.isfinite(value):
+        return "0"
     text = f"{value:.4f}".rstrip("0").rstrip(".")
     return "0" if text == "-0" else text
+
+
+@deal.pure
+def _content(text: str) -> str:
+    r"""Make text safe as XML character data (D32).
+
+    A character XML 1.0 cannot carry becomes U+FFFD. `&`, `<` and `>` become entities and a
+    carriage return becomes `&#13;`, so no `\r` byte reaches the file and a parser reads it back.
+    A line feed or a tab is left as it is: XML keeps both.
+    """
+    return escape(_XML_ILLEGAL.sub("\U0000fffd", text), {"\r": "&#13;"})
 
 
 @deal.pure
@@ -74,7 +95,7 @@ def _text(text: Text) -> str:
     return (
         f'<text x="{_num(text.position.x)}" y="{_num(text.position.y)}" '
         f'font-size="{_num(text.height)}" text-anchor="middle" fill="#000" '
-        f'stroke="none" font-family="sans-serif">{escape(text.content)}</text>'
+        f'stroke="none" font-family="sans-serif">{_content(text.content)}</text>'
     )
 
 
@@ -140,22 +161,37 @@ def _port(port: Port) -> tuple[str, str]:
     label = (
         f'<text class="port-id" x="{_num(label_at.x)}" y="{_num(label_at.y)}" font-size="0.6" '
         'text-anchor="middle" dominant-baseline="central" fill="#d00" stroke="none" '
-        f'font-family="sans-serif">{escape(port.id)}</text>'
+        f'font-family="sans-serif">{_content(port.id)}</text>'
     )
     return marker, label
 
 
 @deal.pure
+def _grid(view: tuple[float, float, float, float]) -> list[str]:
+    """Return a dot at every whole module inside the view.
+
+    A view that is not finite, or that holds more than 10 000 dots, gets no grid (D32): only a
+    hand-built symbol reaches either, and a dot per module of it would not end.
+    """
+    x, y, w, h = view
+    if not all(math.isfinite(v) for v in (x, y, x + w, y + h)):
+        return []
+    x0, x1, y0, y1 = math.ceil(x), math.floor(x + w), math.ceil(y), math.floor(y + h)
+    if max(0, x1 - x0 + 1) * max(0, y1 - y0 + 1) > _MAX_GRID_DOTS:
+        return []
+    return [
+        f'<circle class="grid" cx="{gx}" cy="{gy}" r="0.06" fill="#888" stroke="none"/>'
+        for gy in range(y0, y1 + 1)
+        for gx in range(x0, x1 + 1)
+    ]
+
+
+@deal.pure
 def _annotation(symbol: Symbol, view: tuple[float, float, float, float]) -> list[str]:
     """Return the annotation group: integer grid dots, the body box outline and port markers."""
-    x, y, w, h = view
     box = body_box(symbol)
     lines = ['<g class="annotation">']
-    lines.extend(
-        f'<circle class="grid" cx="{gx}" cy="{gy}" r="0.06" fill="#888" stroke="none"/>'
-        for gy in range(math.ceil(y), math.floor(y + h) + 1)
-        for gx in range(math.ceil(x), math.floor(x + w) + 1)
-    )
+    lines.extend(_grid(view))
     lines.append(
         f'<rect class="body-box" x="{_num(box.min.x)}" y="{_num(box.min.y)}" '
         f'width="{_num(box.width)}" height="{_num(box.height)}" fill="none" stroke="#0a0" '
@@ -205,7 +241,7 @@ def to_svg(
     )
     lines = [
         root,
-        f"<title>{escape(symbol.name)}</title>",
+        f"<title>{_content(symbol.name)}</title>",
         _GROUP_OPEN,
         *(_element(e) for e in symbol.elements),
         "</g>",

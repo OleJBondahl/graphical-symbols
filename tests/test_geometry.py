@@ -112,6 +112,17 @@ def test_arc_point_rounds_intermediate_angles():
     assert p == Point(0.707106781187, 0.707106781187)
 
 
+@pytest.mark.parametrize("angle", [float("nan"), float("inf"), float("-inf")])
+def test_arc_point_of_a_non_finite_angle_is_the_centre(angle):
+    assert arc_point(Arc(Point(1, 2), 3, 0, 90), angle) == Point(1, 2)
+
+
+@pytest.mark.parametrize("angle", [1e300, -1e300, 720.0, -450.0])
+def test_arc_point_of_a_huge_or_unreduced_angle_is_on_the_circle(angle):
+    p = arc_point(Arc(Point(1, 2), 3, 0, 90), angle)
+    assert (p.x - 1) ** 2 + (p.y - 2) ** 2 == pytest.approx(9)
+
+
 @pytest.mark.parametrize(
     ("start", "end", "expected"),
     [(0, 90, 90), (0, 270, 270), (270, 90, 180), (0, 360, 360), (45, 45, 360), (-90, 90, 180)],

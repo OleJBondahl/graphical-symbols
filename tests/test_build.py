@@ -1,6 +1,7 @@
 """`write_build` and `stale_build`: what a build writes, and what counts as out of date."""
 
 import shutil
+import xml.etree.ElementTree as ET
 from dataclasses import replace
 from pathlib import Path
 
@@ -8,8 +9,8 @@ import pytest
 
 import graphical_symbols
 from graphical_symbols.build import load_library, stale_build, write_build
-from graphical_symbols.geometry import Line, Point
-from graphical_symbols.model import Library, Status
+from graphical_symbols.geometry import Direction, Line, Point, Text
+from graphical_symbols.model import Library, Port, Status
 from graphical_symbols.serialize import build_files, package_name
 
 TESTS = Path(__file__).resolve().parent
@@ -263,6 +264,46 @@ class TestStaleBuild:
         assert stale == tuple(built / rel for rel in sorted([RESOLVED, SVG]))
         write_build(LIBRARY, built)
         assert stale_build(LIBRARY, built) == ()
+
+
+ODD_NAMES = [
+    "a\rb",
+    "a\r\nb",
+    "\r",
+    "&<>\"'",
+    "a\x00b",
+    "a\ud800b",
+    "\udfff\ud800",
+    "\U000000e9\U00002713\U0001f600",
+]
+
+
+class TestOddText:
+    """A name, a text element or a port id can carry anything TOML can spell."""
+
+    @staticmethod
+    def library(odd) -> Library:
+        base = LIBRARY.get("S00227")
+        symbol = replace(
+            base,
+            name=odd,
+            elements=(*base.elements, Text(odd, Point(0, 0), 0.5)),
+            ports=(*base.ports, Port(odd, Point(3, 0), Direction.E)),
+        )
+        return replace(LIBRARY, symbols={**LIBRARY.symbols, "S00227": symbol})
+
+    @pytest.mark.parametrize("odd", ODD_NAMES)
+    def test_no_file_has_a_carriage_return_every_svg_parses_and_the_build_is_not_stale(
+        self, tmp_path, odd
+    ):
+        library = self.library(odd)
+        written = write_build(library, tmp_path)
+        assert stale_build(library, tmp_path) == ()
+        for path in written:
+            data = path.read_bytes()
+            assert b"\r" not in data, path
+            if path.suffix == ".svg":
+                ET.fromstring(data)  # noqa: S314 - parses this library's own output
 
 
 def test_the_package_exports_the_build_functions():

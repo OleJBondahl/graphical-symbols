@@ -172,6 +172,54 @@ def test_title_is_escaped():
     assert title.text == 'R<1> & "x"'
 
 
+_ODD_TEXT = [
+    ("a\rb", "a\rb"),
+    ("a\r\nb", "a\r\nb"),
+    ("\r", "\r"),
+    ("a\nb\tc", "a\nb\tc"),
+    ("a\x00b", "a\U0000fffdb"),
+    ("a\x08\x0b\x0c\x0e\x1fb", "a\U0000fffd\U0000fffd\U0000fffd\U0000fffd\U0000fffdb"),
+    ("a\ud800b\udfffc", "a\U0000fffdb\U0000fffdc"),
+    ("a\U0000fffe\U0000ffffb", "a\U0000fffd\U0000fffdb"),
+    ("&<>\"'", "&<>\"'"),
+    ("\U000000e9\U00002713\U0001f600", "\U000000e9\U00002713\U0001f600"),
+    ("", None),
+]
+
+
+@pytest.mark.parametrize(("content", "parsed"), _ODD_TEXT)
+def test_title_and_text_are_well_formed_xml_without_a_carriage_return(content, parsed):
+    out = to_svg(sym(Text(content, Point(0, 0)), name=content))
+    assert "\r" not in out
+    assert out.encode("utf-8")
+    root = parse(out)
+    assert root.find("s:title", NS).text == parsed
+    assert root.find(".//s:text", NS).text == parsed
+
+
+def test_a_carriage_return_is_a_numeric_character_reference():
+    assert "<title>a&#13;b</title>" in to_svg(sym(name="a\rb"))
+
+
+@pytest.mark.parametrize(
+    "value", [math.nan, math.inf, -math.inf, 1e300, -1e300, 1e-300, -0.0, 0.00001]
+)
+def test_any_float_is_written_as_a_plain_number(value):
+    out = to_svg(sym(Line(Point(value, 0), Point(1, 1))))
+    found = re.search(r'x1="([^"]*)"', out)
+    assert found
+    x1 = found.group(1)
+    assert re.fullmatch(r"-?\d+(\.\d{1,4})?", x1)
+    assert "-0." not in x1
+    assert x1 != "-0"
+
+
+@pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf])
+def test_a_non_finite_number_is_written_as_zero(value):
+    out = to_svg(sym(Line(Point(value, value), Point(1, 1))))
+    assert '<line x1="0" y1="0" x2="1" y2="1" stroke-width="0.1"/>' in out
+
+
 def test_negative_zero_never_rendered():
     tricky = Arc(Point(0, 0), 1, 180 + 1e-11, 270)
     # Guard: this arc really does hit arc_point's trig path and yield -0.0.
