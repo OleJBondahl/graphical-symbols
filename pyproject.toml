@@ -95,12 +95,17 @@ convention = "google"
 # alone, so these dataclass fields, enum members and properties look unused to it. Names are
 # matched globally, so add a name here only when it is part of the public model.
 ignore_names = [
-    # Direction, Weight, Fill, Anchor, Status members
-    "N", "E", "S", "W", "THICK", "SOLID", "START", "END", "VERIFIED",
+    # Direction, Weight, Fill, Status, SymbolKind, PathKind, Potential, Severity members
+    "N", "E", "S", "W", "THICK", "SOLID", "VERIFIED", "UNVERIFIED",
+    "SYMBOL", "ELEMENT", "QUALIFIER", "SWITCH_OPEN", "SWITCH_CLOSED", "IMPEDANCE", "SOURCE", "DIODE",
+    "CONDUCTOR", "EARTH", "PROTECTIVE_EARTH", "FUNCTIONAL_EARTH", "FRAME", "ERROR", "WARNING",
     # Direction and Box properties
     "opposite", "width", "height",
     # dataclass fields
-    "weight", "closed", "fill", "content", "anchor",
-    "id", "direction", "description", "standard", "number", "edition", "form",
-    "reference", "ports", "status",
+    "weight", "closed", "fill", "content", "id", "direction", "description", "standard", "number",
+    "edition", "form", "reference", "ports", "status", "kind", "paths", "potential", "from_port",
+    "to_port", "through", "reason", "pole_pitch", "lint_allow", "severity", "location", "title",
+    "number_pattern",
+    # functions and parameters that later tasks and downstream packages call
+    "element_box", "nodes_of", "inverse", "texts",
 ]

@@ -2,7 +2,22 @@ import dataclasses
 
 import pytest
 
-from graphical_symbols.geometry import Arc, Direction, Line, Point, Weight, arc_point, arc_sweep
+from graphical_symbols.geometry import (
+    Arc,
+    Box,
+    Circle,
+    Direction,
+    Fill,
+    Line,
+    Orientation,
+    Point,
+    Polyline,
+    Style,
+    Text,
+    Weight,
+    arc_point,
+    arc_sweep,
+)
 
 
 def test_direction_vectors():
@@ -19,6 +34,25 @@ def test_direction_opposite():
 def test_weight_values():
     assert Weight.NORMAL.value == 0.1
     assert Weight.THICK.value == 0.2
+
+
+def test_style_and_fill_members():
+    assert [s.value for s in Style] == ["solid", "dashed"]
+    assert [f.value for f in Fill] == ["none", "solid"]
+
+
+def test_orientation_value_is_its_name():
+    assert [o.value for o in Orientation] == [
+        "R0",
+        "R90",
+        "R180",
+        "R270",
+        "MR0",
+        "MR90",
+        "MR180",
+        "MR270",
+    ]
+    assert all(o.value == o.name for o in Orientation)
 
 
 def test_point_is_immutable():
@@ -38,6 +72,30 @@ def test_point_equality_and_hash():
     assert Point(1, 2) != Point(2, 1)
     assert hash(Point(1, 2)) == hash(Point(1, 2))
     assert len({Point(1, 2), Point(1, 2), Point(0, 0)}) == 2
+
+
+def test_box_properties():
+    b = Box(Point(0, 0), Point(4, 2))
+    assert (b.width, b.height, b.center) == (4, 2, Point(2, 1))
+
+
+def test_element_defaults():
+    assert Line(Point(0, 0), Point(1, 0)).style is Style.SOLID
+    poly = Polyline((Point(0, 0), Point(1, 0)))
+    assert (poly.closed, poly.fill, poly.weight, poly.style) == (
+        False,
+        Fill.NONE,
+        Weight.NORMAL,
+        Style.SOLID,
+    )
+    assert Circle(Point(0, 0), 1).fill is Fill.NONE
+    assert Arc(Point(0, 0), 1, 0, 90).style is Style.SOLID
+    text = Text("M", Point(0, 0))
+    assert (text.height, text.weight) == (1.0, Weight.NORMAL)
+
+
+def test_text_has_no_anchor_field():
+    assert "anchor" not in {f.name for f in dataclasses.fields(Text)}
 
 
 def test_arc_point_is_exact_at_right_angles():

@@ -5,7 +5,6 @@ import xml.etree.ElementTree as ET
 import pytest
 
 from graphical_symbols import (
-    Anchor,
     Arc,
     Circle,
     Direction,
@@ -15,21 +14,28 @@ from graphical_symbols import (
     Polyline,
     Port,
     Reference,
+    Status,
+    Style,
     Symbol,
+    SymbolKind,
     Text,
     Weight,
-    bbox,
     to_svg,
 )
-from graphical_symbols import svg as svg_module
-from graphical_symbols import symbol as symbol_module
-from graphical_symbols.geometry import arc_point, arc_sweep
+from graphical_symbols.geometry import arc_point
 
 NS = {"s": "http://www.w3.org/2000/svg"}
 
 
 def sym(*elements, name="t", ports=()):
-    return Symbol(name, Reference("X", "1"), tuple(elements), ports)
+    return Symbol(
+        name=name,
+        kind=SymbolKind.SYMBOL,
+        status=Status.UNVERIFIED,
+        reference=Reference("X", "1"),
+        elements=tuple(elements),
+        ports=ports,
+    )
 
 
 def parse(svg):
@@ -45,18 +51,28 @@ def test_output_parses_as_xml():
     assert root.tag == "{http://www.w3.org/2000/svg}svg"
 
 
-def test_root_size_is_bbox_plus_margin_times_module():
+def test_root_size_is_body_box_plus_margin_times_module():
     root = parse(to_svg(rect_symbol()))
     assert root.get("width") == "15mm"
     assert root.get("height") == "10mm"
     assert root.get("viewBox") == "-1 -1 6 4"
 
 
-def test_module_and_margin_are_honoured():
-    root = parse(to_svg(rect_symbol(), module_mm=5, margin=0.5))
-    assert root.get("width") == "25mm"
-    assert root.get("height") == "15mm"
-    assert root.get("viewBox") == "-0.5 -0.5 5 3"
+def test_module_scales_the_size_but_not_the_view_box():
+    root = parse(to_svg(rect_symbol(), module_mm=5))
+    assert root.get("width") == "30mm"
+    assert root.get("height") == "20mm"
+    assert root.get("viewBox") == "-1 -1 6 4"
+
+
+def test_texts_are_accepted_and_ignored():
+    s = rect_symbol()
+    assert to_svg(s, texts={"tag": "-K1"}) == to_svg(s)
+
+
+def test_symbol_without_elements_renders_around_the_origin():
+    root = parse(to_svg(sym()))
+    assert root.get("viewBox") == "-1 -1 2 2"
 
 
 def test_output_is_deterministic():
@@ -96,6 +112,22 @@ def test_line_weight_and_polyline_forms():
     assert '<polygon points="0,0 1,1 2,0" stroke-width="0.1" fill="#000"/>' in out
 
 
+def test_dashed_style_is_drawn_as_a_dash_pattern():
+    out = to_svg(
+        sym(
+            Line(Point(0, 0), Point(1, 0), style=Style.DASHED),
+            Polyline((Point(0, 0), Point(1, 1)), style=Style.DASHED),
+            Arc(Point(0, 0), 1, 0, 90, style=Style.DASHED),
+            Line(Point(0, 1), Point(1, 1)),
+        )
+    )
+    assert out.count('stroke-dasharray="0.5 0.25"') == 3
+    assert (
+        '<line x1="0" y1="0" x2="1" y2="0" stroke-width="0.1" stroke-dasharray="0.5 0.25"/>' in out
+    )
+    assert '<line x1="0" y1="1" x2="1" y2="1" stroke-width="0.1"/>' in out
+
+
 def test_circle_forms():
     out = to_svg(sym(Circle(Point(1, 1), 0.5), Circle(Point(3, 1), 0.25, Fill.SOLID, Weight.THICK)))
     assert '<circle cx="1" cy="1" r="0.5" stroke-width="0.1"/>' in out
@@ -122,9 +154,9 @@ def test_arc_sweep_wraps_past_360():
 
 
 def test_text_attributes_and_escaping():
-    out = to_svg(sym(Text("a<&>b", Point(1, 2), 0.5, Anchor.START)))
+    out = to_svg(sym(Text("a<&>b", Point(1, 2), 0.5)))
     assert (
-        '<text x="1" y="2" font-size="0.5" text-anchor="start" fill="#000" stroke="none" '
+        '<text x="1" y="2" font-size="0.5" text-anchor="middle" fill="#000" stroke="none" '
         'font-family="sans-serif">a&lt;&amp;&gt;b</text>'
     ) in out
     text = parse(out).find(".//s:text", NS)
@@ -214,9 +246,9 @@ def test_annotation_grid_skips_points_outside_viewbox():
     assert grid == {(str(x), str(y)) for x in range(3) for y in range(2)}
 
 
-def test_annotation_bbox_rect():
+def test_annotation_body_box_rect():
     root = annotated_root(rect_symbol())
-    (rect,) = by_class(root, "bbox")
+    (rect,) = by_class(root, "body-box")
     assert (rect.get("x"), rect.get("y"), rect.get("width"), rect.get("height")) == (
         "0",
         "0",
@@ -271,26 +303,10 @@ def test_partial_arc_is_not_split():
     assert path_d(to_svg(sym(Arc(Point(0, 0), 1, 0, 180)))).count("A") == 1
 
 
-def test_bbox_and_renderer_share_the_arc_sweep_rule(monkeypatch):
-    seen = []
-
-    def spy(name):
-        def wrapper(arc):
-            seen.append(name)
-            return arc_sweep(arc)
-
-        return wrapper
-
-    arc = Arc(Point(0, 0), 1, 30, 30)
-    monkeypatch.setattr(symbol_module, "arc_sweep", spy("bbox"))
-    monkeypatch.setattr(svg_module, "arc_sweep", spy("svg"))
-    box = bbox(sym(arc))
-    assert seen == ["bbox"]
-    d = path_d(to_svg(sym(arc)))
-    assert "svg" in seen
-    # Both read a full circle: the bbox spans the circle and the path draws it.
-    assert (box.min, box.max) == (Point(-1, -1), Point(1, 1))
-    assert d.count("A") == 2
+def test_full_circle_arc_is_drawn_and_boxed_as_a_full_circle():
+    s = sym(Arc(Point(0, 0), 1, 30, 30))
+    assert path_d(to_svg(s)).count("A") == 2
+    assert parse(to_svg(s)).get("viewBox") == "-2 -2 4 4"
 
 
 def port_symbol():
@@ -324,7 +340,7 @@ def test_annotated_size_follows_extent_including_labels():
     assert root.get("viewBox") == "-2.6 -2.3 9.2 6.6"
     assert root.get("width") == "23mm"
     assert root.get("height") == "16.5mm"
-    (rect,) = by_class(root, "bbox")
+    (rect,) = by_class(root, "body-box")
     assert (rect.get("x"), rect.get("y"), rect.get("width"), rect.get("height")) == (
         "0",
         "0",

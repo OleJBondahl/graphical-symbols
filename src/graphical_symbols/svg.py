@@ -1,28 +1,34 @@
 """Deterministic SVG rendering of symbols."""
 
 import math
+from collections.abc import Mapping
 from xml.sax.saxutils import escape
 
 import deal
 
+from graphical_symbols.boxes import body_box
 from graphical_symbols.geometry import (
     Arc,
+    Box,
     Circle,
     Element,
     Fill,
     Line,
     Point,
     Polyline,
+    Style,
     Text,
     Weight,
     arc_point,
     arc_sweep,
 )
-from graphical_symbols.symbol import Box, Port, Symbol, bbox
+from graphical_symbols.model import Port, Symbol
 from graphical_symbols.units import DEFAULT_MODULE_MM
 
 _HALF_TURN = 180
 _FULL_TURN = 360
+_MARGIN = 1.0
+_DASHED = ' stroke-dasharray="0.5 0.25"'
 _GROUP_OPEN = '<g fill="none" stroke="#000" stroke-linecap="butt" stroke-linejoin="miter">'
 
 
@@ -34,10 +40,11 @@ def _num(value: float) -> str:
 
 
 @deal.pure
-def _stroke(weight: Weight, fill: Fill = Fill.NONE) -> str:
-    """Return the closing attributes of a stroked shape, with a black fill when solid."""
+def _stroke(weight: Weight, fill: Fill = Fill.NONE, style: Style = Style.SOLID) -> str:
+    """Return the closing attributes of a stroked shape: dashed when asked, black when solid."""
+    dashed = _DASHED if style is Style.DASHED else ""
     solid = ' fill="#000"' if fill is Fill.SOLID else ""
-    return f'stroke-width="{_num(weight.value)}"{solid}/>'
+    return f'stroke-width="{_num(weight.value)}"{dashed}{solid}/>'
 
 
 @deal.pure
@@ -58,15 +65,15 @@ def _arc(arc: Arc) -> str:
         end = arc_point(arc, arc.end_deg)
         large = 1 if sweep > _HALF_TURN else 0
         d = f"{move}{large} 1 {_num(end.x)} {_num(end.y)}"
-    return f'<path d="{d}" {_stroke(arc.weight)}'
+    return f'<path d="{d}" {_stroke(arc.weight, style=arc.style)}'
 
 
 @deal.pure
 def _text(text: Text) -> str:
-    """Render a text label, anchored as requested, in black without a stroke."""
+    """Render a text label, middle-anchored, in black without a stroke."""
     return (
         f'<text x="{_num(text.position.x)}" y="{_num(text.position.y)}" '
-        f'font-size="{_num(text.height)}" text-anchor="{text.anchor.value}" fill="#000" '
+        f'font-size="{_num(text.height)}" text-anchor="middle" fill="#000" '
         f'stroke="none" font-family="sans-serif">{escape(text.content)}</text>'
     )
 
@@ -75,15 +82,15 @@ def _text(text: Text) -> str:
 def _element(element: Element) -> str:
     """Render one element as an SVG tag."""
     match element:
-        case Line(start=s, end=e, weight=weight):
+        case Line(start=s, end=e, weight=weight, style=style):
             return (
                 f'<line x1="{_num(s.x)}" y1="{_num(s.y)}" x2="{_num(e.x)}" y2="{_num(e.y)}" '
-                f"{_stroke(weight)}"
+                f"{_stroke(weight, style=style)}"
             )
-        case Polyline(points=points, closed=closed, fill=fill, weight=weight):
+        case Polyline(points=points, closed=closed, fill=fill, weight=weight, style=style):
             tag = "polygon" if closed else "polyline"
             pts = " ".join(f"{_num(p.x)},{_num(p.y)}" for p in points)
-            return f'<{tag} points="{pts}" {_stroke(weight, fill)}'
+            return f'<{tag} points="{pts}" {_stroke(weight, fill, style)}'
         case Circle(center=c, radius=r, fill=fill, weight=weight):
             return (
                 f'<circle cx="{_num(c.x)}" cy="{_num(c.y)}" r="{_num(r)}" {_stroke(weight, fill)}'
@@ -102,12 +109,12 @@ def _label_at(port: Port) -> Point:
 
 @deal.pure
 def _extent(symbol: Symbol, *, annotate: bool) -> Box:
-    """Return the bbox, unioned with every port label box when annotating.
+    """Return the body box, unioned with every port label box when annotating.
 
     A label box is centred on the label point, with half-width 0.3 M per id character and
     half-height 0.3 M (font-size 0.6).
     """
-    box = bbox(symbol)
+    box = body_box(symbol)
     if not annotate:
         return box
     boxes = [box]
@@ -140,9 +147,9 @@ def _port(port: Port) -> tuple[str, str]:
 
 @deal.pure
 def _annotation(symbol: Symbol, view: tuple[float, float, float, float]) -> list[str]:
-    """Return the annotation group: integer grid dots, the bbox outline and port markers."""
+    """Return the annotation group: integer grid dots, the body box outline and port markers."""
     x, y, w, h = view
-    box = bbox(symbol)
+    box = body_box(symbol)
     lines = ['<g class="annotation">']
     lines.extend(
         f'<circle class="grid" cx="{gx}" cy="{gy}" r="0.06" fill="#888" stroke="none"/>'
@@ -150,7 +157,7 @@ def _annotation(symbol: Symbol, view: tuple[float, float, float, float]) -> list
         for gx in range(math.ceil(x), math.floor(x + w) + 1)
     )
     lines.append(
-        f'<rect class="bbox" x="{_num(box.min.x)}" y="{_num(box.min.y)}" '
+        f'<rect class="body-box" x="{_num(box.min.x)}" y="{_num(box.min.y)}" '
         f'width="{_num(box.width)}" height="{_num(box.height)}" fill="none" stroke="#0a0" '
         'stroke-width="0.05" stroke-dasharray="0.2 0.2"/>'
     )
@@ -165,31 +172,31 @@ def to_svg(
     symbol: Symbol,
     *,
     module_mm: float = DEFAULT_MODULE_MM,
-    margin: float = 1.0,
     annotate: bool = False,
+    texts: Mapping[str, str] | None = None,  # noqa: ARG001 - sample slot texts arrive with the full renderer
 ) -> str:
     """Render a symbol as an SVG document.
 
-    The viewBox is in module units, the symbol extent grown by margin on every side; width and
-    height are the viewBox size times module_mm, in mm. The extent is the bbox, and with
+    The viewBox is in module units, the symbol extent grown by a margin of 1 on every side; width
+    and height are the viewBox size times module_mm, in mm. The extent is the body box, and with
     annotate it is also unioned with every port label box (centred one module out along the
     port direction, half-width 0.3 per id character, half-height 0.3), so no label is clipped.
 
     Args:
         symbol: The symbol to render.
         module_mm: Millimetres per module unit.
-        margin: Empty space around the extent, in module units.
-        annotate: Add grid dots at every whole module, the bbox outline and port markers.
+        annotate: Add grid dots at every whole module, the body box outline and port markers.
+        texts: Sample text per slot id; accepted for the final signature and not yet drawn.
 
     Returns:
         The SVG text, ending with a single newline.
     """
     extent = _extent(symbol, annotate=annotate)
     view = (
-        extent.min.x - margin,
-        extent.min.y - margin,
-        extent.width + 2 * margin,
-        extent.height + 2 * margin,
+        extent.min.x - _MARGIN,
+        extent.min.y - _MARGIN,
+        extent.width + 2 * _MARGIN,
+        extent.height + 2 * _MARGIN,
     )
     root = (
         '<svg xmlns="http://www.w3.org/2000/svg" '

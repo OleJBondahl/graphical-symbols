@@ -123,3 +123,15 @@ The guide says the five examples "must load and lint clean" and that only the fo
 machine-checked. Implemented as written; the guide-verbatim fixture is expected to produce exactly
 that one finding, and a variant with `pole_pitch = 8` is clean. Owner to decide: add `pole_pitch = 8`
 to the example, or shorten the link.
+
+## D13. Box and angle edge cases the guide leaves open
+
+Decided: a symbol without elements has the body box `Box(Point(0, 0), Point(0, 0))`, so its keep-out
+box still contains the origin; an element with no points (a polyline with none) has that same origin
+box as `element_box` but adds nothing to `body_box`; `orient` normalises arc angles into [0, 360)
+under every orientation, `R0` included, so `R0` is the identity only for symbols whose arcs are
+already normalised.
+Why: `body_box` must not raise on malformed symbols (the linter reports them), and section 3 says
+angles are normalised to [0, 360) without exempting `R0`.
+Cost if wrong: a slot-only symbol's keep-out box grows to the origin; a symbol with an arc at
+-90 or 360 reads back as 270 or 0 after `orient(symbol, R0)`.
