@@ -162,3 +162,16 @@ None`. `library.toml` may carry unknown keys; they are ignored.
 Why: the guide names only the `schema` rule for "the file fails validation" and says nothing of the
 config file; one rule keeps `LibraryError` messages uniform.
 Cost if wrong: a separate `config` rule id and a check that ignores unknown keys becoming strict.
+
+## D16. What `repeat` does where the guide is silent
+
+Decided: the result lists every node explicitly, one per pole, with the ports prefixed and
+`potential` kept; a port in no declared node becomes a one-port node (`nodes_of`), so a symbol
+without `nodes` still yields explicit ones. A slot id starting `marking.` is renamed per pole
+(`marking.in` -> `marking.2.in`, `marking.c.in` -> `marking.2.c.in`); `tag`, `value` and any other
+slot id come from pole 1 only, unprefixed. The dashed link line is normal weight and is appended
+after every pole's elements; `lint_allow` is carried over unchanged.
+Why: the guide names `tag` and `value` and the `marking.` prefix, and says "nodes and paths repeat
+per pole" without saying how implicit nodes are treated.
+Cost if wrong: an unknown slot id that should repeat is lost on poles 2..n; resolved JSON of a
+repeated symbol lists nodes that were implicit before.

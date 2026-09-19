@@ -36,6 +36,7 @@ from graphical_symbols.model import (
     SymbolKind,
 )
 from graphical_symbols.orient import orient, translate
+from graphical_symbols.repeat import repeat
 from graphical_symbols.svg import to_svg
 from graphical_symbols.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
 
@@ -78,6 +79,7 @@ __all__ = [
     "keepout_box",
     "on_grid",
     "orient",
+    "repeat",
     "slot_box",
     "snap",
     "to_svg",
