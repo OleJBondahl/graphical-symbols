@@ -1,0 +1,22 @@
+schema = 1
+name = "Lint territory"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "Nobody", number = "not a number" }
+pole_pitch = 5
+
+ports = [
+  { id = "Bad.Id", at = [0.3, -0.7], dir = "N" },
+  { id = "Bad.Id", at = [0.3, -0.7], dir = "S" },
+]
+
+elements = [
+  { line = [[0, 0], [0, 0]] },
+  { circle = [0.1, 0], r = -1 },
+  { polyline = [[0, 0]] },
+  { arc = [0, 0], r = 0, start = 10, end = 10 },
+  { text = "Too tall", at = [0, 0], height = 5 },
+]
+
+[slots]
+tag = { at = [0.1, 0], side = "W", box = [-1, 0] }

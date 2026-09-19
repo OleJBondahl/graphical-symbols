@@ -1,0 +1,15 @@
+# violates: /ports/0/dir
+schema = 1
+name = "Fixture"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "n" },
+  { id = "out", at = [0, 2], dir = "S" },
+]
+
+elements = [
+  { line = [[0, -2], [0, 2]] },
+]

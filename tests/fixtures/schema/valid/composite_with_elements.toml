@@ -1,0 +1,17 @@
+schema = 1
+name = "Parts and elements"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+parts = [
+  { as = "contact", use = "S00227" },
+]
+
+elements = [
+  { line = [[0, 0], [1, 0]] },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "switch_open", through = true },
+]

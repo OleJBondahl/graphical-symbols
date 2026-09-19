@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "graphical-symbols symbol file",
+  "description": "A symbol source file (atomic or composite, TOML decoded to JSON) or a resolved symbol. Structural only: the id pattern, the drawing and wiring grids, positive sizes and the number pattern are lint rules, not schema rules.",
+  "type": "object",
+  "required": ["schema", "name", "kind", "status", "reference"],
+  "anyOf": [{ "required": ["elements"] }, { "required": ["parts"] }],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": 1 },
+    "name": { "type": "string" },
+    "kind": { "enum": ["symbol", "element", "qualifier"] },
+    "status": { "enum": ["unverified", "verified"] },
+    "reference": {
+      "type": "object",
+      "required": ["standard", "number"],
+      "additionalProperties": false,
+      "properties": {
+        "standard": { "type": "string" },
+        "number": { "type": "string" },
+        "edition": { "type": "string" },
+        "form": { "type": "string" }
+      }
+    },
+    "ports": {
+      "description": "An array of port tables (atomic and resolved) or a rename map new_id -> \"part.port\" (composite).",
+      "oneOf": [
+        { "type": "array", "items": { "$ref": "#/$defs/port" } },
+        { "type": "object", "additionalProperties": { "type": "string" } }
+      ]
+    },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "paths": { "type": "array", "items": { "$ref": "#/$defs/path" } },
+    "anchors": { "type": "array", "items": { "$ref": "#/$defs/anchor" } },
+    "elements": { "type": "array", "items": { "$ref": "#/$defs/element" } },
+    "parts": { "type": "array", "items": { "$ref": "#/$defs/part" } },
+    "slots": {
+      "description": "Slot id -> slot table, or in a composite a string reference to a part's slot.",
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/slot" }]
+      }
+    },
+    "pole_pitch": { "type": "integer" },
+    "lint_allow": { "type": "array", "items": { "$ref": "#/$defs/allow" } },
+    "body_box": { "$ref": "#/$defs/box" },
+    "keepout_box": { "$ref": "#/$defs/box" }
+  },
+  "$defs": {
+    "point": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "box": {
+      "description": "[[min_x, min_y], [max_x, max_y]]; present in resolved output only.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/point" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "direction": { "enum": ["N", "E", "S", "W"] },
+    "weight": { "enum": ["normal", "thick"] },
+    "style": { "enum": ["solid", "dashed"] },
+    "fill": { "enum": ["none", "solid"] },
+    "port": {
+      "type": "object",
+      "required": ["id", "at", "dir"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "at": { "$ref": "#/$defs/point" },
+        "dir": { "$ref": "#/$defs/direction" },
+        "description": { "type": "string" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": ["ports"],
+      "additionalProperties": false,
+      "properties": {
+        "ports": { "type": "array", "items": { "type": "string" } },
+        "potential": {
+          "enum": ["earth", "protective_earth", "functional_earth", "frame"]
+        }
+      }
+    },
+    "path": {
+      "type": "object",
+      "required": ["from", "to", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "kind": {
+          "enum": [
+            "conductor",
+            "switch_open",
+            "switch_closed",
+            "impedance",
+            "source",
+            "diode"
+          ]
+        },
+        "through": { "type": "boolean" }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "required": ["id", "at", "dir"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "at": { "$ref": "#/$defs/point" },
+        "dir": { "$ref": "#/$defs/direction" }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "required": ["at", "side", "box"],
+      "additionalProperties": false,
+      "properties": {
+        "at": { "$ref": "#/$defs/point" },
+        "side": { "$ref": "#/$defs/direction" },
+        "box": {
+          "description": "[width, height]; the text stays upright, so the box never rotates.",
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "part": {
+      "type": "object",
+      "required": ["as", "use"],
+      "additionalProperties": false,
+      "properties": {
+        "as": { "type": "string" },
+        "use": { "type": "string" },
+        "orient": {
+          "enum": ["R0", "R90", "R180", "R270", "MR0", "MR90", "MR180", "MR270"]
+        },
+        "attach": { "type": "string" },
+        "to": { "type": "string" },
+        "length": { "type": "number" },
+        "via": { "enum": ["mechanical_link"] },
+        "at": { "$ref": "#/$defs/point" },
+        "repeat": { "type": "integer" }
+      }
+    },
+    "allow": {
+      "type": "object",
+      "required": ["rule", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "rule": { "type": "string" },
+        "reason": { "type": "string" }
+      }
+    },
+    "element": {
+      "description": "Exactly one shape key. weight is allowed on every shape, style on line, polyline and arc, fill on polyline and circle, closed on polyline.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["line"],
+          "additionalProperties": false,
+          "properties": {
+            "line": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/point" },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "weight": { "$ref": "#/$defs/weight" },
+            "style": { "$ref": "#/$defs/style" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["polyline"],
+          "additionalProperties": false,
+          "properties": {
+            "polyline": { "type": "array", "items": { "$ref": "#/$defs/point" } },
+            "closed": { "type": "boolean" },
+            "fill": { "$ref": "#/$defs/fill" },
+            "weight": { "$ref": "#/$defs/weight" },
+            "style": { "$ref": "#/$defs/style" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["circle", "r"],
+          "additionalProperties": false,
+          "properties": {
+            "circle": { "$ref": "#/$defs/point" },
+            "r": { "type": "number" },
+            "fill": { "$ref": "#/$defs/fill" },
+            "weight": { "$ref": "#/$defs/weight" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["arc", "r", "start", "end"],
+          "additionalProperties": false,
+          "properties": {
+            "arc": { "$ref": "#/$defs/point" },
+            "r": { "type": "number" },
+            "start": { "type": "number" },
+            "end": { "type": "number" },
+            "weight": { "$ref": "#/$defs/weight" },
+            "style": { "$ref": "#/$defs/style" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["text", "at", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "text": { "type": "string" },
+            "at": { "$ref": "#/$defs/point" },
+            "height": { "type": "number" },
+            "weight": { "$ref": "#/$defs/weight" }
+          }
+        }
+      ]
+    }
+  }
+}

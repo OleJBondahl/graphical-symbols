@@ -1,0 +1,14 @@
+# violates: /parts
+schema = 1
+name = "Fixture"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+parts = { as = "x", use = "y" }
+
+ports = { in = "contact.in", out = "contact.out" }
+
+[slots]
+tag = { at = [-3.5, 0], side = "W", box = [6, 1] }
+"marking.in" = "contact.marking.in"

@@ -1,0 +1,16 @@
+# violates: /lint_allow/0/rule
+schema = 1
+name = "Fixture"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2], dir = "S" },
+]
+
+lint_allow = [{ rule = 1, reason = "x" }]
+elements = [
+  { line = [[0, -2], [0, 2]] },
+]

@@ -1,0 +1,15 @@
+schema = 1
+name = ""
+kind = "element"
+status = "verified"
+reference = { standard = "", number = "" }
+
+ports = []
+nodes = []
+paths = []
+anchors = []
+elements = []
+parts = []
+lint_allow = []
+
+[slots]

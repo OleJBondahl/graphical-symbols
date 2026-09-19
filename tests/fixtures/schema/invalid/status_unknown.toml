@@ -1,0 +1,15 @@
+# violates: /status
+schema = 1
+name = "Fixture"
+kind = "symbol"
+status = "checked"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2], dir = "S" },
+]
+
+elements = [
+  { line = [[0, -2], [0, 2]] },
+]

@@ -1,0 +1,29 @@
+schema = 1
+name = "Make contact, general symbol"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00227" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "switch_open", through = true },
+]
+
+anchors = [
+  { id = "link", at = [-0.5, 0], dir = "W" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+  { line = [[0, 1], [-1, -1]] },
+]
+
+[slots]
+tag           = { at = [-1.5, 0],    side = "W", box = [6, 1] }
+"marking.in"  = { at = [0.25, -1.5], side = "E", box = [1.5, 1] }
+"marking.out" = { at = [0.25, 1.5],  side = "E", box = [1.5, 1] }
