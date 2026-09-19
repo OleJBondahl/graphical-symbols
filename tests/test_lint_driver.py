@@ -186,6 +186,13 @@ class TestExemptions:
         symbol = plain_symbol(lint_allow=(Allow("degenerate", "nothing here"),))
         assert [f.rule for f in lint(symbol)] == ["allow-unused"]
 
+    @pytest.mark.parametrize("rule", sorted(RESOLVER_RULES))
+    def test_an_exemption_of_a_resolver_rule_adds_no_second_error(self, rule):
+        # The resolver never reads `lint_allow`, so the exemption is inert; `lint` does not add an
+        # `allow-unused` for a rule it cannot run.
+        symbol = plain_symbol(lint_allow=(Allow(rule, "the resolver reports it"),))
+        assert lint(symbol) == ()
+
     def test_an_unknown_rule_is_unknown_and_not_also_unused(self):
         symbol = plain_symbol(lint_allow=(Allow("no-such-rule", "why"),))
         assert [f.rule for f in lint(symbol)] == ["allow-unknown"]

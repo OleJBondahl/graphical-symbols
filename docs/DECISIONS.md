@@ -281,13 +281,18 @@ before `elements[10]`), then generation order. `lint_allow` removes a rule's fin
 severities and in every orientation, and an entry counts as used when the rule fired in any of
 them before the removal. `allow-unknown` (a rule id outside the 33, or a reason that is empty
 or only whitespace; two findings if both) and `allow-unused` (a known rule that did not fire) are
-added afterwards, so they cannot be exempted; an unknown rule is never also unused; a rule of
-another task counts as known but has not fired, so it is unused; duplicate entries for one rule are
-each judged alone; an entry with an empty reason still exempts and is reported once. A rule the
-resolver reports (`schema`, `metadata`, `part-*`, `export-unknown`, and `id-format` of a part id)
-never fires in `lint`, so `allow-unused` reports an exemption of it. The package exports the
-function `lint`, which shadows the subpackage as an attribute of `graphical_symbols`: write
-`from graphical_symbols.lint import ...`, never `import graphical_symbols.lint as m`.
+added afterwards, so they cannot be exempted; an unknown rule is never also unused; a known rule
+that does not apply to the symbol (`slot-missing` on an element) did not fire, so it is unused;
+duplicate entries for one rule are each judged alone; an entry with an empty reason still exempts
+and is reported once. A rule only the resolver reports (`schema`, `metadata`, `part-unknown`,
+`part-cycle`, `part-anchor`, `part-port-unexported`, `export-unknown`; `RESOLVER_RULES` in
+`lint/registry.py`) never fires in `lint` and the resolver does not read `lint_allow`, so an
+exemption naming one changes nothing and is not reported as unused (C3). `id-format` is not in
+that set: `lint` runs it on a symbol's own ids, so an `id-format` exemption is judged like any
+other (one aimed at a part id is reported unused, since only the resolver reports those). The
+package exports the function `lint`, which shadows the subpackage as an attribute of
+`graphical_symbols`: write `from graphical_symbols.lint import ...`, never
+`import graphical_symbols.lint as m`.
 Why: the guide says who loops over orientations nowhere (D6) and leaves the exemption corners open.
 Cost if wrong: a change in `ordered`, in `exempt` or in the two exemption functions; a rule row and
 a `CHECKS` entry per rule instead of one registration if the two are ever merged.
@@ -552,3 +557,20 @@ A data repo that concatenates `LibraryError.findings` and `lint` results and sor
 alphabetical order (`id-format` before `metadata`, `export-unknown` before `part-port-unexported`).
 Why: two orders for the same rules had no single rationale, and the table is the guide's own.
 Cost if wrong: a change in one function; resolver findings of different rules swap places.
+
+## C3. `lint_allow` cannot exempt the rules the resolver reports
+
+Concern: guide section 4 calls `lint_allow` "the only way to be exempt from a lint rule", section 9
+says composition and file rules "are reported the same way", and section 8 says an exemption whose
+rule would not have fired is itself an error. The resolver's rules (`schema`, `metadata`,
+`part-unknown`, `part-cycle`, `part-anchor`, `part-port-unexported`, `export-unknown`, and
+`id-format` of a part id) run in `resolve_library`, outside `lint`, which never reads `lint_allow`;
+the three statements cannot all hold for them.
+Implemented as: these rules are not exemptable. An entry that names one of the seven that only the
+resolver reports changes nothing, and `allow-unused` does not fire for it, so a mistaken entry is
+inert and does not add a second error next to the original one (`id-format` is still judged by
+`lint`, see D23). Cost if wrong: applying `lint_allow` in `resolve_library` to the composite's own
+findings, and reporting an entry there as unused when the rule did not fire; the two exemption
+functions in `lint/exemptions.py` would then serve both places. Owner to decide whether these rules
+are formally non-exemptable or the resolver should apply `lint_allow`.
+

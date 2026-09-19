@@ -53,6 +53,20 @@ GUIDE_ORDER: tuple[str, ...] = (
     "allow-unused",
 )
 RULE_IDS: frozenset[str] = frozenset(GUIDE_ORDER)
+# The rules only the resolver reports. `lint` never runs them and the resolver does not read
+# `lint_allow`, so no exemption can cover them (D23, C3). `id-format` is not here: `lint` runs it
+# on a symbol's own ids.
+RESOLVER_RULES: frozenset[str] = frozenset(
+    {
+        "schema",
+        "metadata",
+        "part-unknown",
+        "part-cycle",
+        "part-anchor",
+        "part-port-unexported",
+        "export-unknown",
+    }
+)
 GUIDE_INDEX: dict[str, int] = {rule_id: index for index, rule_id in enumerate(GUIDE_ORDER)}
 
 # No orientation sorts first, then R0 to MR270.

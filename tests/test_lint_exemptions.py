@@ -1,7 +1,21 @@
 """Exemptions group: applying `lint_allow`, `allow-unknown` and `allow-unused`."""
 
+import pytest
+
 from graphical_symbols.lint.exemptions import allow_unknown, allow_unused, exempt
+from graphical_symbols.lint.registry import RESOLVER_RULES
 from graphical_symbols.model import Allow, Finding, Severity
+
+# The rules only the resolver reports: `lint` never runs them, so `lint_allow` cannot cover them.
+RESOLVER_ONLY = [
+    "schema",
+    "metadata",
+    "part-unknown",
+    "part-cycle",
+    "part-anchor",
+    "part-port-unexported",
+    "export-unknown",
+]
 
 
 def found(rule, severity=Severity.ERROR, location=None):
@@ -88,3 +102,15 @@ class TestAllowUnused:
 
     def test_an_empty_reason_still_counts_as_use(self):
         assert allow_unused((Allow("degenerate", ""),), frozenset({"degenerate"})) == ()
+
+    @pytest.mark.parametrize("rule", RESOLVER_ONLY)
+    def test_a_rule_only_the_resolver_reports_is_inert_not_unused(self, rule):
+        assert allow_unused((Allow(rule, "why"),), frozenset()) == ()
+
+    def test_the_resolver_only_rules_are_registered_as_such(self):
+        assert frozenset(RESOLVER_ONLY) == RESOLVER_RULES
+
+    def test_id_format_is_also_a_lint_rule_so_it_is_judged_like_any_other(self):
+        assert [f.location for f in allow_unused((Allow("id-format", "why"),), frozenset())] == [
+            "lint_allow[0]"
+        ]

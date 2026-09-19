@@ -2,7 +2,7 @@
 
 import deal
 
-from graphical_symbols.lint.registry import RULE_IDS, quote, rule_finding
+from graphical_symbols.lint.registry import RESOLVER_RULES, RULE_IDS, quote, rule_finding
 from graphical_symbols.model import Allow, Finding
 
 
@@ -38,6 +38,9 @@ def allow_unknown(allow: tuple[Allow, ...]) -> tuple[Finding, ...]:
 def allow_unused(allow: tuple[Allow, ...], fired: frozenset[str]) -> tuple[Finding, ...]:
     """Report each exemption of a known rule that did not fire, in any orientation.
 
+    A rule only the resolver reports never fires here and cannot be exempted (C3), so an
+    exemption naming one is inert and is not reported as unused.
+
     Args:
         allow: The symbol's exemptions; each is judged on its own, also when a rule is named twice.
         fired: The rules that had findings before any exemption was applied.
@@ -49,5 +52,5 @@ def allow_unused(allow: tuple[Allow, ...], fired: frozenset[str]) -> tuple[Findi
             f"lint_allow[{index}]",
         )
         for index, entry in enumerate(allow)
-        if entry.rule in RULE_IDS and entry.rule not in fired
+        if entry.rule in RULE_IDS - RESOLVER_RULES and entry.rule not in fired
     )
