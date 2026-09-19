@@ -12,7 +12,7 @@ from typing import Any
 import deal
 
 from graphical_symbols.boxes import body_box, keepout_box
-from graphical_symbols.gallery import readme
+from graphical_symbols.gallery import readme, sample_texts
 from graphical_symbols.geometry import Arc, Box, Circle, Element, Line, Point, Polyline, Text
 from graphical_symbols.model import Library, Slot, Symbol, nodes_of
 from graphical_symbols.svg import to_svg
@@ -220,6 +220,8 @@ def build_files(library: Library) -> dict[str, bytes]:
         symbol = library.symbols[number]
         files[f"build/resolved/{number}.json"] = to_json(symbol_to_data(symbol))
         files[f"build/svg/{number}.svg"] = to_svg(symbol)
-        files[f"build/annotated/{number}.svg"] = to_svg(symbol, annotate=True)
+        files[f"build/annotated/{number}.svg"] = to_svg(
+            symbol, annotate=True, texts=sample_texts(symbol)
+        )
     files[f"src/{package_name(library.standard)}/bundle.json"] = to_json(bundle_to_data(library))
     return {path: files[path].encode("utf-8", errors="replace") for path in sorted(files)}

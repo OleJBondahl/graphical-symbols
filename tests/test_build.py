@@ -10,7 +10,7 @@ import pytest
 import graphical_symbols
 from graphical_symbols.build import load_library, stale_build, write_build
 from graphical_symbols.geometry import Direction, Line, Point, Text
-from graphical_symbols.model import Library, Port, Status
+from graphical_symbols.model import Library, Port, Slot, Status
 from graphical_symbols.serialize import build_files, package_name
 
 TESTS = Path(__file__).resolve().parent
@@ -163,6 +163,23 @@ class TestWriteBuild:
         assert text.startswith("<svg ")
         assert 'class="annotation"' not in text
         assert 'class="annotation"' in (built / ANNOTATED).read_text(encoding="utf-8")
+
+    def test_the_annotated_svg_shows_the_sample_texts_and_the_plain_svg_shows_none(self, built):
+        plain = ET.fromstring((built / SVG).read_bytes())  # noqa: S314 - our own output
+        assert not [e for e in plain.iter() if e.get("class") == "sample-text"]
+        annotated = ET.fromstring((built / ANNOTATED).read_bytes())  # noqa: S314 - our own output
+        texts = [e.text for e in annotated.iter() if e.get("class") == "sample-text"]
+        # Slots are drawn in id order. S00227 has no value slot, so the value sample is not drawn.
+        assert texts == ["1", "2", "-X1"]
+
+    def test_a_value_slot_gets_the_value_sample(self, tmp_path):
+        base = LIBRARY.get("S00227")
+        value = Slot("value", Point(1, 0), Direction.E, (2, 1))
+        library = edited(slots=(*base.slots, value))
+        write_build(library, tmp_path)
+        annotated = ET.fromstring((tmp_path / ANNOTATED).read_bytes())  # noqa: S314
+        texts = [e.text for e in annotated.iter() if e.get("class") == "sample-text"]
+        assert texts == ["1", "2", "-X1", "10 A"]
 
 
 class TestStaleBuild:

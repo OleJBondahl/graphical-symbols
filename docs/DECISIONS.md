@@ -496,3 +496,39 @@ XML with LF-only bytes.
 Cost if wrong: a garbage symbol draws garbage numbers instead of an error; a real symbol above
 100 by 100 M gets no grid in its annotated SVG (one constant); a `\r` in a name shows as `&#13;`
 in the file.
+
+## D33. What the annotated SVG draws, and the sample texts of the gallery
+
+Decided: the guide says `annotate=True` draws "the grid, ports with ids and lanes, anchors, slot
+boxes, and both boxes" and `texts` maps slot ids to sample strings. Drawn in this order, all inside
+`<g class="annotation">`: the grid (`grid`, a dot at every whole module, D32); `body-box` (green)
+and `keepout-box` (purple), both dashed 0.2/0.2, the keep-out one offset by 0.2 so they alternate
+where they coincide; per slot, in slot-id order, a translucent `slot-box` (blue) and its id (`slot-id`,
+size 0.3) just above the box; per anchor a teal diamond of half-size 0.2 (`anchor`) and its id
+(`anchor-id`, size 0.4) centred 0.75 M out along the anchor direction; the `lane` of every port, a
+red translucent strip 0.5 M wide from the port along its direction to the edge of the view; then
+per port a red dot (`port`) and its id (`port-id`, size 0.6, centred 1 M out). The elements are
+drawn first, under all of it. The view is the keep-out box united with every port label box, every
+lane start (0.5 M across), every anchor marker and label and every slot label, plus 1 M on every
+side; a label box is 1 M wide per font size and character (0.18 M per character at size 0.3) and one
+font size high, a little wider than the glyphs. Plain, the view is the body box, plus the slot boxes
+of the texts that are drawn. Sample text (`<g class="samples">`, drawn last, in both modes, class
+`sample-text`, orange, no stroke, upright, `font-family="sans-serif"`): the font size is the
+largest `s <= 1` with `s <= h` and `0.6 * s * characters <= w`, rounded down to 4 decimals; a
+slot with no text, an empty one, a box without a positive size, or an id the symbol has no slot
+for gets nothing. Vertical placement uses explicit baselines and no `dominant-baseline`, which
+several renderers (MuPDF, cairosvg) ignore: E and W put the baseline 0.36 s below the slot point (a
+capital is about 0.72 s tall, so it is centred on the point), N puts it on the point, S 0.72 s
+below (the capitals hang from the point). The port id labels use the same 0.36 rule instead of
+`dominant-baseline="central"`, so they moved 0.216 M down. Slots are drawn in id order because
+resolved JSON keeps them in id order (D30): a symbol loaded from a bundle must give the same
+bytes as the one from the sources. The build (`build_files`) draws `build/annotated/<n>.svg` with
+`sample_texts(symbol)` from `gallery.py`: `tag` is `-X1`, `value` is `10 A`, `marking.<port id>` is
+the 1-based position of the port in `symbol.ports` (the first, for ports that share an id); the
+plain `build/svg/<n>.svg` stays the bare definition.
+Why: the guide names what is drawn, not how; the gallery must show a filled-in symbol, and a
+sample text that does not depend on the symbol name keeps the files small and stable.
+Cost if wrong: every annotated SVG changes (colours, sizes, label places are constants); a
+different sample changes every annotated file; the 0.6 M per character width is the guide's own
+text extent, and a real font is a little wider for some strings (`marking.out` at size 0.3 fits
+its label box only about).

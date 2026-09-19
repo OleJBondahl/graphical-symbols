@@ -65,9 +65,10 @@ def test_module_scales_the_size_but_not_the_view_box():
     assert root.get("viewBox") == "-1 -1 6 4"
 
 
-def test_texts_are_accepted_and_ignored():
+def test_texts_for_slots_the_symbol_does_not_have_are_ignored():
     s = rect_symbol()
     assert to_svg(s, texts={"tag": "-K1"}) == to_svg(s)
+    assert to_svg(s, annotate=True, texts={"tag": "-K1"}) == to_svg(s, annotate=True)
 
 
 def test_symbol_without_elements_renders_around_the_origin():
@@ -276,7 +277,8 @@ def test_port_id_placed_one_module_out_along_direction():
     ports = (Port("W", Point(0, 0), Direction.W), Port("S", Point(2, 0), Direction.S))
     root = annotated_root(sym(Line(Point(0, 0), Point(2, 0)), ports=ports))
     positions = [(t.get("x"), t.get("y")) for t in by_class(root, "port-id")]
-    assert positions == [("-1", "0"), ("2", "1")]
+    # The baseline is 0.36 of the font size below the label centre, so the capitals are centred.
+    assert positions == [("-1", "0.216"), ("2", "1.216")]
 
 
 def test_annotation_grid_covers_every_integer_point_in_viewbox():

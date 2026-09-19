@@ -4,7 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from graphical_symbols.build import load_library
-from graphical_symbols.gallery import readme
+from graphical_symbols.gallery import readme, sample_texts
 from graphical_symbols.model import Library, Status, SymbolKind
 
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
@@ -86,3 +86,29 @@ def test_the_text_is_deterministic_with_lf_and_one_trailing_newline():
     assert "\r" not in text
     assert text.endswith("|\n")
     assert not text.endswith("\n\n")
+
+
+def test_the_sample_texts_of_the_make_contact():
+    assert sample_texts(LIBRARY.get("S00227")) == {
+        "tag": "-X1",
+        "value": "10 A",
+        "marking.in": "1",
+        "marking.out": "2",
+    }
+
+
+def test_a_marking_is_the_one_based_position_of_its_port():
+    texts = sample_texts(LIBRARY.get("S00230"))
+    assert [texts[f"marking.{p}"] for p in ("com", "no", "nc")] == ["1", "2", "3"]
+
+
+def test_ports_that_share_an_id_share_the_first_position():
+    symbol = LIBRARY.get("S00016")
+    doubled = replace(
+        symbol, ports=(*symbol.ports, replace(symbol.ports[0], position=symbol.ports[1].position))
+    )
+    assert sample_texts(doubled)["marking.n"] == "1"
+
+
+def test_a_symbol_without_ports_still_has_a_tag_and_a_value():
+    assert sample_texts(replace(LIBRARY.get("S00227"), ports=())) == {"tag": "-X1", "value": "10 A"}
