@@ -597,3 +597,44 @@ Why: D8 makes the package the standard with everything but letters and digits re
 package would write `src/bundle.json` instead of `src/<package>/bundle.json`, silently.
 Cost if wrong: a `schema` finding on `standard` in `parse_config` and `validate_bundle`, so
 `load_library` reports it, and a matching key in the JSON Schema.
+
+## Open questions for the owner
+
+- C1 (S00254 fails `pitch-overflow` as written): add `pole_pitch = 8` to the guide's example or
+  shorten the link. The real `iec60617` `S00171` may change the extent; report the outcome there.
+- C2 (`id-format` versus `repeat`'s `<k>.` port ids): keep the prefix form permanently, or change
+  the guide's id pattern.
+- C3 (`lint_allow` and the seven resolver-only rules): formally non-exemptable, or apply
+  `lint_allow` in `resolve_library`.
+- Merging `feat/toolkit` into `main` is the owner's call; nothing has been merged.
+
+## Known limits, decided not to bound
+
+Each is reachable only from the data repo owner's own files, and the guide is silent. Cost if
+wrong: add a bound and a `schema` finding, as D22 did for numbers and `repeat`.
+
+- `resolve_library`: nested composites with two parts each fan out as 2^depth elements (depth 16 is
+  about 2 s; about 40 tiny files would not finish).
+- A catastrophic-backtracking `number_pattern` in `library.toml` (for example `(a+)+$`; the time
+  grows by 4 per 2 characters) can hang `re.search`. It is the only non-terminating path in the
+  core. `^S\d{5}$`-style patterns are safe.
+- Lint cost is quadratic in the number of poles of a `repeat`ed device (64 poles about 21 s, 24
+  poles 2.8 s; `deal` tracing is about 2.2 times of that). The gates need only `repeat(s, 3)`.
+- `load_library` accepts a file stem or `number_pattern` that yields a number failing the stem
+  regex (`a b.toml`, or a Windows device name such as `CON`); `write_build` and `stale_build` then
+  raise `ValueError` (D31), and `build/svg/CON.svg` would misbehave on Windows.
+- `validate` still raises on a mapping key that is a 4300-digit integer (unreachable from TOML or
+  JSON); some private module-level tables (`orient._PARTS`, `load._ELEMENTS`, `svg._SAMPLE_ALIGN`,
+  `geometry._RIGHT_ANGLE_COS_SIN`) are mutable dicts.
+- In the annotated S00227 the sample text `-X1` covers the start of the `link` anchor label,
+  because the guide's `tag` slot ends 1 M west of that anchor. Cosmetic, gallery only.
+
+## What `../iec60617` must do because of these decisions
+
+- Add `.gitattributes` with `* text=auto eol=lf`; without it, on Windows with `core.autocrlf=true`,
+  tracked build files become CRLF and `stale_build` reports everything stale.
+- Run `write_build` again: the `Text` baseline fix (D33) changed the bytes of every SVG that contains
+  a `Text` element, so any committed build is stale.
+- Use `finding_key` (`graphical_symbols.lint.registry`, D34) to sort the concatenated
+  `LibraryError.findings` and `lint` results; wrap `load_bundle` at import time for `LibraryError`.
+- Lint `repeat(s, 3)` for every symbol with a through path, and report the C1 outcome.
