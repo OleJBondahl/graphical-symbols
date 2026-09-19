@@ -32,8 +32,14 @@ from graphical_symbols.repeat import repeat
 
 _PLACEMENT_KEYS = ("to", "length", "via")
 
-# One file's parts being resolved: the file stem and the index of the part in progress.
-_Stack = tuple[tuple[str, int], ...]
+# `repeat` in a part file stops here: the guide sets no bound, and a data file must not be able to
+# ask for a million poles.
+_MAX_REPEAT = 64
+
+# A cycle longer than this is shown by its first files only, so a message stays readable.
+_CHAIN_SHOWN = 8
+
+_Found = tuple[tuple[str, Finding], ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,16 +48,6 @@ class Resolution:
 
     symbols: Mapping[str, Symbol]
     findings: Mapping[str, tuple[Finding, ...]]
-
-
-@dataclass(frozen=True, slots=True)
-class _Walk:
-    """The state of one `resolve_library` call; the two dicts are filled as the walk goes."""
-
-    sources: Mapping[str, Mapping[str, Any]]
-    valid: frozenset[str]
-    resolved: dict[str, Symbol | None]
-    problems: dict[str, list[Finding]]
 
 
 @deal.pure
@@ -111,8 +107,9 @@ def _prepare(
     if "repeat" in part:
         where = _at("parts", index, "repeat")
         count = int(part["repeat"])
-        if count < 1:
-            return None, (rule_finding("schema", "repeat must be at least 1", where),)
+        if not 1 <= count <= _MAX_REPEAT:
+            message = f"repeat must be between 1 and {_MAX_REPEAT}"
+            return None, (rule_finding("schema", message, where),)
         if not any(path.through for path in base.paths):
             return None, (rule_finding("schema", "repeat needs a part with a through path", where),)
         symbol = repeat(base, count)
@@ -409,56 +406,125 @@ def _compose(
     )
 
 
+@dataclass(frozen=True, slots=True)
+class _Step:
+    """What to do with one part of the composite in progress.
+
+    `descend` names a file to resolve first; `base` is the part's resolved symbol; with neither
+    the composite cannot be built. `findings` are (file stem, finding) pairs.
+    """
+
+    descend: str | None = None
+    base: Symbol | None = None
+    findings: _Found = ()
+
+
+@dataclass(frozen=True, slots=True)
+class _Walk:
+    """The state of the walk over the part files; only `_walk` changes the containers.
+
+    `stack` holds the files in progress, deepest last; `progress` and `bases` are kept for those
+    files only (the index of the part in progress, and the parts resolved so far); `broken` names
+    the files in progress that have a part that cannot be used.
+    """
+
+    sources: Mapping[str, Mapping[str, Any]]
+    valid: frozenset[str]
+    resolved: dict[str, Symbol | None]
+    stack: list[str]
+    progress: dict[str, int]
+    bases: dict[str, dict[str, Symbol]]
+    broken: set[str]
+
+
 @deal.pure
-def _report_cycle(walk: _Walk, here: _Stack, use: str) -> None:
+def _cycle_findings(stack: list[str], progress: Mapping[str, int], use: str) -> _Found:
     """Report `part-cycle` on every file of the cycle `use` closes, at the part that leads on."""
-    members = here[[stem for stem, _ in here].index(use) :]
-    chain = " -> ".join((*(stem for stem, _ in members), use))
-    for stem, index in members:
-        walk.problems[stem].append(
-            rule_finding("part-cycle", f"parts form a cycle: {chain}", _at("parts", index, "use"))
+    members = stack[stack.index(use) :]
+    shown = members if len(members) <= _CHAIN_SHOWN else [*members[:_CHAIN_SHOWN], "..."]
+    chain = " -> ".join((*shown, use))
+    return tuple(
+        (
+            stem,
+            rule_finding(
+                "part-cycle", f"parts form a cycle: {chain}", _at("parts", progress[stem], "use")
+            ),
         )
+        for stem in members
+    )
 
 
 @deal.pure
-def _visit_composite(
-    walk: _Walk, stem: str, data: Mapping[str, Any], stack: _Stack
-) -> Symbol | None:
-    """Resolve the parts of a composite, reporting the unknown and the cyclic, then compose it."""
-    bases: dict[str, Symbol] = {}
-    usable = True
-    for index, part in enumerate(data["parts"]):
-        use = part["use"]
-        here = (*stack, (stem, index))
-        if use not in walk.sources:
-            message = f"the part file {quote(use)} does not exist"
-            walk.problems[stem].append(
-                rule_finding("part-unknown", message, _at("parts", index, "use"))
-            )
-            usable = False
-        elif any(name == use for name, _ in here):
-            _report_cycle(walk, here, use)
-            usable = False
-        elif use in walk.valid and (base := _visit(walk, use, here)) is not None:
-            bases[use] = base
-        else:
-            usable = False
-    if not usable:
-        return None
-    symbol, found = _compose(data, bases)
-    walk.problems[stem].extend(found)
-    return symbol
+def _classify(walk: _Walk, use: str) -> _Step:
+    """Decide what the part of the file on top of the stack that uses `use` needs next.
+
+    Unknown files and cycles are reported here. A file that failed validation, or failed to
+    resolve, is reported by itself, so its users only learn they cannot be built.
+    """
+    stem = walk.stack[-1]
+    if use not in walk.sources:
+        message = f"the part file {quote(use)} does not exist"
+        where = _at("parts", walk.progress[stem], "use")
+        return _Step(findings=((stem, rule_finding("part-unknown", message, where)),))
+    if use in walk.progress:
+        return _Step(findings=_cycle_findings(walk.stack, walk.progress, use))
+    if use not in walk.valid:
+        return _Step()
+    if use in walk.resolved:
+        return _Step(base=walk.resolved[use])
+    return _Step(descend=use)
 
 
 @deal.pure
-def _visit(walk: _Walk, stem: str, stack: _Stack) -> Symbol | None:
-    """Resolve one schema-valid file once: atomic files as read, composites flattened."""
-    if stem not in walk.resolved:
-        data = walk.sources[stem]
-        walk.resolved[stem] = (
-            _visit_composite(walk, stem, data, stack) if "parts" in data else symbol_from_data(data)
-        )
-    return walk.resolved[stem]
+def _finish(walk: _Walk, stem: str) -> tuple[Symbol | None, tuple[Finding, ...]]:
+    """Build a file whose parts are all decided: atomic files as read, composites flattened."""
+    data = walk.sources[stem]
+    if "parts" not in data:
+        return symbol_from_data(data), ()
+    if stem in walk.broken:
+        return None, ()
+    return _compose(data, walk.bases[stem])
+
+
+@deal.pure
+def _walk(
+    sources: Mapping[str, Mapping[str, Any]], valid: frozenset[str]
+) -> tuple[dict[str, Symbol | None], _Found]:
+    """Resolve every valid file, part files first, with an explicit stack instead of recursion.
+
+    Returns the symbol of each file (`None` when it cannot be built) and the findings of the walk.
+    """
+    walk = _Walk(sources, valid, {}, [], {}, {}, set())
+    found: list[tuple[str, Finding]] = []
+    for root in sorted(valid):
+        if root in walk.resolved:
+            continue
+        walk.stack.append(root)
+        while walk.stack:
+            stem = walk.stack[-1]
+            parts = sources[stem].get("parts", ())
+            index = walk.progress.setdefault(stem, 0)
+            bases = walk.bases.setdefault(stem, {})
+            if index >= len(parts):
+                symbol, more = _finish(walk, stem)
+                walk.resolved[stem] = symbol
+                found += ((stem, finding) for finding in more)
+                walk.stack.pop()
+                del walk.progress[stem]
+                del walk.bases[stem]
+                continue
+            use = parts[index]["use"]
+            step = _classify(walk, use)
+            found += step.findings
+            if step.descend is not None:
+                walk.stack.append(step.descend)
+                continue
+            if step.base is None:
+                walk.broken.add(stem)
+            else:
+                bases[use] = step.base
+            walk.progress[stem] = index + 1
+    return walk.resolved, tuple(found)
 
 
 @deal.pure
@@ -489,11 +555,10 @@ def resolve_library(config: LibraryConfig, sources: Mapping[str, Mapping[str, An
         else:
             valid.add(stem)
             problems[stem] = [*metadata_findings(stem, data, config), *part_id_findings(data)]
-    walk = _Walk(sources, frozenset(valid), {}, problems)
-    for stem in stems:
-        if stem in valid:
-            _visit(walk, stem, ())
+    resolved, found = _walk(sources, frozenset(valid))
+    for stem, finding in found:
+        problems[stem].append(finding)
     return Resolution(
-        {stem: symbol for stem in stems if (symbol := walk.resolved.get(stem)) is not None},
+        {stem: symbol for stem in stems if (symbol := resolved.get(stem)) is not None},
         {stem: tuple(sorted(found, key=_order)) for stem, found in problems.items() if found},
     )

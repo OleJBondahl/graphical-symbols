@@ -1,0 +1,10 @@
+# violates: /elements/0/r
+schema = 1
+name = "Fixture"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+elements = [
+  { circle = [0, 0], r = nan },
+]

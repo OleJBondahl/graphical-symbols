@@ -179,10 +179,10 @@ repeated symbol lists nodes that were implicit before.
 ## D17. Structural problems `validate` cannot see are `schema` findings from the resolver
 
 Decided: `validate` does not know a composite from an atomic file, and `repeat` states preconditions
-as contracts, so `resolve_library` reports these itself, all as rule `schema`: `repeat` below 1 or
-on a part whose file has no through path (at `/parts/<i>/repeat`); `ports` as an array of tables in
-a file with `parts` (`/ports`); `ports` as a rename table, or a slot given as a string reference,
-in a file without `parts` (`/ports`, `/slots/<id>`); two parts with the same `as`
+as contracts, so `resolve_library` reports these itself, all as rule `schema`: `repeat` below 1,
+above 64 (D22), or on a part whose file has no through path (at `/parts/<i>/repeat`); `ports`
+as an array of tables in a file with `parts` (`/ports`); `ports` as a rename table, or a slot
+given as a string reference, in a file without `parts` (`/ports`, `/slots/<id>`); two parts with the same `as`
 (`/parts/<i>/as`, the later one). A file with any of them has no symbol.
 Why: the guide names one rule, `schema`, for "the file fails validation", and `repeat` must not be
 called in violation of its contracts.
@@ -241,3 +241,25 @@ registry (`lint/registry.py`, `rule_finding`); the eight rules of the resolver a
 remaining 25 come with the linter.
 Why: a data repo gate needs to know which file a finding is about.
 Cost if wrong: a `file` field on `Finding` instead of a message prefix.
+
+## D22. Every number is bounded, `repeat` is capped, the walk has no recursion limit
+
+Decided: every numeric value in a source or bundle file must be finite with an absolute value of at
+most 1e6 module units (1e6 M is 2.5 km). Both validators enforce it and stay in agreement: the
+hand-written `validate` tests `not (-1e6 <= x <= 1e6)`, so NaN and infinity fail; the JSON Schema
+has `$defs/number` and `$defs/integer` (used by every number and integer key, `pole_pitch` and
+`repeat` included) written as `not { anyOf: [exclusiveMinimum 1e6, exclusiveMaximum -1e6] }`,
+because jsonschema's `maximum` lets NaN through and this form does not (JSON has no NaN; a TOML
+file does). The `schema` constant and the enum-like values are unaffected. The resolver also
+rejects a part `repeat` above 64, like `repeat` below 1: a `schema` finding at
+`/parts/<i>/repeat`, part not resolved; a direct call of `repeat(symbol, n)` is unchanged. The walk
+over part files uses an explicit stack, so a chain of composites of any depth resolves, with no
+depth cap; a `part-cycle` message shows the first 8 files of a cycle and `...` when it is longer.
+`_matches` in `lint/file.py` treats a pattern that raises `OverflowError` or `RecursionError` as
+matching nothing, as it does one that is not a valid regex.
+Why: with bounded input all later arithmetic (`orient`, boxes, the coming overlap tests, placement
+sums) is total, so the pure core can keep its promise never to raise (D3); `validate` accepted
+integers of up to 4300 digits, which overflowed `int + float` in placement and made `repeat` hang.
+64 poles is far beyond any real switching device.
+Cost if wrong: a larger bound is a one-constant change in `load.py` and the schema; a symbol beyond
+2.5 km or a 65-pole device cannot be written until then.

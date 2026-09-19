@@ -1,4 +1,5 @@
 import copy
+import math
 import re
 import tomllib
 from pathlib import Path as FilePath
@@ -745,3 +746,50 @@ def test_parse_config_reports_patterns_the_regex_engine_cannot_compile(pattern):
     config, findings = parse_config(CONFIG.replace(r"^S\d{5}$", pattern))
     assert config is None
     assert [(f.rule, f.location) for f in findings] == [("schema", "/number_pattern")]
+
+
+# Every number is finite with an absolute value of at most 1e6 (decision D22).
+
+BEYOND = [1_000_001, -1_000_001, 1e7, 1e6 + 1, math.nan, math.inf, -math.inf, 10**400, -(10**400)]
+BEYOND_IDS = ["above", "below", "1e7", "float", "nan", "inf", "-inf", "400-digits", "-400-digits"]
+
+
+@pytest.mark.parametrize("value", [1_000_000, -1_000_000, 1e6, -1e6, 0.125])
+def test_numbers_at_the_limit_are_valid(value):
+    data = atomic()
+    data["elements"] = [{"line": [[value, -value], [0, 0]]}, {"circle": [0, 0], "r": value}]
+    data["pole_pitch"] = 1_000_000
+    assert validate(data) == ()
+
+
+@pytest.mark.parametrize("value", BEYOND, ids=BEYOND_IDS)
+def test_a_number_beyond_the_limit_is_a_short_finding(value):
+    data = atomic()
+    data["elements"] = [{"line": [[0, 0], [value, 1]]}]
+    (found,) = validate(data)
+    assert (found.rule, found.location) == ("schema", "/elements/0/line/1/0")
+    assert "must be a number between" in found.message
+    assert len(found.message) < 100
+
+
+@pytest.mark.parametrize("value", BEYOND, ids=BEYOND_IDS)
+def test_an_integer_beyond_the_limit_is_a_finding(value):
+    data = atomic()
+    data["pole_pitch"] = value
+    (found,) = validate(data)
+    assert (found.rule, found.location) == ("schema", "/pole_pitch")
+    assert len(found.message) < 100
+
+
+def test_a_number_beyond_the_limit_is_reported_at_every_place_it_occurs():
+    data = atomic()
+    data["elements"] = [{"text": "M", "at": [1e9, 0], "height": math.nan}]
+    data["slots"] = {"tag": {"at": [0, 0], "side": "W", "box": [2e6, 1]}}
+    assert locations(data) == {"/elements/0/at/0", "/elements/0/height", "/slots/tag/box/0"}
+
+
+def test_the_schema_constant_and_repeat_are_not_widened_by_the_bound():
+    data = composite()
+    data["parts"][0]["repeat"] = 1_000_001
+    assert locations(data) == {"/parts/0/repeat"}
+    assert locations(edited(atomic(), "schema", value=2)) == {"/schema"}

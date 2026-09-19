@@ -2,7 +2,9 @@
 
 `validate` is the hand-written twin of `schema/symbol.schema.json`; the agreement test keeps the
 two in step. Both are structural only: types, required keys, enums and array shapes. The id
-pattern, the grid, positive sizes and the number pattern are lint rules.
+pattern, the grid, positive sizes and the number pattern are lint rules. The one bound on values
+is that every number is finite with an absolute value of at most 1e6 module units, which keeps
+all later arithmetic total.
 """
 
 import re
@@ -42,6 +44,9 @@ from graphical_symbols.model import (
     Symbol,
     SymbolKind,
 )
+
+# Every number in a file is finite with an absolute value of at most this (1e6 M is 2.5 km).
+_LIMIT = 1_000_000
 
 # A check takes a decoded value and its JSON-pointer-like location ("" is the root) and returns
 # the violations it finds.
@@ -88,15 +93,29 @@ def _string(value: object, location: str) -> list[Finding]:
 
 
 @deal.pure
+def _within_limit(value: object) -> bool:
+    """Return whether a number is at most `_LIMIT` in absolute value; NaN and infinity are not."""
+    return isinstance(value, int | float) and -_LIMIT <= value <= _LIMIT
+
+
+@deal.pure
 def _number(value: object, location: str) -> list[Finding]:
-    """Check for a number."""
-    return [] if _is_number(value) else [_finding(location, "must be a number")]
+    """Check for a number within the limit."""
+    if not _is_number(value):
+        return [_finding(location, "must be a number")]
+    if not _within_limit(value):
+        return [_finding(location, f"must be a number between -{_LIMIT} and {_LIMIT}")]
+    return []
 
 
 @deal.pure
 def _integer(value: object, location: str) -> list[Finding]:
-    """Check for an integer."""
-    return [] if _is_integer(value) else [_finding(location, "must be an integer")]
+    """Check for an integer within the limit."""
+    if not _is_integer(value):
+        return [_finding(location, "must be an integer")]
+    if not _within_limit(value):
+        return [_finding(location, f"must be an integer between -{_LIMIT} and {_LIMIT}")]
+    return []
 
 
 @deal.pure

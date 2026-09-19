@@ -23,11 +23,11 @@ def _matches(pattern: str, text: str) -> bool:
     """Return whether the pattern is found in the text.
 
     `search`, not `fullmatch`: the pattern anchors itself with `^` and `$`, as the guide's example
-    does. A pattern that does not compile matches nothing.
+    does. A pattern the regex engine cannot compile matches nothing.
     """
     try:
         return re.search(pattern, text) is not None
-    except re.error:
+    except (re.error, OverflowError, RecursionError):
         return False
 
 

@@ -1,9 +1,13 @@
 """The resolver: flattening composites, placement, inheritance and the composition rules."""
 
+import math
 import tomllib
 from pathlib import Path as FilePath
 
 import pytest
+from damage import HUGE_INTEGERS, ODD_VALUES, damage
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from graphical_symbols.geometry import Direction, Line, Orientation, Point, Style, Weight
 from graphical_symbols.load import symbol_from_data
@@ -894,6 +898,28 @@ class TestFileRules:
         assert located(resolution, "S00094") == [("schema", "/parts/0/repeat")]
         assert "S00094" not in resolution.symbols
 
+    @pytest.mark.parametrize("count", [65, 1_000, 1_000_000, 1_000_001, 10**9])
+    def test_repeat_above_the_cap_is_a_schema_finding_at_the_repeat_key(self, count):
+        top = composite("S00094", f'parts = [{{ as = "a", use = "S00227", repeat = {count} }}]\n')
+        resolution = resolve_library(CONFIG, guide_sources() | files(top))
+        assert located(resolution, "S00094") == [("schema", "/parts/0/repeat")]
+        assert "S00094" not in resolution.symbols
+
+    def test_the_repeat_cap_message_names_the_bounds(self):
+        top = composite("S00094", 'parts = [{ as = "a", use = "S00227", repeat = 65 }]\n')
+        resolution = resolve_library(CONFIG, guide_sources() | files(top))
+        assert resolution.findings["S00094"][0].message == "repeat must be between 1 and 64"
+
+    def test_repeat_of_64_resolves(self):
+        exports = ", ".join(f'p{k}i = "a.{k}.in", p{k}o = "a.{k}.out"' for k in range(1, 65))
+        top = composite(
+            "S00094",
+            f'parts = [{{ as = "a", use = "S00227", repeat = 64 }}]\nports = {{ {exports} }}\n',
+        )
+        resolution = resolve_library(CONFIG, guide_sources() | files(top))
+        assert resolution.findings == {}
+        assert len(resolution.symbols["S00094"].ports) == 128
+
     def test_repeat_of_a_part_without_a_through_path_is_a_schema_finding(self):
         top = composite("S00094", 'parts = [{ as = "a", use = "S00013", repeat = 2 }]\n')
         resolution = resolve(TWO_PORT_PLAIN, top)
@@ -940,3 +966,201 @@ class TestDeterminism:
 
     def test_stems_without_findings_are_not_listed(self):
         assert resolve(LINK_E, LINK_W).findings == {}
+
+
+def chain(depth: int, *, last: str = "leaf") -> dict[str, dict]:
+    """Composites S00000 .. S<depth-1>, each using the next; the last is an element or as told.
+
+    Every composite holds one part, so each flattened symbol stays one line long.
+    """
+    sources = {}
+    for i in range(depth):
+        stem = f"S{i:05d}"
+        data = {
+            "schema": 1,
+            "name": "n",
+            "kind": "element",
+            "status": "unverified",
+            "reference": {"standard": "IEC 60617", "number": stem},
+        }
+        if i < depth - 1:
+            data["parts"] = [{"as": "a", "use": f"S{i + 1:05d}"}]
+        elif last == "leaf":
+            data["elements"] = [{"line": [[0, 0], [1, 0]]}]
+        elif last == "unknown":
+            data["parts"] = [{"as": "a", "use": "S99999"}]
+        else:
+            data["parts"] = [{"as": "a", "use": last}]
+        sources[stem] = data
+    return sources
+
+
+class TestNoRecursionLimit:
+    """The walk over part files is iterative: a chain of any depth resolves."""
+
+    def test_a_chain_of_5000_composites_resolves(self):
+        resolution = resolve_library(CONFIG, chain(5000))
+        assert resolution.findings == {}
+        assert len(resolution.symbols) == 5000
+        assert resolution.symbols["S00000"].elements == (Line(Point(0, 0), Point(1, 0)),)
+
+    def test_the_result_does_not_depend_on_which_end_of_the_chain_is_reached_first(self):
+        forward = chain(600)
+        backward = dict(reversed(forward.items()))
+        assert resolve_library(CONFIG, forward) == resolve_library(CONFIG, backward)
+
+    def test_a_chain_ending_in_an_unknown_part_reports_only_the_last_file(self):
+        resolution = resolve_library(CONFIG, chain(5000, last="unknown"))
+        assert located(resolution, "S04999") == [("part-unknown", "/parts/0/use")]
+        assert list(resolution.findings) == ["S04999"]
+        assert resolution.symbols == {}
+
+    def test_a_cycle_of_5000_files_is_reported_on_each_with_a_short_message(self):
+        resolution = resolve_library(CONFIG, chain(5000, last="S00000"))
+        assert len(resolution.findings) == 5000
+        assert all(
+            located(resolution, stem) == [("part-cycle", "/parts/0/use")]
+            for stem in resolution.findings
+        )
+        assert resolution.findings["S02500"][0].message == (
+            "parts form a cycle: S00000 -> S00001 -> S00002 -> S00003 -> S00004 -> S00005 -> "
+            "S00006 -> S00007 -> ... -> S00000"
+        )
+        assert resolution.symbols == {}
+
+    def test_a_short_cycle_is_shown_in_full(self):
+        resolution = resolve_library(CONFIG, chain(3, last="S00000"))
+        assert resolution.findings["S00001"][0].message == (
+            "parts form a cycle: S00000 -> S00001 -> S00002 -> S00000"
+        )
+
+
+class TestBoundedNumbers:
+    """Every number in a file is at most 1e6 in absolute value, so arithmetic cannot overflow."""
+
+    def test_a_huge_length_is_a_schema_finding_and_does_not_raise(self):
+        huge = "1" + "0" * 400
+        top = composite(
+            "S00095",
+            'parts = [{ as = "a", use = "S00010" }, '
+            f'{{ as = "b", use = "S00011", attach = "link", to = "a.link", length = {huge} }}]\n',
+        )
+        resolution = resolve(LINK_E, LINK_W, top)
+        assert located(resolution, "S00095") == [("schema", "/parts/1/length")]
+        assert "S00095" not in resolution.symbols
+
+    def test_a_huge_at_is_a_schema_finding_and_does_not_raise(self):
+        huge = "1" + "0" * 400
+        top = composite("S00095", f'parts = [{{ as = "a", use = "S00010", at = [{huge}, 0] }}]\n')
+        assert located(resolve(LINK_E, top), "S00095") == [("schema", "/parts/0/at/0")]
+
+    @pytest.mark.parametrize("bad", ["nan", "inf", "-inf"])
+    def test_a_non_finite_length_or_at_is_a_schema_finding(self, bad):
+        top = composite(
+            "S00095",
+            'parts = [{ as = "a", use = "S00010" }, '
+            f'{{ as = "b", use = "S00011", attach = "link", to = "a.link", length = {bad} }}, '
+            f'{{ as = "c", use = "S00011", at = [{bad}, 0] }}]\n',
+        )
+        assert located(resolve(LINK_E, LINK_W, top), "S00095") == [
+            ("schema", "/parts/1/length"),
+            ("schema", "/parts/2/at/0"),
+        ]
+
+    def test_values_at_the_limit_resolve(self):
+        top = composite(
+            "S00095",
+            'parts = [{ as = "a", use = "S00010", at = [1e6, -1e6] }, '
+            '{ as = "b", use = "S00011", attach = "link", to = "a.link", length = 1e6, '
+            'via = "mechanical_link" }]\n',
+        )
+        resolution = resolve(LINK_E, LINK_W, top)
+        assert resolution.findings == {}
+        assert resolution.symbols["S00095"].elements[1] == Line(
+            Point(1e6, -1e6), Point(2e6, -1e6), Weight.NORMAL, Style.DASHED
+        )
+
+
+class TestPatternTotality:
+    """A `LibraryConfig` built by hand may carry a pattern the regex engine cannot handle."""
+
+    @pytest.mark.parametrize(
+        "pattern",
+        ["a{99999999999}", "(" * 3000 + ")" * 3000, "(", "[z-a]"],
+        ids=["overflow", "nesting", "open", "range"],
+    )
+    def test_such_a_pattern_matches_nothing_and_does_not_raise(self, pattern):
+        config = LibraryConfig("IEC 60617", "t", pattern)
+        resolution = resolve_library(config, files(LINK_E))
+        assert located(resolution, "S00010") == [("metadata", "/reference/number")]
+        assert "does not match" in resolution.findings["S00010"][0].message
+        assert "S00010" in resolution.symbols
+
+
+# resolve_library must be total: no input, however damaged, may make it raise (decision D3).
+
+SOURCES = guide_sources() | files(
+    composite(
+        "S00040",
+        'parts = [{ as = "main", use = "S00227", repeat = 3, orient = "R90" }]\n'
+        'ports = { a = "main.1.in", b = "main.1.out", c = "main.2.in", d = "main.2.out",'
+        ' e = "main.3.in", f = "main.3.out" }\n'
+        '[slots]\ntag = "main.tag"\n',
+    ),
+    composite(
+        "S00041",
+        'parts = [{ as = "a", use = "S00010" },'
+        ' { as = "b", use = "S00011", attach = "link", to = "a.link", length = 2,'
+        ' via = "mechanical_link", orient = "MR0" },'
+        ' { as = "c", use = "S00254", at = [3, 3] }]\n'
+        'ports = { in = "c.in", out = "c.out" }\n',
+    ),
+    LINK_E,
+    LINK_W,
+    TWO_PORT,
+)
+SOURCE_STEMS = sorted(SOURCES)
+HOSTILE = (
+    ODD_VALUES
+    | HUGE_INTEGERS
+    | st.sampled_from([0, 1, 63, 64, 65, 10**9, -1, math.nan, math.inf, "S99999", "a", "a.link"])
+    | st.sampled_from(SOURCE_STEMS)
+)
+KEYS = [
+    "extra", "repeat", "use", "as", "attach", "to", "length", "via", "orient", "at", "parts",
+    "ports", "elements", "slots",
+]  # fmt: skip
+
+
+def raises_nothing(resolve_fn, sources) -> bool:
+    """Whether `resolve_fn(CONFIG, sources)` returns instead of raising anything at all."""
+    try:
+        resolve_fn(CONFIG, sources)
+    except Exception:  # noqa: BLE001
+        return False
+    return True
+
+
+def test_the_totality_check_can_fail():
+    def overflows(_config, _sources):
+        raise OverflowError
+
+    def recurses(_config, _sources):
+        raise RecursionError
+
+    assert not raises_nothing(overflows, SOURCES)
+    assert not raises_nothing(recurses, SOURCES)
+    assert raises_nothing(resolve_library, SOURCES)
+
+
+@settings(max_examples=400, deadline=None)
+@given(
+    stem=st.sampled_from(SOURCE_STEMS),
+    pick=st.integers(min_value=0),
+    action=st.sampled_from(["replace", "delete", "add"]),
+    value=HOSTILE,
+    key=st.sampled_from(KEYS),
+)
+def test_resolving_never_raises_on_damaged_files(stem, pick, action, value, key):
+    sources = {**SOURCES, stem: damage(SOURCES[stem], pick, action, value, key)}
+    assert raises_nothing(resolve_library, sources)

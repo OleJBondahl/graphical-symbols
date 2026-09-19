@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "graphical-symbols symbol file",
-  "description": "A symbol source file (atomic or composite, TOML decoded to JSON) or a resolved symbol. Structural only: the id pattern, the drawing and wiring grids, positive sizes and the number pattern are lint rules, not schema rules.",
+  "description": "A symbol source file (atomic or composite, TOML decoded to JSON) or a resolved symbol. Structural only: the id pattern, the drawing and wiring grids, positive sizes and the number pattern are lint rules, not schema rules. The one bound on values: every number is at most 1e6 in absolute value.",
   "type": "object",
   "required": ["schema", "name", "kind", "status", "reference"],
   "anyOf": [{ "required": ["elements"] }, { "required": ["parts"] }],
@@ -47,15 +47,25 @@
         "oneOf": [{ "type": "string" }, { "$ref": "#/$defs/slot" }]
       }
     },
-    "pole_pitch": { "type": "integer" },
+    "pole_pitch": { "$ref": "#/$defs/integer" },
     "lint_allow": { "type": "array", "items": { "$ref": "#/$defs/allow" } },
     "body_box": { "$ref": "#/$defs/box" },
     "keepout_box": { "$ref": "#/$defs/box" }
   },
   "$defs": {
+    "number": {
+      "description": "A finite number with absolute value at most 1e6 (module units). Written as the negation of beyond the limit so that NaN, which a TOML file can carry, is rejected too.",
+      "type": "number",
+      "not": { "anyOf": [{ "exclusiveMinimum": 1000000 }, { "exclusiveMaximum": -1000000 }] }
+    },
+    "integer": {
+      "description": "An integer with absolute value at most 1e6, written like number.",
+      "type": "integer",
+      "not": { "anyOf": [{ "exclusiveMinimum": 1000000 }, { "exclusiveMaximum": -1000000 }] }
+    },
     "point": {
       "type": "array",
-      "items": { "type": "number" },
+      "items": { "$ref": "#/$defs/number" },
       "minItems": 2,
       "maxItems": 2
     },
@@ -132,7 +142,7 @@
         "box": {
           "description": "[width, height]; the text stays upright, so the box never rotates.",
           "type": "array",
-          "items": { "type": "number" },
+          "items": { "$ref": "#/$defs/number" },
           "minItems": 2,
           "maxItems": 2
         }
@@ -150,10 +160,10 @@
         },
         "attach": { "type": "string" },
         "to": { "type": "string" },
-        "length": { "type": "number" },
+        "length": { "$ref": "#/$defs/number" },
         "via": { "enum": ["mechanical_link"] },
         "at": { "$ref": "#/$defs/point" },
-        "repeat": { "type": "integer" }
+        "repeat": { "$ref": "#/$defs/integer" }
       }
     },
     "allow": {
@@ -201,7 +211,7 @@
           "additionalProperties": false,
           "properties": {
             "circle": { "$ref": "#/$defs/point" },
-            "r": { "type": "number" },
+            "r": { "$ref": "#/$defs/number" },
             "fill": { "$ref": "#/$defs/fill" },
             "weight": { "$ref": "#/$defs/weight" }
           }
@@ -212,9 +222,9 @@
           "additionalProperties": false,
           "properties": {
             "arc": { "$ref": "#/$defs/point" },
-            "r": { "type": "number" },
-            "start": { "type": "number" },
-            "end": { "type": "number" },
+            "r": { "$ref": "#/$defs/number" },
+            "start": { "$ref": "#/$defs/number" },
+            "end": { "$ref": "#/$defs/number" },
             "weight": { "$ref": "#/$defs/weight" },
             "style": { "$ref": "#/$defs/style" }
           }
@@ -226,7 +236,7 @@
           "properties": {
             "text": { "type": "string" },
             "at": { "$ref": "#/$defs/point" },
-            "height": { "type": "number" },
+            "height": { "$ref": "#/$defs/number" },
             "weight": { "$ref": "#/$defs/weight" }
           }
         }
