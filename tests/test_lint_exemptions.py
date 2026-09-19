@@ -34,7 +34,7 @@ class TestExempt:
 
 class TestAllowUnknown:
     def test_known_rules_with_reasons_are_clean(self):
-        allow = (Allow("degenerate", "because"), Allow("slot-missing", "a rule of a later task"))
+        allow = (Allow("degenerate", "because"), Allow("slot-missing", "any reason"))
         assert allow_unknown(allow) == ()
 
     def test_an_unknown_rule_fires_at_the_entry(self):

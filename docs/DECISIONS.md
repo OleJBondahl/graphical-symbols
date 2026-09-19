@@ -241,8 +241,8 @@ file that cannot be read (missing, unreadable, not UTF-8, a directory named `x.t
 missing `symbols/` directory are `schema` findings located at the file or directory name. It
 raises one `LibraryError` holding every finding: `library.toml` first, then per file, each message
 prefixed `<file name>: ` because a finding has no file of its own. Rule severity comes from the
-registry (`lint/registry.py`, `rule_finding`); the eight rules of the resolver are registered, the
-remaining 25 come with the linter.
+registry (`lint/registry.py`, `rule_finding`); the eight rules of the resolver were registered
+first, and the linter registers rules 9 to 33.
 Why: a data repo gate needs to know which file a finding is about.
 Cost if wrong: a `file` field on `Finding` instead of a message prefix.
 
@@ -513,10 +513,11 @@ red translucent strip 0.5 M wide from the port along its direction to the edge o
 per port a red dot (`port`) and its id (`port-id`, size 0.6, centred 1 M out). The elements are
 drawn first, under all of it. The view is the keep-out box united with every port label box, every
 lane start (0.5 M across), every anchor marker and label and every slot label, plus 1 M on every
-side; a port or anchor label box is 1 em wide per character (0.3 M per character at size 0.6, 0.4 M at
-0.4), a little wider than the glyphs, a slot label box is 0.6 em per character (0.18 M at size
-0.3, the guide's own text width), and each is one font size high. Plain, the view is the body box, plus the slot boxes
-of the texts that are drawn. Sample text (`<g class="samples">`, drawn last, in both modes, class
+side; a port or anchor label box is 1 em wide per character (0.6 M per character at size 0.6, 0.4 M
+at 0.4; the code keeps the half-width, 0.3 and 0.2 M per character), a little wider than the
+glyphs, a slot label box is 0.6 em per character (0.18 M at size 0.3, the guide's own text width),
+and each is one font size high. Plain, the view is the body box, plus the slot boxes of the texts
+that are drawn. Sample text (`<g class="samples">`, drawn last, in both modes, class
 `sample-text`, orange, no stroke, upright, `font-family="sans-serif"`): the font size is the
 largest `s <= 1` with `s <= h` and `0.6 * s * characters <= w`, rounded down to 4 decimals; a
 slot with no text, an empty one, a box without a positive size, or an id the symbol has no slot
