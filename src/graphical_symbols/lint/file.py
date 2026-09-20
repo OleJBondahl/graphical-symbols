@@ -28,7 +28,7 @@ def _matches(pattern: str, text: str) -> bool:
     """
     try:
         return re.search(pattern, text) is not None
-    except (re.error, OverflowError, RecursionError):
+    except re.error, OverflowError, RecursionError:
         return False
 
 

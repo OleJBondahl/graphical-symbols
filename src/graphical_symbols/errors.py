@@ -17,7 +17,7 @@ class UnknownSymbolError(GraphicalSymbolsError):
 class LibraryError(GraphicalSymbolsError):
     """A library failed to load; `findings` says why."""
 
-    def __init__(self, findings: "tuple[Finding, ...]") -> None:
+    def __init__(self, findings: tuple[Finding, ...]) -> None:
         """Keep the findings and summarise them in the message."""
         super().__init__("; ".join(f"{f.rule}: {f.message}" for f in findings))
         self.findings = findings
