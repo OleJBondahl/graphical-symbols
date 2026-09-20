@@ -1,0 +1,20 @@
+schema = 1
+name = "A tap that no path reaches"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+  { id = "tap", at = [2, 0],  dir = "E" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "conductor" },
+]
+
+elements = [
+  { line = [[0, -2], [0, 2]] },
+  { line = [[0, 0], [2, 0]] },
+]

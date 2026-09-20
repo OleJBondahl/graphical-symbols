@@ -1,0 +1,19 @@
+schema = 1
+name = "Through path from the south port to the north port"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00002" }
+
+ports = [
+  { id = "top",    at = [0, -2], dir = "N" },
+  { id = "bottom", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "bottom", to = "top", kind = "conductor", through = true },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+]

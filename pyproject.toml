@@ -7,7 +7,7 @@ name = "graphical-symbols"
 version = "0.1.0"
 description = "Standard-agnostic core for graphical symbols as strict, typed, immutable Python values"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Ole Johan Bondahl" }]
@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "hypothesis==6.168.0",
+    "jsonschema==4.26.0",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "ruff==0.16.8",
@@ -31,14 +32,11 @@ packages = ["src/graphical_symbols"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=graphical_symbols --cov-report=term-missing"
+addopts = "--cov=graphical_symbols --cov-report=term-missing --cov-fail-under=100"
 
 [tool.ruff]
 line-length = 100
-# target-version is intentionally py313, not py314: ruff strips the parens from
-# `except (X, Y):` tuples under py314, producing invalid syntax. requires-python
-# stays ">=3.14"; only the lint/format target is held back.
-target-version = "py313"
+target-version = "py315"
 
 [tool.ruff.lint]
 select = [
@@ -80,7 +78,16 @@ select = [
     "TID",  # flake8-tidy-imports
     "ANN",  # flake8-annotations
 ]
-ignore = ["TRY003"]
+# TC001/TC003 (move/lazy-import type-only-looking imports) ignored under target-version
+# py315: proven unsafe here, not just a style choice. Moving graphical_symbols.model /
+# graphical_symbols.geometry names into `if TYPE_CHECKING:` breaks dataclass field
+# annotations at runtime -- `deal`'s contract wrapper calls inspect.signature(), which
+# calls annotationlib.get_annotations() on frozen dataclasses (model.py's Port etc.),
+# raising `NameError: name 'Point' is not defined` because TYPE_CHECKING is False at
+# runtime. Confirmed by applying ruff's own --unsafe-fixes for these two rules across
+# the tree: 21 tests failed with this exact NameError. Revisit if deal or dataclasses
+# gain lazy-annotation support that doesn't need eager resolution.
+ignore = ["TRY003", "TC001", "TC003"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -91,16 +98,11 @@ convention = "google"
 "scripts/**" = ["T20"]
 
 [tool.vulture]
-# Public data-model API that only downstream packages and the tests read. Vulture scans src
-# alone, so these dataclass fields, enum members and properties look unused to it. Names are
-# matched globally, so add a name here only when it is part of the public model.
+# Enum members that only downstream packages and the tests use (the guide's vocabulary), so
+# vulture, which scans src alone, sees no use. Names match globally: add one only when it is a
+# member of the public data model.
 ignore_names = [
-    # Direction, Weight, Fill, Anchor, Status members
-    "N", "E", "S", "W", "THICK", "SOLID", "START", "END", "VERIFIED",
-    # Direction and Box properties
-    "opposite", "width", "height",
-    # dataclass fields
-    "weight", "closed", "fill", "content", "anchor",
-    "id", "direction", "description", "standard", "number", "edition", "form",
-    "reference", "ports", "status",
+    "THICK", "VERIFIED", "UNVERIFIED", "ELEMENT", "QUALIFIER",
+    "SWITCH_OPEN", "SWITCH_CLOSED", "IMPEDANCE", "SOURCE", "DIODE", "CONDUCTOR",
+    "EARTH", "PROTECTIVE_EARTH", "FUNCTIONAL_EARTH", "FRAME",
 ]

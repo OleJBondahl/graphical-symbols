@@ -1,0 +1,9 @@
+schema = 1
+name = "Cycle, second file"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00010" }
+
+parts = [
+  { as = "a", use = "S00001" },
+]

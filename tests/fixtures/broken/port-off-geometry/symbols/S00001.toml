@@ -1,0 +1,17 @@
+schema = 1
+name = "Port in the middle of a line"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+]
+
+nodes = [
+  { ports = ["in"], potential = "earth" },
+]
+
+elements = [
+  { line = [[-1, -2], [1, -2]] },
+]

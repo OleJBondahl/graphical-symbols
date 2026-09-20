@@ -1,0 +1,13 @@
+schema = 1
+name = "Link east"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00010" }
+
+anchors = [
+  { id = "link", at = [0, 0], dir = "E" },
+]
+
+elements = [
+  { line = [[0, 0], [-1, 0]] },
+]

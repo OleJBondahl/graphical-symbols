@@ -1,0 +1,27 @@
+schema = 1
+name = "Marking slot that makes the symbol wider than its pole pitch"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "switch_open", through = true },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+  { line = [[0, 1], [-1, -1]] },
+]
+
+# The body is 1 M wide and the widest marking slot reaches x = 4.25: 5.25 M in all, past the
+# default pitch of 4 M.
+[slots]
+tag           = { at = [-1.5, 0],    side = "W", box = [6, 1] }
+"marking.in"  = { at = [0.25, -1.5], side = "E", box = [4, 1] }
+"marking.out" = { at = [0.25, 1.5],  side = "E", box = [1.5, 1] }

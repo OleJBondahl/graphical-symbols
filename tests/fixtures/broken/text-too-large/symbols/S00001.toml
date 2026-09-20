@@ -1,0 +1,9 @@
+schema = 1
+name = "Text taller than one module"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+elements = [
+  { text = "M", at = [0, 0], height = 1.5 },
+]

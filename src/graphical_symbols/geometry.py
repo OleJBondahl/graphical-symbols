@@ -46,12 +46,24 @@ class Fill(Enum):
     SOLID = "solid"
 
 
-class Anchor(Enum):
-    """Horizontal text anchoring."""
+class Style(Enum):
+    """Line style; dashed is drawn with a dash of 0.5 M and a gap of 0.25 M."""
 
-    START = "start"
-    MIDDLE = "middle"
-    END = "end"
+    SOLID = "solid"
+    DASHED = "dashed"
+
+
+class Orientation(Enum):
+    """One of the 8 orientations: an optional mirror (flip x), then a clockwise turn by n."""
+
+    R0 = "R0"
+    R90 = "R90"
+    R180 = "R180"
+    R270 = "R270"
+    MR0 = "MR0"
+    MR90 = "MR90"
+    MR180 = "MR180"
+    MR270 = "MR270"
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,12 +75,36 @@ class Point:
 
 
 @dataclass(frozen=True, slots=True)
+class Box:
+    """An axis-aligned rectangle."""
+
+    min: Point
+    max: Point
+
+    @property
+    def width(self) -> float:
+        """Horizontal extent."""
+        return self.max.x - self.min.x
+
+    @property
+    def height(self) -> float:
+        """Vertical extent."""
+        return self.max.y - self.min.y
+
+    @property
+    def center(self) -> Point:
+        """Midpoint of the rectangle."""
+        return Point((self.min.x + self.max.x) / 2, (self.min.y + self.max.y) / 2)
+
+
+@dataclass(frozen=True, slots=True)
 class Line:
     """A straight segment."""
 
     start: Point
     end: Point
     weight: Weight = Weight.NORMAL
+    style: Style = Style.SOLID
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +115,7 @@ class Polyline:
     closed: bool = False
     fill: Fill = Fill.NONE
     weight: Weight = Weight.NORMAL
+    style: Style = Style.SOLID
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,16 +137,17 @@ class Arc:
     start_deg: float
     end_deg: float
     weight: Weight = Weight.NORMAL
+    style: Style = Style.SOLID
 
 
 @dataclass(frozen=True, slots=True)
 class Text:
-    """A text label; height is in module units."""
+    """A text label, always middle-anchored and upright; height is in module units."""
 
     content: str
     position: Point
     height: float = 1.0
-    anchor: Anchor = Anchor.MIDDLE
+    weight: Weight = Weight.NORMAL
 
 
 Element = Line | Polyline | Circle | Arc | Text
@@ -123,11 +161,14 @@ def arc_point(arc: Arc, degrees: float) -> Point:
 
     Args:
         arc: Supplies the centre and radius; its own angles are ignored.
-        degrees: Angle clockwise on screen from +x.
+        degrees: Angle clockwise on screen from +x. A NaN or infinite angle has no direction, so
+            it gives the centre (D32); files cannot carry one, only a hand-built arc can.
 
     Returns:
         The point, with trig-derived coordinates rounded to 12 decimal places.
     """
+    if not math.isfinite(degrees):
+        return arc.center
     if degrees % 90 == 0:
         cos, sin = _RIGHT_ANGLE_COS_SIN[int(degrees % 360)]
     else:

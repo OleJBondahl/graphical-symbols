@@ -1,0 +1,14 @@
+schema = 1
+name = "Degenerate elements"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+elements = [
+  { line = [[0, 0], [0, 1]] },
+  { line = [[0, 0], [0, 1]] },
+  { line = [[1, 1], [1, 1]] },
+  { circle = [2, 0], r = 0 },
+  { polyline = [[3, 0]] },
+  { arc = [4, 0], r = 1, start = 90, end = 90 },
+]

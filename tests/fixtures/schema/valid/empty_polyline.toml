@@ -1,0 +1,9 @@
+schema = 1
+name = "Empty polyline"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+elements = [
+  { polyline = [] },
+]

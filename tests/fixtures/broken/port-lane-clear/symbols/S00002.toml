@@ -1,0 +1,25 @@
+# Clean in the base orientation, broken in others: slot boxes do not rotate with the symbol.
+# In R0 the box is above "in" and only touches its lane at x = 0.25. After R90 it stands at
+# x in [3, 4], y in [-0.75, 2.25] and covers the lane of the port that moved to (2, 0).
+schema = 1
+name = "Slot box that lands in a wire lane when turned"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00002" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "conductor" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+]
+
+[slots]
+"marking.in" = { at = [0.75, -3], side = "N", box = [1, 3] }

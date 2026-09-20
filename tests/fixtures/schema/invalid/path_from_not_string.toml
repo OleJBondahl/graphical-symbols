@@ -1,0 +1,18 @@
+# violates: /paths/0/from
+schema = 1
+name = "Fixture"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2], dir = "S" },
+]
+
+paths = [{ from = 1, to = "out", kind = "diode" }]
+elements = [
+  { line = [[0, -2], [0, 2]] },
+]
+
+[slots]

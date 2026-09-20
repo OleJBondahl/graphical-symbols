@@ -1,0 +1,33 @@
+schema = 1
+name = "Resolved"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+body_box = [[0, -2], [0, 2]]
+keepout_box = [[-6, -2], [1.75, 2]]
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N", description = "" },
+  { id = "out", at = [0, 2], dir = "S", description = "" },
+]
+
+nodes = [
+  { ports = ["in"] },
+  { ports = ["out"], potential = "earth" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "switch_open", through = true },
+]
+
+elements = [
+  { line = [[0, -2], [0, 2]], weight = "normal", style = "solid" },
+  { polyline = [[0, 0], [1, 0]], closed = false, fill = "none", weight = "normal", style = "solid" },
+  { circle = [0, 0], r = 1, fill = "none", weight = "normal" },
+  { arc = [0, 0], r = 1, start = 0, end = 90, weight = "normal", style = "solid" },
+  { text = "M", at = [0, 0], height = 1, weight = "normal" },
+]
+
+[slots]
+tag = { at = [-1.5, 0], side = "W", box = [6, 1] }
+"marking.in" = { at = [0.25, -1.5], side = "E", box = [1.5, 1] }

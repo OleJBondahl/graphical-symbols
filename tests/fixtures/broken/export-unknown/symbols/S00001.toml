@@ -1,0 +1,11 @@
+schema = 1
+name = "Exports a port that does not exist"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+parts = [
+  { as = "a", use = "S00010" },
+]
+
+ports = { in = "a.in", other = "a.nothing" }

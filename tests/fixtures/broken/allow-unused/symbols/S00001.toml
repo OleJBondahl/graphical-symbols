@@ -1,0 +1,13 @@
+schema = 1
+name = "Exemption of a rule that does not fire"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+lint_allow = [
+  { rule = "degenerate", reason = "nothing here is degenerate" },
+]
+
+elements = [
+  { line = [[0, 0], [0, 1]] },
+]

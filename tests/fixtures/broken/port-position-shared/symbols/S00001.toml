@@ -1,0 +1,18 @@
+schema = 1
+name = "Two ports of different nodes at one position"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "a", at = [0, -2], dir = "N" },
+  { id = "b", at = [0, -2], dir = "E" },
+]
+
+paths = [
+  { from = "a", to = "b", kind = "conductor" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+]

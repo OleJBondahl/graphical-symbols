@@ -1,0 +1,13 @@
+schema = 1
+name = "Anchor off the grid"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00002" }
+
+anchors = [
+  { id = "link", at = [0, 0.3], dir = "E" },
+]
+
+elements = [
+  { line = [[0, 0], [0, 1]] },
+]

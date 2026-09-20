@@ -1,0 +1,19 @@
+schema = 1
+name = "Two ports with one id"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+  { id = "in", at = [0, 2],  dir = "S" },
+]
+
+nodes = [
+  { ports = ["in"], potential = "earth" },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]] },
+  { line = [[0, 2], [0, 1]] },
+]

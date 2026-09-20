@@ -1,0 +1,14 @@
+schema = 1
+name = "Two anchors with one id"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00001" }
+
+anchors = [
+  { id = "link", at = [0, 0], dir = "W" },
+  { id = "link", at = [0, 1], dir = "E" },
+]
+
+elements = [
+  { line = [[0, 0], [0, 1]] },
+]

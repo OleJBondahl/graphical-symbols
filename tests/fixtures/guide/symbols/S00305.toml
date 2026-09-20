@@ -1,0 +1,29 @@
+schema = 1
+name = "Operating device, general symbol; relay coil, general symbol"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00305" }
+
+ports = [
+  { id = "in",  at = [0, -3], dir = "N" },
+  { id = "out", at = [0, 3],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "impedance", through = true },
+]
+
+anchors = [
+  { id = "link", at = [2, 0], dir = "E" },
+]
+
+elements = [
+  { line = [[0, -3], [0, -1]] },
+  { line = [[0, 3], [0, 1]] },
+  { polyline = [[-2, -1], [2, -1], [2, 1], [-2, 1]], closed = true },
+]
+
+[slots]
+tag           = { at = [-2.5, 0],  side = "W", box = [6, 1] }
+"marking.in"  = { at = [0.25, -2], side = "E", box = [1.5, 1] }
+"marking.out" = { at = [0.25, 2],  side = "E", box = [1.5, 1] }

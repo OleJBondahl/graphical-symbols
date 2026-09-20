@@ -1,0 +1,19 @@
+schema = 1
+name = "Horizontal through path"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00003" }
+
+ports = [
+  { id = "left",  at = [-2, 0], dir = "W" },
+  { id = "right", at = [2, 0],  dir = "E" },
+]
+
+paths = [
+  { from = "left", to = "right", kind = "conductor", through = true },
+]
+
+elements = [
+  { line = [[-2, 0], [-1, 0]] },
+  { line = [[2, 0], [1, 0]] },
+]
