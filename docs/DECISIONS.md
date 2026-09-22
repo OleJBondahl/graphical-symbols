@@ -650,6 +650,25 @@ Cost if wrong: a consumer with a stale copy or a broken resource path silently s
 against the real guide; `test_guide_package_data.py`'s can-fail test is the guard against a
 resource that resolves but is not this file's content.
 
+## D39. `to_fragment`: a placeable `<g>` fragment beside the standalone document `to_svg`
+
+Decided: `svg.py` gains `to_fragment(symbol: Symbol) -> str`, returning `_GROUP_OPEN`, one
+`_element(e)` per `symbol.elements` and `</g>`, joined by newlines with a trailing one -- exactly
+the plain content group `to_svg` already builds, reusing `_element` and `_GROUP_OPEN` directly
+rather than a second element-rendering path. No `<svg>` root, no `<title>`, no annotations, and no
+sample texts: the function takes no `texts` parameter at all, so a slot's sample text can never
+reach a fragment, not merely because no fixture happens to exercise it. It applies no transform,
+scale or orientation of its own; the caller places it in its own coordinate system. Exported from
+`graphical_symbols.__init__` alongside `to_svg`.
+Why: `schematika_render` (the Schematika v2 monorepo's render package) assembles a page out of
+several placed symbols and needs each one as a reusable piece it positions and scales itself, not
+a whole standalone document; the guide (`SYMBOL_INTERFACE.html`) defines only the standalone
+`to_svg` document and is silent on an embeddable fragment.
+Cost if wrong: reusing `_element`/`_GROUP_OPEN` means any future change to how an element renders
+is automatically picked up here too; if a future edit ever duplicated that logic instead, the
+fragment and the document's plain mode could silently drift apart. A wrong function name is a
+rename in two files (`svg.py`, `__init__.py`) and the tests that check it.
+
 ## Open questions for the owner
 
 - C1 (S00254 fails `pitch-overflow` as written): add `pole_pitch = 8` to the guide's example or

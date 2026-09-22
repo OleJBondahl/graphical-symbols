@@ -483,3 +483,24 @@ def to_svg(
         lines.extend(['<g class="samples">', *(_sample_text(*s) for s in sampled), "</g>"])
     lines.append("</svg>")
     return "\n".join(lines) + "\n"
+
+
+@deal.pure
+def to_fragment(symbol: Symbol) -> str:
+    """Render a symbol as a placeable SVG fragment: a `<g>` of its plain elements only.
+
+    For embedding one placed symbol inside a larger document the caller assembles -- the caller
+    wraps the result in its own `<g transform="...">` to position, orient and scale it; this
+    function applies none of its own. No title, no annotations, no sample texts: built from the
+    same element primitives `to_svg`'s plain mode uses (`_GROUP_OPEN` and `_element`), so a
+    change to how one element renders never drifts between the two.
+
+    Args:
+        symbol: The symbol to render, already oriented and repeated by the caller (via
+            `orient`/`repeat`), exactly as `to_svg` expects its own `symbol` argument.
+
+    Returns:
+        The `<g>...</g>` fragment text, ending with a single newline.
+    """
+    lines = [_GROUP_OPEN, *(_element(e) for e in symbol.elements), "</g>"]
+    return "\n".join(lines) + "\n"

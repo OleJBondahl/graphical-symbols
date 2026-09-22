@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "graphical-symbols"
-version = "0.1.1"
+version = "0.1.2"
 description = "Standard-agnostic core for graphical symbols as strict, typed, immutable Python values"
 readme = "README.md"
 requires-python = ">=3.15"

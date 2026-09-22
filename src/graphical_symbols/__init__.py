@@ -40,7 +40,7 @@ from graphical_symbols.model import (
 )
 from graphical_symbols.orient import orient, translate
 from graphical_symbols.repeat import repeat
-from graphical_symbols.svg import to_svg
+from graphical_symbols.svg import to_fragment, to_svg
 from graphical_symbols.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
 
 __all__ = [
@@ -90,6 +90,7 @@ __all__ = [
     "slot_box",
     "snap",
     "stale_build",
+    "to_fragment",
     "to_svg",
     "translate",
     "write_build",

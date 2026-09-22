@@ -14,12 +14,14 @@ from graphical_symbols import (
     Polyline,
     Port,
     Reference,
+    Slot,
     Status,
     Style,
     Symbol,
     SymbolKind,
     Text,
     Weight,
+    to_fragment,
     to_svg,
 )
 from graphical_symbols.boxes import element_box
@@ -28,7 +30,7 @@ from graphical_symbols.geometry import arc_point
 NS = {"s": "http://www.w3.org/2000/svg"}
 
 
-def sym(*elements, name="t", ports=()):
+def sym(*elements, name="t", ports=(), **kwargs):
     return Symbol(
         name=name,
         kind=SymbolKind.SYMBOL,
@@ -36,6 +38,7 @@ def sym(*elements, name="t", ports=()):
         reference=Reference("X", "1"),
         elements=tuple(elements),
         ports=ports,
+        **kwargs,
     )
 
 
@@ -423,3 +426,51 @@ def test_plain_render_ignores_port_labels():
     assert root.get("viewBox") == "-1 -1 6 4"
     assert root.get("width") == "15mm"
     assert plain == to_svg(sym(*port_symbol().elements))
+
+
+def test_fragment_has_the_expected_elements_and_none_of_a_document():
+    symbol = sym(
+        Line(Point(0, 0), Point(2, 0)),
+        Circle(Point(1, 1), 0.5),
+        name="frag",
+        ports=(Port("1", Point(0, 0), Direction.W),),
+    )
+    out = to_fragment(symbol)
+    assert out.startswith(
+        '<g fill="none" stroke="#000" stroke-linecap="butt" stroke-linejoin="miter">\n'
+    )
+    assert out.endswith("</g>\n")
+    assert '<line x1="0" y1="0" x2="2" y2="0" stroke-width="0.1"/>' in out
+    assert '<circle cx="1" cy="1" r="0.5" stroke-width="0.1"/>' in out
+    assert "<title" not in out
+    assert "<svg" not in out
+    assert "annotation" not in out
+    assert "sample-text" not in out
+    # Exactly one group: the elements, nothing else.
+    assert out.count("<g") == 1
+    assert out.count("</g>") == 1
+
+
+def test_fragment_matches_the_plain_content_group_of_to_svg():
+    symbol = rect_symbol()
+    document = to_svg(symbol)
+    fragment = to_fragment(symbol)
+    assert fragment.rstrip("\n") in document
+
+
+def test_fragment_never_draws_a_slots_sample_text():
+    slot = Slot("tag", Point(0, 0), Direction.E, (2.0, 1.0))
+    symbol = sym(Line(Point(0, 0), Point(2, 0)), name="slotted", slots=(slot,))
+    # Proof the suppression is real: the same symbol *does* draw a sample text through `to_svg`
+    # when texts are supplied, so the fragment's absence of one is not an accident of the fixture.
+    assert 'class="sample-text"' in to_svg(symbol, texts={"tag": "X1"})
+    fragment = to_fragment(symbol)
+    assert "sample-text" not in fragment
+    assert '<line x1="0" y1="0" x2="2" y2="0" stroke-width="0.1"/>' in fragment
+
+
+def test_to_fragment_is_a_public_name():
+    import graphical_symbols
+
+    assert "to_fragment" in graphical_symbols.__all__
+    assert graphical_symbols.to_fragment is to_fragment
