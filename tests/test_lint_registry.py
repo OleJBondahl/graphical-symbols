@@ -14,7 +14,13 @@ from graphical_symbols.lint.registry import (
 )
 from graphical_symbols.model import Finding, Severity
 
-GUIDE = Path(__file__).resolve().parent.parent / "docs" / "SYMBOL_INTERFACE.html"
+GUIDE = (
+    Path(__file__).resolve().parent.parent
+    / "src"
+    / "graphical_symbols"
+    / "docs"
+    / "SYMBOL_INTERFACE.html"
+)
 _ROW = re.compile(
     r"<tr>(?:<td rowspan=\"\d+\">(?P<group>[^<]+)</td>)?<td><code>(?P<rule>[a-z-]+)</code>"
     r"(?P<warning> \(warning\))?</td>"

@@ -9,7 +9,7 @@ import pytest
 from graphical_symbols.load import parse_config, parse_toml, symbol_from_data, validate
 
 ROOT = Path(__file__).resolve().parent.parent
-GUIDE = ROOT / "docs" / "SYMBOL_INTERFACE.html"
+GUIDE = ROOT / "src" / "graphical_symbols" / "docs" / "SYMBOL_INTERFACE.html"
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "guide"
 SYMBOL_FILES = sorted((FIXTURES / "symbols").glob("*.toml"))
 

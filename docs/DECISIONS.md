@@ -628,6 +628,28 @@ toolkit itself never touches a file outside that build step.
 Cost if wrong: a file read or write anywhere else in `src/` needs a new decision record and a
 `fp_purity_gate.py` exemption, which the gate's own can-fail test would then have to prove.
 
+## D38. The design guide is package data, read through `importlib.resources`
+
+Decided: `docs/SYMBOL_INTERFACE.html` moved (`git mv`, history kept) to
+`src/graphical_symbols/docs/SYMBOL_INTERFACE.html`. Hatch's wheel config already packages
+everything under `src/graphical_symbols/`, so the file needs no new build-system entry: it sits
+at the same relative path in the source tree and in the built wheel. A consumer reads it with
+`importlib.resources.files("graphical_symbols").joinpath("docs/SYMBOL_INTERFACE.html")`, which
+resolves the same way whether the package is installed from an editable source checkout, a git
+dependency, or a built wheel. `tests/test_guide_package_data.py` proves the resource resolves and
+carries the guide's own `<title>` (not a byte count, which would break on every edit to the
+guide's prose and tests the wrong property).
+Why: `electrical-symbols` compares its data byte for byte against this guide's worked examples
+(its own D38, the "verbatim gate"), and until this toolkit left the Schematika v2 monorepo the two
+packages shared one copy through a sibling directory. Now they are two repositories; the toolkit's
+wheel never shipped `docs/`, so the sibling path stopped resolving. Moving the guide under the
+package directory keeps exactly one copy, and it is the toolkit's own, which is the only copy a
+downstream gate can check against and still mean anything (a vendored copy in the downstream
+package would only prove agreement with itself).
+Cost if wrong: a consumer with a stale copy or a broken resource path silently stops checking
+against the real guide; `test_guide_package_data.py`'s can-fail test is the guard against a
+resource that resolves but is not this file's content.
+
 ## Open questions for the owner
 
 - C1 (S00254 fails `pitch-overflow` as written): add `pole_pitch = 8` to the guide's example or

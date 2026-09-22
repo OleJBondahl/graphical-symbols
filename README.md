@@ -10,8 +10,10 @@ build, with every lint rule and gate proven by a failing fixture. Nothing is rel
 
 ## The design
 
-[docs/SYMBOL_INTERFACE.html](docs/SYMBOL_INTERFACE.html) is the binding, final spec. Open it in a
-browser. The key ideas:
+[src/graphical_symbols/docs/SYMBOL_INTERFACE.html](src/graphical_symbols/docs/SYMBOL_INTERFACE.html)
+is the binding, final spec. Open it in a browser; it ships as package data, readable at runtime
+through `importlib.resources.files("graphical_symbols").joinpath("docs/SYMBOL_INTERFACE.html")`.
+The key ideas:
 
 - A symbol is a definition: no tag, terminal numbers, position or orientation. Those belong to
   the placement in a drawing library.

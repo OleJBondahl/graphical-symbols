@@ -4,7 +4,7 @@ The package version is then a constant the layout reads without asking package m
 it after changing `version`; `tests/test_version.py` fails while the two disagree.
 
 Usage:
-    uv run python packages/graphical-symbols/scripts/build.py
+    uv run python scripts/build.py
 """
 
 import sys

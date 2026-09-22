@@ -8,8 +8,9 @@ read-only reference and never a constraint. Alpha, single owner, breaking change
 
 ## The guide decides
 
-`docs/SYMBOL_INTERFACE.html` is the only design document. It is final and binding. An identical copy
-lives in `../iec60617`. Read all of it before doing anything. Never edit it. Definitions in it
+`src/graphical_symbols/docs/SYMBOL_INTERFACE.html` is the only design document (it ships as package
+data, readable at runtime through `importlib.resources`). It is final and binding. An identical
+copy lives in `../iec60617`. Read all of it before doing anything. Never edit it. Definitions in it
 (extents, overlap, orientations, the wire lane, placement, `repeat`, the 33 lint rules, the JSON
 output format) are exact: implement them as written.
 
