@@ -598,6 +598,36 @@ package would write `src/bundle.json` instead of `src/<package>/bundle.json`, si
 Cost if wrong: a `schema` finding on `standard` in `parse_config` and `validate_bundle`, so
 `load_library` reports it, and a matching key in the JSON Schema.
 
+## D36. `deal` is the one runtime dependency, kept for the purity contracts
+
+Decided: every module-level function in a pure module carries `@deal.pure`, checked at import
+time, and `deal` is a runtime dependency of the package, not a dev dependency. No other
+third-party package is added to `src/`; `jsonschema` stays a dev-only dependency of the schema
+agreement test. This carries forward the reasoning of the Schematika v2 monorepo's decision 0008
+from the interval this package spent as `packages/graphical-symbols` in that workspace, where a
+boundary test enforced `deal` as the package's only allowed third-party import; that test does not
+exist here, so this entry is the record now that the package is its own repository again.
+Why: `scripts/fp_purity_gate.py` fails the build when a pure-module function is missing the
+decorator, and the decorator is a runtime contract, so it cannot be moved to a dev group.
+Cost if wrong: a second third-party import in `src/` with no record here, or `deal` dropped
+without a replacement for the purity contracts it checks.
+
+## D37. Build-time file access is confined to `build.py`, `load_bundle` and `load_library`
+
+Decided: `load_library`, `load_bundle`, `write_build` and `stale_build`, and `scripts/build.py`,
+read and write symbol source and build files as a build-time tool whose output is tracked data
+(`build/`, `src/graphical_symbols/bundle.json`-shaped output for a consumer, the gallery). No
+other module reads or writes a file; the pure core takes values and returns values.
+`scripts/fp_purity_gate.py` exempts `build.py` by name, the same way `tests/test_boundaries.py`
+in the Schematika v2 monorepo exempted it while this package lived there as
+`packages/graphical-symbols` (that workspace's decision 0009, which also recorded
+`electrical_symbols` reading its packaged `bundle.json` at import -- a fact about that package,
+not this one, and no longer this repository's concern).
+Why: symbol data is compiled by a developer running the build, not read at render time; the
+toolkit itself never touches a file outside that build step.
+Cost if wrong: a file read or write anywhere else in `src/` needs a new decision record and a
+`fp_purity_gate.py` exemption, which the gate's own can-fail test would then have to prove.
+
 ## Open questions for the owner
 
 - C1 (S00254 fails `pitch-overflow` as written): add `pole_pitch = 8` to the guide's example or

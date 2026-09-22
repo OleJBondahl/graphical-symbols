@@ -30,6 +30,9 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/graphical_symbols"]
 
+[tool.ty.environment]
+python-version = "3.15"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=graphical_symbols --cov-report=term-missing --cov-fail-under=100"
