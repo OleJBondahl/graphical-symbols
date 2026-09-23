@@ -686,7 +686,12 @@ lead's `port` with `<k>.`, the same prefix it gives the port itself, so a repeat
 stay bound. Composition namespaces a part's bound lead `<part>.<child port>` while placing it,
 then rewrites that to the rename map's exported id once `_export_ports` has computed it; a lead
 bound to a part port the rename map leaves out keeps the namespaced, unreachable id, which is
-moot because `_export_ports` already fails the file on `part-port-unexported` for that port.
+moot because `_export_ports` already fails the file on `part-port-unexported` for that port. A
+part port the rename map exports under more than one new id (`{ a = "c.in", b = "c.in" }`) gives
+a bound lead the first one the map declares: both exported ports still share the child's position
+and direction, so the choice only decides which one the lead's own metadata names, never where
+either one draws or routes; `test_resolve.py`'s
+`test_a_lead_on_a_port_exported_twice_follows_the_first_declared_alias` pins it.
 Why: the package version (`pyproject.toml`, currently 0.1.2) is this repo's only versioning
 mechanism with a minor/major/patch structure; the work order that asked for this expects the
 release that carries it to be tagged a minor step (`v0.2.0`) on that scheme, not on `schema`,

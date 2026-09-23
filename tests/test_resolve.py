@@ -400,6 +400,23 @@ class TestBoundLeadsThroughComposition:
         resolution = resolve(TWO_LEADS, top)
         assert located(resolution, "S00052") == [("part-port-unexported", "/ports")]
 
+    def test_a_lead_on_a_port_exported_twice_follows_the_first_declared_alias(self):
+        """D40: both aliases share the child's position, so the choice only names the lead."""
+        top = composite(
+            "S00053",
+            'parts = [{ as = "c", use = "S00014" }]\n'
+            'ports = { a = "c.in", b = "c.in", out = "c.out" }\n',
+        )
+        resolution = resolve(TWO_LEADS, top)
+        assert resolution.findings == {}
+        result = resolution.symbols["S00053"]
+        assert result.ports == (
+            Port("a", Point(0, -2), N),
+            Port("b", Point(0, -2), N),
+            Port("out", Point(0, 2), S),
+        )
+        assert [e.port for e in result.elements if isinstance(e, Line)] == ["a", "out"]
+
 
 class TestInheritance:
     def test_a_slot_reference_is_moved_with_its_part_placement(self):

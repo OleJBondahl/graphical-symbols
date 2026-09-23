@@ -303,6 +303,9 @@ def _export_leads(
 
     A lead bound to a part port the rename map leaves out is left as `part.port`, unreachable:
     `_export_ports` already reports `part-port-unexported` for that port and composition stops.
+    A part port exported under more than one new id follows the first one the rename map
+    declares (D40): the two exported ports still share the child's position and direction, so
+    the choice only decides which one a lead's metadata names, not where either draws.
     """
     return tuple(
         replace(e, port=exported[e.port][0])
