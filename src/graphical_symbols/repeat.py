@@ -4,13 +4,22 @@ from dataclasses import replace
 
 import deal
 
-from graphical_symbols.geometry import Line, Point, Style, Weight
+from graphical_symbols.geometry import Element, Line, Point, Style, Weight
 from graphical_symbols.model import Node, Path, Port, Slot, Symbol, nodes_of
 from graphical_symbols.orient import translate
 
 _DEFAULT_PITCH = 4
 _LINK = "link"
 _MARKING = "marking."
+
+
+@deal.pure
+def _pole_elements(elements: tuple[Element, ...], k: int) -> tuple[Element, ...]:
+    """Return pole `k`'s elements, a bound lead's `port` prefixed `<k>.` to match its port."""
+    return tuple(
+        replace(e, port=f"{k}.{e.port}") if isinstance(e, Line) and e.port is not None else e
+        for e in elements
+    )
 
 
 @deal.pure
@@ -52,8 +61,9 @@ def repeat(symbol: Symbol, n: int) -> Symbol:
     """Return `n` copies of a symbol placed along +x, as an ordinary symbol.
 
     Pole k (from 1) is the symbol translated by `((k - 1) * pitch, 0)`, where the pitch is the
-    symbol's `pole_pitch`, default 4. Ports, and the paths and nodes that name them, are prefixed
-    `<k>.`; every node is listed explicitly, `potential` kept. Marking slots (`marking.in` becomes
+    symbol's `pole_pitch`, default 4. Ports, and the paths, nodes and bound leads that name them,
+    are prefixed `<k>.`; every node is listed explicitly, `potential` kept. Marking slots
+    (`marking.in` becomes
     `marking.<k>.in`) repeat per pole; `tag`, `value` and any other slot come from pole 1 only.
     Only pole 1's path keeps `through`. Pole 1's anchors become the result's anchors, and if one
     is `link` and `n > 1` a dashed line joins pole 1's `link` to pole n's. `pole_pitch` becomes
@@ -76,7 +86,10 @@ def repeat(symbol: Symbol, n: int) -> Symbol:
         dashes = (Line(link.position, end, Weight.NORMAL, Style.DASHED),)
     return replace(
         symbol,
-        elements=tuple(e for pole in poles for e in pole.elements) + dashes,
+        elements=tuple(
+            e for k, pole in enumerate(poles, start=1) for e in _pole_elements(pole.elements, k)
+        )
+        + dashes,
         ports=tuple(p for ports, _, _ in parts for p in ports),
         nodes=tuple(node for _, nodes, _ in parts for node in nodes),
         paths=tuple(path for _, _, paths in parts for path in paths),

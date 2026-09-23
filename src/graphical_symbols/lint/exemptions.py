@@ -17,7 +17,7 @@ def exempt(findings: tuple[Finding, ...], allow: tuple[Allow, ...]) -> tuple[Fin
 def allow_unknown(allow: tuple[Allow, ...]) -> tuple[Finding, ...]:
     """Report each exemption that names a rule the guide does not have, or gives no reason.
 
-    Any of the guide's 33 rules is known, also one this toolkit does not implement yet. An entry
+    Any of the guide's 34 rules is known, also one this toolkit does not implement yet. An entry
     with both faults gets two findings.
     """
     return tuple(

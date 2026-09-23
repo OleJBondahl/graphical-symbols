@@ -70,8 +70,8 @@ class TestRegistration:
         assert exported_lint is lint
         assert graphical_symbols.__all__.count("lint") == 1
 
-    def test_the_guide_names_33_rules(self):
-        assert len(RULE_IDS) == 33
+    def test_the_guide_names_34_rules(self):
+        assert len(RULE_IDS) == 34
 
     def test_every_check_belongs_to_a_registered_rule(self):
         assert set(CHECKS) <= set(RULES)

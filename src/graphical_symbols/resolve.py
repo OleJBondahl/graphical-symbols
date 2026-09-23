@@ -218,14 +218,24 @@ def _place(
 
 
 @deal.pure
+def _namespace_leads(elements: tuple[Element, ...], name: str) -> tuple[Element, ...]:
+    """Prefix a bound lead's `port` with `<part>.`, matching `_export_ports`'s `part.port` keys."""
+    return tuple(
+        replace(e, port=f"{name}.{e.port}") if isinstance(e, Line) and e.port is not None else e
+        for e in elements
+    )
+
+
+@deal.pure
 def _place_parts(
     parts: list[Mapping[str, Any]], bases: Mapping[str, Symbol]
 ) -> tuple[dict[str, Symbol], tuple[Element, ...], tuple[Finding, ...]]:
     """Place every part in file order.
 
     Returns the placed parts by local id, the elements of all parts (a part's link line before
-    the part's own elements), and the findings. A part that fails to place is left out and its
-    id is remembered, so a later part that targets it adds no finding of its own.
+    the part's own elements, a bound lead's `port` namespaced `<part>.`), and the findings. A part
+    that fails to place is left out and its id is remembered, so a later part that targets it adds
+    no finding of its own.
     """
     placed: dict[str, Symbol] = {}
     failed: set[str] = set()
@@ -249,7 +259,7 @@ def _place_parts(
             found += problems
         else:
             placed[name] = moved
-            elements += (*link, *moved.elements)
+            elements += (*link, *_namespace_leads(moved.elements, name))
     return placed, tuple(elements), tuple(found)
 
 
@@ -283,6 +293,23 @@ def _export_ports(
         if ref not in exported
     ]
     return tuple(ports), exported, tuple(found)
+
+
+@deal.pure
+def _export_leads(
+    elements: tuple[Element, ...], exported: Mapping[str, list[str]]
+) -> tuple[Element, ...]:
+    """Rewrite a bound lead's namespaced `part.port` to the new id it was exported as.
+
+    A lead bound to a part port the rename map leaves out is left as `part.port`, unreachable:
+    `_export_ports` already reports `part-port-unexported` for that port and composition stops.
+    """
+    return tuple(
+        replace(e, port=exported[e.port][0])
+        if isinstance(e, Line) and e.port is not None and e.port in exported
+        else e
+        for e in elements
+    )
 
 
 @deal.pure
@@ -388,7 +415,7 @@ def _compose(
     return (
         replace(
             own,
-            elements=(*elements, *own.elements),
+            elements=(*_export_leads(elements, exported), *own.elements),
             ports=ports,
             nodes=nodes,
             paths=_inherit_paths(placed, exported, nodes, own.paths),

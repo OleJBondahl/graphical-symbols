@@ -3,7 +3,7 @@
 import deal
 
 from graphical_symbols.boxes import body_box, keepout_box, slot_box
-from graphical_symbols.geometry import Box, Direction, Point
+from graphical_symbols.geometry import Box, Direction, Line, Point
 from graphical_symbols.lint.geometry import point_on_geometry
 from graphical_symbols.lint.overlap import boxes_overlap, overlaps_rect, wire_lane
 from graphical_symbols.lint.registry import quote, rule_finding
@@ -205,4 +205,49 @@ def port_position_shared(symbol: Symbol) -> tuple[Finding, ...]:
                 )
                 found.append(rule_finding("port-position-shared", message, f"ports[{later}]"))
                 break
+    return tuple(found)
+
+
+@deal.pure
+def _along_port_axis(line: Line, direction: Direction) -> bool:
+    """Return whether a line's two ends stay on the one coordinate the port's axis fixes.
+
+    North and south face along y, so x must be constant; east and west face along x, so y must
+    be constant. Exact comparison.
+    """
+    if direction in (Direction.N, Direction.S):
+        return line.start.x == line.end.x
+    return line.start.y == line.end.y
+
+
+@deal.pure
+def lead_off_port(symbol: Symbol) -> tuple[Finding, ...]:
+    """Report every line element whose `port` binding is broken (spec TL1).
+
+    Fires when the named port does not exist; when it does, fires when neither end of the line is
+    at the port's position, when the line does not lie along the port's facing axis, or both. One
+    finding per offending line, at `elements[i]`.
+    """
+    by_id = {port.id: port for port in symbol.ports}
+    found: list[Finding] = []
+    for index, element in enumerate(symbol.elements):
+        if not isinstance(element, Line) or element.port is None:
+            continue
+        port = by_id.get(element.port)
+        if port is None:
+            message = f"the lead names the port {quote(element.port)}, which does not exist"
+            found.append(rule_finding("lead-off-port", message, f"elements[{index}]"))
+            continue
+        reaches = port.position in (element.start, element.end)
+        along_axis = _along_port_axis(element, port.direction)
+        if reaches and along_axis:
+            continue
+        problems = [
+            *(("neither end is at the port's position",) if not reaches else ()),
+            *((f"it does not lie along the {port.direction.name} axis",) if not along_axis else ()),
+        ]
+        message = (
+            f"the lead bound to the port {quote(port.id)} is off the port: {' and '.join(problems)}"
+        )
+        found.append(rule_finding("lead-off-port", message, f"elements[{index}]"))
     return tuple(found)

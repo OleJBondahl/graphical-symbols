@@ -1,0 +1,20 @@
+schema = 1
+name = "Lead bound to a port, reaching it, but off its facing axis"
+kind = "element"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00003" }
+
+ports = [
+  { id = "in",  at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2],  dir = "S" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "conductor", through = true },
+]
+
+elements = [
+  { line = [[0, -2], [0, -1]], port = "in" },
+  { line = [[0, 2], [0, 1]], port = "out" },
+  { line = [[0, -2], [1, -2]], port = "in" },
+]

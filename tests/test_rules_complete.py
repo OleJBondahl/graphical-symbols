@@ -1,4 +1,4 @@
-"""The toolkit reports exactly the guide's 33 rules, each with its group, severity and fixture.
+"""The toolkit reports exactly the guide's 34 rules, each with its group, severity and fixture.
 
 The table below is written out by hand from the guide's section 9 on purpose: it is the check on
 the registry, so it must not be derived from it.
@@ -12,7 +12,7 @@ from graphical_symbols.lint import CHECKS, RULE_IDS, RULES
 from graphical_symbols.model import Severity
 
 E, W = Severity.ERROR, Severity.WARNING
-THE_33 = {
+THE_RULES = {
     "schema": ("File", E),
     "metadata": ("File", E),
     "id-format": ("File", E),
@@ -26,6 +26,7 @@ THE_33 = {
     "port-lane-clear": ("Ports", E),
     "port-spacing": ("Ports", E),
     "port-position-shared": ("Ports", E),
+    "lead-off-port": ("Ports", E),
     "node-invalid": ("Connectivity", E),
     "path-invalid": ("Connectivity", E),
     "through-count": ("Connectivity", E),
@@ -60,28 +61,27 @@ RESOLVER_RULES = {
 EXEMPTION_RULES = {"allow-unknown", "allow-unused"}
 
 
-def test_the_hand_written_table_has_33_rules():
-    assert len(THE_33) == 33
+def test_the_hand_written_table_has_34_rules():
+    assert len(THE_RULES) == 34
 
 
-def test_the_registry_holds_exactly_the_33_rules_of_the_guide():
-    assert set(RULES) == set(RULE_IDS) == set(THE_33)
-    assert len(RULES) == 33
+def test_the_registry_holds_exactly_the_34_rules_of_the_guide():
+    assert set(RULES) == set(RULE_IDS) == set(THE_RULES)
+    assert len(RULES) == 34
 
 
 def test_the_hand_written_table_is_the_guides_table():
-    assert [(rule, group, severity) for rule, (group, severity) in THE_33.items()] == guide_rules(
-        GUIDE.read_text(encoding="utf-8")
-    )
+    table = [(rule, group, severity) for rule, (group, severity) in THE_RULES.items()]
+    assert table == guide_rules(GUIDE.read_text(encoding="utf-8"))
 
 
-@pytest.mark.parametrize("rule_id", sorted(THE_33))
+@pytest.mark.parametrize("rule_id", sorted(THE_RULES))
 def test_every_rule_has_its_guide_group_and_severity(rule_id):
-    assert (RULES[rule_id].group, RULES[rule_id].severity) == THE_33[rule_id]
+    assert (RULES[rule_id].group, RULES[rule_id].severity) == THE_RULES[rule_id]
 
 
 def test_exactly_three_rules_are_warnings():
-    warnings = {rule_id for rule_id, (_, severity) in THE_33.items() if severity is W}
+    warnings = {rule_id for rule_id, (_, severity) in THE_RULES.items() if severity is W}
     assert warnings == {"through-missing", "port-isolated", "anchor-off-geometry"}
     assert {r.id for r in RULES.values() if r.severity is W} == warnings
 
@@ -89,7 +89,7 @@ def test_exactly_three_rules_are_warnings():
 def test_the_checks_the_resolver_and_the_exemptions_produce_every_rule_once_between_them():
     assert set(CHECKS).isdisjoint(RESOLVER_RULES | EXEMPTION_RULES)
     assert RESOLVER_RULES.isdisjoint(EXEMPTION_RULES)
-    assert set(CHECKS) | RESOLVER_RULES | EXEMPTION_RULES == set(THE_33)
+    assert set(CHECKS) | RESOLVER_RULES | EXEMPTION_RULES == set(THE_RULES)
 
 
 def test_only_the_body_edge_lane_and_slot_overlap_rules_depend_on_the_orientation():
@@ -101,7 +101,7 @@ def test_only_the_body_edge_lane_and_slot_overlap_rules_depend_on_the_orientatio
     }
 
 
-@pytest.mark.parametrize("rule_id", sorted(THE_33))
+@pytest.mark.parametrize("rule_id", sorted(THE_RULES))
 def test_every_rule_has_a_broken_fixture_that_makes_it_fire(rule_id):
     directory = BROKEN / rule_id / "symbols"
     assert directory.is_dir()
@@ -110,4 +110,4 @@ def test_every_rule_has_a_broken_fixture_that_makes_it_fire(rule_id):
 
 
 def test_no_fixture_directory_is_left_over_for_a_rule_that_does_not_exist():
-    assert {p.name for p in BROKEN.iterdir() if p.is_dir()} == set(THE_33)
+    assert {p.name for p in BROKEN.iterdir() if p.is_dir()} == set(THE_RULES)

@@ -257,7 +257,8 @@ _ALLOW = _table({"rule": _string, "reason": _string}, required=("rule", "reason"
 # One table per shape, keyed by the shape key; an element has exactly one of these keys.
 _ELEMENTS = {
     "line": _table(
-        {"line": _array(_POINT, 2), "weight": _WEIGHT, "style": _STYLE}, required=("line",)
+        {"line": _array(_POINT, 2), "weight": _WEIGHT, "style": _STYLE, "port": _string},
+        required=("line",),
     ),
     "polyline": _table(
         {
@@ -408,7 +409,9 @@ def _element_from_data(item: Mapping[str, Any]) -> Element:
     weight = Weight[item.get("weight", "normal").upper()]
     if "line" in item:
         start, end = item["line"]
-        return Line(_point(start), _point(end), weight, Style(item.get("style", "solid")))
+        return Line(
+            _point(start), _point(end), weight, Style(item.get("style", "solid")), item.get("port")
+        )
     if "polyline" in item:
         return Polyline(
             tuple(_point(p) for p in item["polyline"]),

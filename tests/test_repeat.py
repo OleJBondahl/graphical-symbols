@@ -104,6 +104,27 @@ class TestOnePole:
         assert repeat(s230, 1).pole_pitch == 8
 
 
+class TestBoundLeadsAreRenamed:
+    """A bound lead's `port` is prefixed `<k>.`, the same prefix its port gets (D40)."""
+
+    def test_a_bound_leads_port_is_prefixed_per_pole(self):
+        symbol = bare(
+            elements=(
+                Line(Point(0, -2), Point(0, -1), port="in"),
+                Line(Point(0, 2), Point(0, 1), port="out"),
+            )
+        )
+        result = repeat(symbol, 2)
+        ports = [e.port for e in result.elements if isinstance(e, Line)]
+        assert ports == ["1.in", "1.out", "2.in", "2.out"]
+
+    def test_an_unbound_lead_is_left_alone(self):
+        symbol = bare(elements=(Line(Point(0, -2), Point(0, -1)),))
+        result = repeat(symbol, 2)
+        ports = [e.port for e in result.elements if isinstance(e, Line)]
+        assert ports == [None, None]
+
+
 class TestThreePolesOfS00227:
     @pytest.fixture
     def result(self, s227) -> Symbol:

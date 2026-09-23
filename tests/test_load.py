@@ -67,7 +67,7 @@ anchors = [
   { id = "link", at = [-0.5, 0], dir = "W" },
 ]
 elements = [
-  { line = [[0, -2], [0, -1]], weight = "thick", style = "dashed" },
+  { line = [[0, -2], [0, -1]], weight = "thick", style = "dashed", port = "in" },
   { polyline = [[0, 0], [1, 0], [1, 1]], closed = true, fill = "solid" },
   { circle = [0, 0], r = 0.25, fill = "solid", weight = "thick" },
   { arc = [0, 0], r = 1, start = 180, end = 0, style = "dashed" },
@@ -359,6 +359,7 @@ def test_an_element_needs_exactly_one_shape_key(element):
         {"line": [[0, 0], [1, 0]], "closed": True},
         {"circle": [0, 0], "r": 1, "closed": True},
         {"line": [[0, 0], [1, 0]], "r": 1},
+        {"circle": [0, 0], "r": 1, "port": "in"},
     ],
 )
 def test_optional_keys_belong_to_their_shapes(element):
@@ -493,7 +494,7 @@ def test_symbol_from_data_builds_every_field():
         Slot("marking.in", Point(0.25, -1.5), Direction.E, (1.5, 1)),
     )
     assert symbol.elements == (
-        Line(Point(0, -2), Point(0, -1), Weight.THICK, Style.DASHED),
+        Line(Point(0, -2), Point(0, -1), Weight.THICK, Style.DASHED, port="in"),
         Polyline((Point(0, 0), Point(1, 0), Point(1, 1)), closed=True, fill=Fill.SOLID),
         Circle(Point(0, 0), 0.25, Fill.SOLID, Weight.THICK),
         Arc(Point(0, 0), 1, 180, 0, style=Style.DASHED),

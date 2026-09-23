@@ -81,6 +81,7 @@ def test_box_properties():
 
 def test_element_defaults():
     assert Line(Point(0, 0), Point(1, 0)).style is Style.SOLID
+    assert Line(Point(0, 0), Point(1, 0)).port is None
     poly = Polyline((Point(0, 0), Point(1, 0)))
     assert (poly.closed, poly.fill, poly.weight, poly.style) == (
         False,

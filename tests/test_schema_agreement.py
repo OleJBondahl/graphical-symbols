@@ -106,7 +106,9 @@ DAMAGE = {
     "base": st.sampled_from(BASES),
     "pick": st.integers(min_value=0),
     "action": st.sampled_from(["replace", "delete", "add"]),
-    "key": st.sampled_from(["extra", "line", "r", "weight", "at", "height", "elements", "slots"]),
+    "key": st.sampled_from(
+        ["extra", "line", "r", "weight", "at", "height", "elements", "slots", "port"]
+    ),
 }
 
 

@@ -1,4 +1,4 @@
-"""Ports group: the seven `port-*` rules, and the wire lane."""
+"""Ports group: the seven `port-*` rules, `lead-off-port`, and the wire lane."""
 
 import math
 from dataclasses import replace
@@ -24,6 +24,7 @@ from graphical_symbols.geometry import (
 )
 from graphical_symbols.lint import CHECKS, RULES, lint
 from graphical_symbols.lint.ports import (
+    lead_off_port,
     port_duplicate_id,
     port_lane_clear,
     port_off_geometry,
@@ -47,6 +48,7 @@ PORT_RULES = (
     "port-lane-clear",
     "port-spacing",
     "port-position-shared",
+    "lead-off-port",
 )
 
 
@@ -573,6 +575,93 @@ class TestPortPositionShared:
         assert where(port_position_shared(symbol)) == [("port-position-shared", "ports[1]")]
 
 
+# The spec's worked example (docs/specs/2026-09-23-terminal-leads.md, TL1): a terminal-shaped
+# symbol with all four stub leads correctly bound.
+TERMINAL = plain_symbol(
+    ports=(port("n", 0, -1, N), port("e", 1, 0, E), port("s", 0, 1, S), port("w", -1, 0, W)),
+    elements=(
+        Circle(P(0, 0), 0.25),
+        Line(P(0, -0.25), P(0, -1), port="n"),
+        Line(P(0.25, 0), P(1, 0), port="e"),
+        Line(P(0, 0.25), P(0, 1), port="s"),
+        Line(P(-0.25, 0), P(-1, 0), port="w"),
+    ),
+)
+
+
+class TestLeadOffPort:
+    def test_an_unbound_line_is_not_checked(self):
+        assert lead_off_port(plain_symbol()) == ()
+
+    def test_a_symbol_with_no_ports_and_no_bound_leads_is_clean(self):
+        assert lead_off_port(plain_symbol(elements=(Line(P(0, -2), P(0, -1)),))) == ()
+
+    def test_all_four_correctly_bound_leads_are_clean(self):
+        assert lead_off_port(TERMINAL) == ()
+
+    def test_a_lead_bound_to_a_port_that_does_not_exist_fires(self):
+        symbol = plain_symbol(
+            ports=(port("in", 0, -2, N),),
+            elements=(Line(P(0, -2), P(0, -1), port="ghost"),),
+        )
+        (found,) = lead_off_port(symbol)
+        assert (found.rule, found.severity, found.location) == (
+            "lead-off-port",
+            Severity.ERROR,
+            "elements[0]",
+        )
+        assert "'ghost'" in found.message
+
+    def test_a_lead_that_does_not_reach_its_port_fires(self):
+        symbol = plain_symbol(
+            ports=(port("in", 0, -2, N),),
+            elements=(Line(P(0, -3), P(0, -1), port="in"),),
+        )
+        (found,) = lead_off_port(symbol)
+        assert found.location == "elements[0]"
+        assert "position" in found.message
+
+    def test_a_lead_that_reaches_its_port_but_crosses_the_axis_fires(self):
+        symbol = plain_symbol(
+            ports=(port("in", 0, -2, N),),
+            elements=(Line(P(0, -2), P(1, -2), port="in"),),
+        )
+        (found,) = lead_off_port(symbol)
+        assert found.location == "elements[0]"
+        assert "axis" in found.message
+
+    def test_the_terminals_east_lead_rebound_to_north_fires(self):
+        """The spec's can-fail probe (acceptance 1): rebind the east lead to `n`."""
+        broken = replace(
+            TERMINAL,
+            elements=tuple(
+                replace(e, port="n") if isinstance(e, Line) and e.port == "e" else e
+                for e in TERMINAL.elements
+            ),
+        )
+        assert {f.location for f in lead_off_port(broken)} == {"elements[2]"}
+
+    def test_neither_end_at_the_port_and_off_axis_both_appear_in_the_message(self):
+        symbol = plain_symbol(
+            ports=(port("in", 0, -2, N),),
+            elements=(Line(P(0, -3), P(1, -3), port="in"),),
+        )
+        (found,) = lead_off_port(symbol)
+        assert "position" in found.message
+        assert "axis" in found.message
+
+    def test_only_a_line_element_is_checked(self):
+        assert (
+            lead_off_port(
+                plain_symbol(
+                    ports=(port("in", 0, -2, N),),
+                    elements=(Text("t", P(0, -2), 1),),
+                )
+            )
+            == ()
+        )
+
+
 class TestGuideExamples:
     ATOMIC = ("S00227", "S00230", "S00305", "S00171")
 
@@ -645,6 +734,7 @@ class TestGuideConnectionPoint:
             "port-position-shared",
             "port-duplicate-id",
             "port-off-wiring-grid",
+            "lead-off-port",
         ],
     )
     def test_the_other_ports_rules_pass_on_it(self, library, rule_id):

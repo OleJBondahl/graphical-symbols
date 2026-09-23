@@ -65,6 +65,20 @@ elements = [{ line = [[0, -2], [0, 2]] }]
 )
 # The same without the through flag.
 TWO_PORT_PLAIN = TWO_PORT.replace("through = true", "through = false").replace("S00012", "S00013")
+# A two-port element whose two leads are each bound to their own port.
+TWO_LEADS = (
+    HEAD.format(name="Two bound leads", kind="element", number="S00014")
+    + """ports = [
+  { id = "in", at = [0, -2], dir = "N" },
+  { id = "out", at = [0, 2], dir = "S" },
+]
+paths = [{ from = "in", to = "out", kind = "switch_open", through = true }]
+elements = [
+  { line = [[0, -2], [0, -1]], port = "in" },
+  { line = [[0, 2], [0, 1]], port = "out" },
+]
+"""
+)
 
 
 def composite(number: str, body: str, kind: str = "element") -> str:
@@ -363,6 +377,28 @@ class TestTwoLevelComposite:
         top = resolution.symbols["S00050"]
         assert top.nodes == (Node(("in",)), Node(("out",)))
         assert top.paths == (Path("in", "out", PathKind.SWITCH_OPEN, through=True),)
+
+
+class TestBoundLeadsThroughComposition:
+    """A part's bound lead is rewritten to the id its port is exported as (D40)."""
+
+    def test_a_bound_lead_is_rewritten_to_the_exported_id(self):
+        top = composite(
+            "S00051",
+            'parts = [{ as = "c", use = "S00014" }]\nports = { a = "c.in", b = "c.out" }\n',
+        )
+        resolution = resolve(TWO_LEADS, top)
+        assert resolution.findings == {}
+        result = resolution.symbols["S00051"]
+        assert result.ports == (Port("a", Point(0, -2), N), Port("b", Point(0, 2), S))
+        assert [e.port for e in result.elements if isinstance(e, Line)] == ["a", "b"]
+
+    def test_an_unexported_bound_lead_makes_the_part_port_unexported(self):
+        top = composite(
+            "S00052", 'parts = [{ as = "c", use = "S00014" }]\nports = { a = "c.in" }\n'
+        )
+        resolution = resolve(TWO_LEADS, top)
+        assert located(resolution, "S00052") == [("part-port-unexported", "/ports")]
 
 
 class TestInheritance:

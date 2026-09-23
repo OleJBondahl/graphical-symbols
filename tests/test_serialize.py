@@ -203,6 +203,14 @@ class TestSymbolToData:
             {"text": "M", "at": [0, 0], "height": 1, "weight": "normal"},
         ]
 
+    def test_a_bound_leads_port_is_written_only_when_set(self):
+        symbol = bare(
+            elements=(Line(Point(0, -2), Point(0, -1), port="in"), Line(Point(0, 2), Point(0, 1)))
+        )
+        bound, unbound = symbol_to_data(symbol)["elements"]
+        assert bound["port"] == "in"
+        assert "port" not in unbound
+
     def test_non_default_element_values_are_written_as_names(self):
         symbol = bare(
             elements=(
@@ -303,6 +311,15 @@ def test_a_repeated_symbol_round_trips():
     assert round_trips(repeat(LIBRARY.get("S00227"), 3))
 
 
+def test_a_bound_lead_round_trips():
+    assert round_trips(
+        bare(
+            ports=(Port("in", Point(0, -2), N),),
+            elements=(Line(Point(0, -2), Point(0, -1), port="in"),),
+        )
+    )
+
+
 def test_a_hand_built_symbol_with_an_implicit_node_round_trips():
     symbol = bare(
         ports=(Port("a", Point(0, -2), N), Port("b", Point(0, 2), S, "second")),
@@ -359,7 +376,7 @@ _styles = st.sampled_from(Style)
 _fills = st.sampled_from(Fill)
 _directions = st.sampled_from(Direction)
 _elements = st.one_of(
-    st.builds(Line, _points, _points, _weights, _styles),
+    st.builds(Line, _points, _points, _weights, _styles, st.none() | _ids),
     st.builds(
         Polyline,
         st.lists(_points, max_size=4).map(tuple),

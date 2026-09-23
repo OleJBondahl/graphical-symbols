@@ -190,7 +190,8 @@
               "maxItems": 2
             },
             "weight": { "$ref": "#/$defs/weight" },
-            "style": { "$ref": "#/$defs/style" }
+            "style": { "$ref": "#/$defs/style" },
+            "port": { "type": "string" }
           }
         },
         {

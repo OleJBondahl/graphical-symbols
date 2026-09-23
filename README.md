@@ -30,7 +30,7 @@ The key ideas:
 ## What is here
 
 The data model and `orient`, the boxes and `repeat`, the TOML reader with its JSON Schema
-(`schema/symbol.schema.json`), the composition resolver, 33 lint rules, plain and annotated SVG,
+(`schema/symbol.schema.json`), the composition resolver, 34 lint rules, plain and annotated SVG,
 and the build (resolved JSON per symbol, the bundle, SVGs, a gallery README). Decisions the guide
 leaves open, and concerns about the guide, are in [docs/DECISIONS.md](docs/DECISIONS.md).
 
@@ -44,8 +44,8 @@ from graphical_symbols.lint import RULES
 
 library = load_library(root)  # raises LibraryError, listing every problem in the files
 contact = library.get("S00227")  # by number; iterating a library is sorted by number
-assert len(RULES) == 33  # the guide's rule table
-findings = lint(contact)  # all 33 rules, geometric ones in all 8 orientations
+assert len(RULES) == 34  # the guide's rule table
+findings = lint(contact)  # all 34 rules, geometric ones in all 8 orientations
 assert findings == ()  # the guide's make contact lints clean
 for finding in findings:  # each has .rule, .severity, .message, .location, .orientation
     print(finding.rule, finding.location, finding.message)

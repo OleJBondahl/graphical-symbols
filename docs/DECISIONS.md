@@ -669,6 +669,39 @@ is automatically picked up here too; if a future edit ever duplicated that logic
 fragment and the document's plain mode could silently drift apart. A wrong function name is a
 rename in two files (`svg.py`, `__init__.py`) and the tests that check it.
 
+## D40. A line binds to a port with `port`; the file's `schema` integer does not step
+
+Decided: `Line` gains a trailing field `port: str | None = None`, written by `line = { ...,
+port = "in" }`. It is optional, additive and carries no default that changes an existing file's
+meaning, so `schema` (the file-format marker, `const 1` in the JSON Schema and
+`_schema_version`) stays 1: nothing that validated before stops validating, and nothing that
+validates now would have validated under the old rule differently. A new lint rule
+`lead-off-port` (ERROR, Ports group, guide section 9) fires when the named port does not exist,
+or when it does but neither end of the line is at the port's position, or the line does not run
+along the port's facing axis (the coordinate perpendicular to the port's direction must be equal
+at both ends) -- one finding per offending line, at `elements[i]`. The resolved JSON writes
+`port` only when set (D11's "absent" pattern, like `edition` and `pole_pitch`). `orient` and
+`translate` carry `port` along for free through `dataclasses.replace`. `repeat` prefixes a bound
+lead's `port` with `<k>.`, the same prefix it gives the port itself, so a repeated symbol's leads
+stay bound. Composition namespaces a part's bound lead `<part>.<child port>` while placing it,
+then rewrites that to the rename map's exported id once `_export_ports` has computed it; a lead
+bound to a part port the rename map leaves out keeps the namespaced, unreachable id, which is
+moot because `_export_ports` already fails the file on `part-port-unexported` for that port.
+Why: the package version (`pyproject.toml`, currently 0.1.2) is this repo's only versioning
+mechanism with a minor/major/patch structure; the work order that asked for this expects the
+release that carries it to be tagged a minor step (`v0.2.0`) on that scheme, not on `schema`,
+which is a single flat integer with no such structure and no precedent of ever moving off 1. A
+consumer on the old tag simply never emits `port`; a consumer that needs it takes the new tag,
+same as any other public addition here (CLAUDE.md's "coordinated change"). The `port-lane-clear`
+guarantee already makes a wire reaching a port along its own axis safe at `t = 0`; `lead-off-port`
+only makes sure a claimed binding actually is that wire, so a downstream renderer (or anything
+else) can trust `element.port` without re-deriving it from geometry.
+Cost if wrong: an unmapped `repeat` or composition would leave `element.port` naming a port that
+no longer exists after flattening, silently turning every downstream reader's binding lookup
+into "unbound" instead of a loud finding; `test_repeat.py` and `test_resolve.py` each gained one
+test against exactly that. If the owner ever wants `schema` itself to carry a minor/major split,
+that is a bigger, separate decision: nothing here depends on it.
+
 ## Open questions for the owner
 
 - C1 (S00254 fails `pitch-overflow` as written): add `pole_pitch = 8` to the guide's example or

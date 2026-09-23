@@ -20,6 +20,7 @@ from graphical_symbols.lint.exemptions import allow_unknown, allow_unused, exemp
 from graphical_symbols.lint.file import symbol_id_findings
 from graphical_symbols.lint.geometry import degenerate, off_drawing_grid, text_too_large
 from graphical_symbols.lint.ports import (
+    lead_off_port,
     port_duplicate_id,
     port_lane_clear,
     port_off_geometry,
@@ -60,6 +61,7 @@ CHECKS: Mapping[str, Check] = MappingProxyType(
         "port-lane-clear": port_lane_clear,
         "port-spacing": port_spacing,
         "port-position-shared": port_position_shared,
+        "lead-off-port": lead_off_port,
         "node-invalid": node_invalid,
         "path-invalid": path_invalid,
         "through-count": through_count,

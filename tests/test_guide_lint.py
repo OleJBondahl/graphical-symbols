@@ -1,4 +1,4 @@
-"""The guide's examples lint clean with all 33 rules, alone and repeated (sections 4 and 12)."""
+"""The guide's examples lint clean with all 34 rules, alone and repeated (sections 4 and 12)."""
 
 import tomllib
 from dataclasses import replace

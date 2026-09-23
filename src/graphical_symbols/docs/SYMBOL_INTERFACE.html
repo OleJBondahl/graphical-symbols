@@ -149,10 +149,10 @@ Generic consumers should chain symbols using the through path's <code>from</code
 </table>
 
 <h3>Elements</h3>
-<p>Each element is a table with exactly one shape key. Optional on all: <code>weight</code> (<code>normal</code> | <code>thick</code>). Optional on line, polyline, arc: <code>style</code> (<code>solid</code> | <code>dashed</code>).</p>
+<p>Each element is a table with exactly one shape key. Optional on all: <code>weight</code> (<code>normal</code> | <code>thick</code>). Optional on line, polyline, arc: <code>style</code> (<code>solid</code> | <code>dashed</code>). Optional on line: <code>port</code>, the id of the port the line leads to; see the wiring contract, section 8, and the <code>lead-off-port</code> rule, section 9.</p>
 <table>
 <tr><th>Shape</th><th>Form</th></tr>
-<tr><td>Line</td><td><code>{ line = [[x1, y1], [x2, y2]] }</code></td></tr>
+<tr><td>Line</td><td><code>{ line = [[x1, y1], [x2, y2]], port = "in" }</code> (<code>port</code> optional)</td></tr>
 <tr><td>Polyline</td><td><code>{ polyline = [[x, y], ...], closed = true, fill = "solid" }</code> (<code>closed</code> default false, <code>fill</code> <code>none</code> | <code>solid</code>, default none)</td></tr>
 <tr><td>Circle</td><td><code>{ circle = [cx, cy], r = 0.5, fill = "none" }</code></td></tr>
 <tr><td>Arc</td><td><code>{ arc = [cx, cy], r = 0.5, start = 180, end = 0 }</code> (clockwise from <code>start</code> to <code>end</code>)</td></tr>
@@ -420,13 +420,14 @@ Data repo gates require zero findings of either severity, so a warning is simply
 <tr><td rowspan="3">Geometry</td><td><code>off-drawing-grid</code></td><td>any coordinate, radius, text height, anchor, slot point or slot box size is not a multiple of 0.125</td></tr>
 <tr><td><code>degenerate</code></td><td>zero-length line, non-positive radius, polyline with fewer than 2 points (3 when closed), arc with equal angles, exact duplicate element, slot box with a non-positive side</td></tr>
 <tr><td><code>text-too-large</code></td><td>a text element is taller than 1 M</td></tr>
-<tr><td rowspan="7">Ports</td><td><code>port-duplicate-id</code></td><td>two ports share an id</td></tr>
+<tr><td rowspan="8">Ports</td><td><code>port-duplicate-id</code></td><td>two ports share an id</td></tr>
 <tr><td><code>port-off-wiring-grid</code></td><td>a port position is not a multiple of 1 M</td></tr>
 <tr><td><code>port-off-geometry</code></td><td>a port is not at a line or polyline endpoint, on a circle or arc, or on a closed outline</td></tr>
 <tr><td><code>port-on-body-edge</code></td><td>a port is not on the body-box side matching its direction</td></tr>
 <tr><td><code>port-lane-clear</code></td><td>an element or slot box overlaps a port's wire lane (section 8)</td></tr>
 <tr><td><code>port-spacing</code></td><td>two ports with the same <code>dir</code> are not a multiple of 2 M apart along their side</td></tr>
 <tr><td><code>port-position-shared</code></td><td>two ports of different nodes share a position</td></tr>
+<tr><td><code>lead-off-port</code></td><td>a line's <code>port</code> names a port that does not exist, or the line does not reach the port's position along its facing axis</td></tr>
 <tr><td rowspan="6">Connectivity</td><td><code>node-invalid</code></td><td>a node names an unknown port, or a port is listed in two nodes</td></tr>
 <tr><td><code>path-invalid</code></td><td>a path names an unknown port, joins two ports of one node, or duplicates another path between the same nodes</td></tr>
 <tr><td><code>through-count</code></td><td>more than one through path</td></tr>

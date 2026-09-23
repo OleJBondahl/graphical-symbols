@@ -99,12 +99,13 @@ class Box:
 
 @dataclass(frozen=True, slots=True)
 class Line:
-    """A straight segment."""
+    """A straight segment, optionally the lead of a port."""
 
     start: Point
     end: Point
     weight: Weight = Weight.NORMAL
     style: Style = Style.SOLID
+    port: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
