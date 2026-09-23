@@ -2,11 +2,13 @@
 
 Standard-agnostic toolkit for graphical-symbol data. Symbols are TOML files; the toolkit loads
 them, resolves composition, lints the wiring contract, renders SVG, and builds a resolved JSON
-bundle plus a gallery. Standard repos such as [`iec60617`](../iec60617) hold only data and reuse
-the toolkit and its gates. Later: ISO 14617 and ISA 5.1.
+bundle plus a gallery. Data packages hold only data and reuse the toolkit and its gates:
+`electrical-symbols` (IEC 60617-style symbols, in the Schematika v2 monorepo) now, ISO 14617 and
+ISA 5.1 later.
 
 Status: alpha. The toolkit the guide describes is built: reading, resolving, linting, SVG and the
-build, with every lint rule and gate proven by a failing fixture. Nothing is released.
+build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
+(`v0.1.0` to `v0.1.2`); Schematika v2 pins one of them.
 
 ## The design
 
