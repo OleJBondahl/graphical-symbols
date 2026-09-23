@@ -36,7 +36,7 @@ a decision entry.
 
 ## Rules
 
-- Python 3.15 (`.python-version`), `uv` only (never bare `python`, `pip`, `python -c`), ruff, ty, pytest, hypothesis,
+- Python 3.15 (`.python-version`), `uv` only (never bare `python` or `pip`), ruff, ty, pytest, hypothesis,
   vulture, deal. Every dependency pinned to the exact latest stable version. Runtime dependency:
   `deal` only (`jsonschema` may be a dev dependency for the agreement test). TOML is read with the
   standard library's `tomllib`.
