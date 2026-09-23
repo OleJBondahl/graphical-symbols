@@ -8,7 +8,7 @@ ISA 5.1 later.
 
 Status: alpha. The toolkit the guide describes is built: reading, resolving, linting, SVG and the
 build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
-(`v0.1.0` to `v0.1.2`); Schematika v2 pins one of them.
+(`v0.1.0` to `v0.2.0`); Schematika v2 pins one of them.
 
 ## The design
 
