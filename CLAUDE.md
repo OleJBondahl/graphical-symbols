@@ -19,7 +19,8 @@ data, readable at runtime through `importlib.resources`; `electrical-symbols`' v
 reads it from the installed distribution, D38). It is final and binding. Read all of it before
 doing anything. Never edit it. Definitions in it
 (extents, overlap, orientations, the wire lane, placement, `repeat`, the 33 lint rules, the JSON
-output format) are exact: implement them as written.
+output format) are exact: implement them as written. The toolkit has one rule beyond the guide's
+33, `lead-off-port` (D40).
 
 Where the guide is silent, decide yourself and record the decision in `docs/DECISIONS.md`, one entry
 each: what you decided, why, what it costs if wrong. If you believe the guide is wrong or

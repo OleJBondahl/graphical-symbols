@@ -44,7 +44,7 @@ from graphical_symbols.lint import RULES
 
 library = load_library(root)  # raises LibraryError, listing every problem in the files
 contact = library.get("S00227")  # by number; iterating a library is sorted by number
-assert len(RULES) == 34  # the guide's rule table
+assert len(RULES) == 34  # the guide's 33 rules plus lead-off-port (D40)
 findings = lint(contact)  # all 34 rules, geometric ones in all 8 orientations
 assert findings == ()  # the guide's make contact lints clean
 for finding in findings:  # each has .rule, .severity, .message, .location, .orientation
