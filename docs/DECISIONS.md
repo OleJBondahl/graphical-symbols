@@ -707,6 +707,23 @@ into "unbound" instead of a loud finding; `test_repeat.py` and `test_resolve.py`
 test against exactly that. If the owner ever wants `schema` itself to carry a minor/major split,
 that is a bigger, separate decision: nothing here depends on it.
 
+## D41. Public, plain-markdown docs; v0.3.0; exact git tag; no PyPI for now
+
+Decided (owner 2026-10-01): the repo's documentation is plain markdown in the repo, with no
+documentation site: `README.md` (install, one worked example, the concepts), `docs/GUIDE.md`
+(the concepts in more depth: how symbols are defined, built, linted and serialized) and
+`AGENTS.md` (how an agent works here). Every public name in `__all__` carries a short Google-style
+docstring. The README's Python examples are run by `tests/test_readme.py`, so they cannot drift.
+The release that carries this is `v0.3.0`; consumers install by exact git tag (`uv add
+"graphical-symbols @ git+https://github.com/OleJBondahl/graphical-symbols@v0.3.0"`). The package
+is not published to PyPI for now.
+Why: the toolkit is consumed by an exact tag already (D38's package data, Schematika's pin), a
+site or an index would add upkeep with no reader today, and the README test already keeps the
+examples true.
+Cost if wrong: if a consumer outside the tag workflow appears, PyPI publication is a later,
+separate decision (trusted publishing and a release workflow); nothing here blocks it. The docs
+are only as true as their tests: prose outside the README's examples is not run.
+
 ## Open questions for the owner
 
 - C1 (S00254 fails `pitch-overflow` as written): add `pole_pitch = 8` to the guide's example or
