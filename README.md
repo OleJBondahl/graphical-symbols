@@ -6,8 +6,8 @@ bundle plus a gallery. Data packages hold only data and reuse the toolkit and it
 `electrical-symbols` (IEC 60617-style symbols, in the Schematika v2 monorepo) now, ISO 14617 and
 ISA 5.1 later.
 
-Status: alpha. The toolkit the guide describes is built: reading, resolving, linting, SVG and the
-build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
+Status: alpha. The toolkit the spec below describes is built: reading, resolving, linting, SVG and
+the build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
 (`v0.1.0` to `v0.3.0`); Schematika v2 pins one of them. Not on PyPI (D41).
 
 ## Install
@@ -16,7 +16,8 @@ build, with every lint rule and gate proven by a failing fixture. Released by ex
 uv add "graphical-symbols @ git+https://github.com/OleJBondahl/graphical-symbols@v0.3.0"
 ```
 
-Python 3.15. The one runtime dependency is `deal`. More depth: [docs/GUIDE.md](docs/GUIDE.md).
+Python 3.15 or later. The one runtime dependency is `deal`. More depth:
+[docs/GUIDE.md](docs/GUIDE.md).
 
 ## The design
 
@@ -39,8 +40,8 @@ The key ideas:
 
 The data model and `orient`, the boxes and `repeat`, the TOML reader with its JSON Schema
 (`schema/symbol.schema.json`), the composition resolver, 34 lint rules, plain and annotated SVG,
-and the build (resolved JSON per symbol, the bundle, SVGs, a gallery README). Decisions the guide
-leaves open, and concerns about the guide, are in [docs/DECISIONS.md](docs/DECISIONS.md).
+and the build (resolved JSON per symbol, the bundle, SVGs, a gallery README). Decisions the spec
+leaves open, and concerns about the spec, are in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Use
 
@@ -52,9 +53,9 @@ from graphical_symbols.lint import RULES
 
 library = load_library(root)  # raises LibraryError, listing every problem in the files
 contact = library.get("S00227")  # by number; iterating a library is sorted by number
-assert len(RULES) == 34  # the guide's 33 rules plus lead-off-port (D40)
+assert len(RULES) == 34  # the spec's 33 rules plus lead-off-port (D40)
 findings = lint(contact)  # all 34 rules, geometric ones in all 8 orientations
-assert findings == ()  # the guide's make contact lints clean
+assert findings == ()  # the spec's make contact lints clean
 for finding in findings:  # each has .rule, .severity, .message, .location, .orientation
     print(finding.rule, finding.location, finding.message)
 ```
@@ -93,5 +94,9 @@ just ci        # format check, ruff, ty, vulture, purity gate, pytest with cover
 
 Coverage must stay at 100% (`--cov-fail-under=100`), so a partial run such as
 `uv run pytest tests/test_units.py` fails on coverage alone: add `--no-cov` for one.
-`tests/test_readme.py` runs the examples above, so they stay true. Agents: read
-[AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) first.
+`tests/test_readme.py` runs the examples above and those in [docs/GUIDE.md](docs/GUIDE.md), so
+they stay true. Agents: start at [AGENTS.md](AGENTS.md).
+
+## License
+
+MIT, see [LICENSE](LICENSE).
