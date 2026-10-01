@@ -8,7 +8,15 @@ ISA 5.1 later.
 
 Status: alpha. The toolkit the guide describes is built: reading, resolving, linting, SVG and the
 build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
-(`v0.1.0` to `v0.2.0`); Schematika v2 pins one of them.
+(`v0.1.0` to `v0.3.0`); Schematika v2 pins one of them. Not on PyPI (D41).
+
+## Install
+
+```
+uv add "graphical-symbols @ git+https://github.com/OleJBondahl/graphical-symbols@v0.3.0"
+```
+
+Python 3.15. The one runtime dependency is `deal`. More depth: [docs/GUIDE.md](docs/GUIDE.md).
 
 ## The design
 
@@ -86,4 +94,4 @@ just ci        # format check, ruff, ty, vulture, purity gate, pytest with cover
 Coverage must stay at 100% (`--cov-fail-under=100`), so a partial run such as
 `uv run pytest tests/test_units.py` fails on coverage alone: add `--no-cov` for one.
 `tests/test_readme.py` runs the examples above, so they stay true. Agents: read
-[CLAUDE.md](CLAUDE.md) first.
+[AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) first.
