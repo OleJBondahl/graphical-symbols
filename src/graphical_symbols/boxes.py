@@ -76,7 +76,12 @@ def element_box(element: Element) -> Box:
 
 @deal.pure
 def body_box(symbol: Symbol) -> Box:
-    """Return the union of the element boxes; a symbol without elements has the origin box."""
+    """Return the union of the element extents, in module units, ignoring stroke width.
+
+    Extents are as for text (`0.6 * height` per character), arcs (the true swept extent) and the
+    other elements. A symbol without elements has the box (0, 0) to (0, 0). Ports, anchors and
+    slots do not count.
+    """
     return _bounding(tuple(p for e in symbol.elements for p in _extent_points(e)))
 
 
@@ -102,6 +107,6 @@ def slot_box(slot: Slot) -> Box:
 
 @deal.pure
 def keepout_box(symbol: Symbol) -> Box:
-    """Return the body box united with every slot box."""
+    """Return the body box united with every slot box: the room the symbol needs kept clear."""
     boxes = (body_box(symbol), *(slot_box(s) for s in symbol.slots))
     return _bounding(tuple(p for b in boxes for p in (b.min, b.max)))

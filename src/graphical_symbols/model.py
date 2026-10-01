@@ -54,7 +54,13 @@ class Severity(Enum):
 
 @dataclass(frozen=True, slots=True)
 class Port:
-    """A connection point on a symbol; the id is the only pin identity."""
+    """A connection point on a symbol; the id is the only pin identity.
+
+    Attributes:
+        position: Where a wire meets the symbol, in module units.
+        direction: The outward normal: the side of the body box the port sits on.
+        description: Free text, empty if none.
+    """
 
     id: str
     position: Point
@@ -64,7 +70,12 @@ class Port:
 
 @dataclass(frozen=True, slots=True)
 class Node:
-    """Ports that are the same electrical point inside the symbol."""
+    """Ports that are the same electrical point inside the symbol.
+
+    Attributes:
+        ports: Port ids.
+        potential: The fixed potential the node stands for, or None for an ordinary node.
+    """
 
     ports: tuple[str, ...]
     potential: Potential | None = None
@@ -72,7 +83,15 @@ class Node:
 
 @dataclass(frozen=True, slots=True)
 class Path:
-    """A two-terminal relation between the ports of two different nodes."""
+    """A two-terminal relation between the ports of two different nodes.
+
+    Attributes:
+        from_port: Id of the port at one end.
+        to_port: Id of the port at the other end.
+        kind: The electrical meaning of the relation.
+        through: Whether this is the symbol's through path, the one `repeat` requires and
+            keeps on pole 1 only.
+    """
 
     from_port: str
     to_port: str
@@ -82,7 +101,12 @@ class Path:
 
 @dataclass(frozen=True, slots=True)
 class Anchor:
-    """An attachment point for composition."""
+    """An attachment point for composition.
+
+    Attributes:
+        position: In module units.
+        direction: The way the anchor faces; two anchors join when they face each other.
+    """
 
     id: str
     position: Point
@@ -91,7 +115,13 @@ class Anchor:
 
 @dataclass(frozen=True, slots=True)
 class Slot:
-    """Room reserved for text the consumer draws; `box` is (width, height)."""
+    """Room reserved for text the consumer draws; `box` is (width, height).
+
+    Attributes:
+        position: The point the box grows from, in module units.
+        side: The direction the box grows towards from `position`; see `slot_box`.
+        box: Width and height in module units, never rotated.
+    """
 
     id: str
     position: Point
@@ -119,7 +149,15 @@ class Allow:
 
 @dataclass(frozen=True, slots=True)
 class Symbol:
-    """A symbol definition, not a placement: it has no label, tag or position."""
+    """A symbol definition, not a placement: it has no label, tag or position.
+
+    Attributes:
+        name: The symbol's name.
+        reference: Where the standard defines it.
+        elements: The drawing, in module units.
+        pole_pitch: Spacing between poles for `repeat`, in module units; None means 4.
+        lint_allow: Lint exemptions the symbol claims.
+    """
 
     name: str
     kind: SymbolKind
@@ -137,7 +175,16 @@ class Symbol:
 
 @dataclass(frozen=True, slots=True)
 class Finding:
-    """One lint or load problem."""
+    """One lint or load problem.
+
+    Attributes:
+        rule: The id of the rule that reported it.
+        message: Human-readable text.
+        location: Where it is, such as `elements[2]` or `slots.tag`, or None if it is about the
+            whole symbol.
+        orientation: The orientation it was found in, or None if the rule does not depend on
+            orientation.
+    """
 
     rule: str
     severity: Severity
@@ -157,7 +204,10 @@ class LibraryConfig:
 
 @dataclass(frozen=True, slots=True)
 class Library:
-    """The symbols of one standard, keyed by reference number."""
+    """The symbols of one standard, keyed by reference number.
+
+    Iterating yields the symbols sorted by reference number; `len` is their count.
+    """
 
     standard: str
     title: str

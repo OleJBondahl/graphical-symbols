@@ -443,7 +443,7 @@ def to_svg(
     height are the viewBox size times module_mm, in mm. Plain, the extent is the body box; with
     annotate it is the keep-out box, every port label box, every anchor and its label, every slot
     label and the start of every lane, so no annotation is clipped. The elements are drawn first,
-    then the annotations (in the order of `_annotation`), then the sample texts.
+    then the annotations, then the sample texts. The output is deterministic.
 
     Args:
         symbol: The symbol to render.
@@ -489,11 +489,10 @@ def to_svg(
 def to_fragment(symbol: Symbol) -> str:
     """Render a symbol as a placeable SVG fragment: a `<g>` of its plain elements only.
 
-    For embedding one placed symbol inside a larger document the caller assembles -- the caller
+    For embedding one placed symbol inside a larger document the caller assembles. The caller
     wraps the result in its own `<g transform="...">` to position, orient and scale it; this
-    function applies none of its own. No title, no annotations, no sample texts: built from the
-    same element primitives `to_svg`'s plain mode uses (`_GROUP_OPEN` and `_element`), so a
-    change to how one element renders never drifts between the two.
+    function applies none of its own. No title, no annotations, no sample texts. Elements are
+    drawn exactly as in `to_svg`'s plain mode, in module units.
 
     Args:
         symbol: The symbol to render, already oriented and repeated by the caller (via

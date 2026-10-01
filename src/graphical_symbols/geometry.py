@@ -9,7 +9,10 @@ import deal
 
 
 class Direction(Enum):
-    """Compass direction, with the unit vector as its value."""
+    """Compass direction, with the unit vector as its value.
+
+    The axes are SVG's, so N is (0, -1) (up on screen) and S is (0, 1).
+    """
 
     N = (0, -1)
     E = (1, 0)
@@ -54,7 +57,10 @@ class Style(Enum):
 
 
 class Orientation(Enum):
-    """One of the 8 orientations: an optional mirror (flip x), then a clockwise turn by n."""
+    """One of the 8 orientations: an optional mirror (flip x), then a clockwise turn by n.
+
+    `R<n>` turns by n degrees; `MR<n>` mirrors first, then turns. R0 is the symbol as defined.
+    """
 
     R0 = "R0"
     R90 = "R90"
@@ -68,7 +74,7 @@ class Orientation(Enum):
 
 @dataclass(frozen=True, slots=True)
 class Point:
-    """A position in module units."""
+    """A position in module units, x to the right and y downwards."""
 
     x: float
     y: float
@@ -76,7 +82,7 @@ class Point:
 
 @dataclass(frozen=True, slots=True)
 class Box:
-    """An axis-aligned rectangle."""
+    """An axis-aligned rectangle in module units, from its min corner to its max corner."""
 
     min: Point
     max: Point
@@ -99,7 +105,11 @@ class Box:
 
 @dataclass(frozen=True, slots=True)
 class Line:
-    """A straight segment, optionally the lead of a port."""
+    """A straight segment, optionally the lead of a port.
+
+    Attributes:
+        port: The id of the port this line is the lead of, or None for an ordinary line.
+    """
 
     start: Point
     end: Point
@@ -110,7 +120,12 @@ class Line:
 
 @dataclass(frozen=True, slots=True)
 class Polyline:
-    """A chain of segments, optionally closed and filled."""
+    """A chain of segments through `points`, optionally closed and filled.
+
+    Attributes:
+        closed: Whether the last point joins back to the first.
+        fill: Whether a closed polyline is filled.
+    """
 
     points: tuple[Point, ...]
     closed: bool = False
@@ -121,7 +136,7 @@ class Polyline:
 
 @dataclass(frozen=True, slots=True)
 class Circle:
-    """A circle, optionally filled."""
+    """A circle, optionally filled; the radius is in module units."""
 
     center: Point
     radius: float
@@ -131,7 +146,11 @@ class Circle:
 
 @dataclass(frozen=True, slots=True)
 class Arc:
-    """A circular arc swept clockwise on screen from start_deg to end_deg."""
+    """A circular arc swept clockwise on screen from start_deg to end_deg.
+
+    Angles are in degrees, measured clockwise on screen from +x (so 90 points down). Equal
+    angles make a full circle.
+    """
 
     center: Point
     radius: float
@@ -143,7 +162,11 @@ class Arc:
 
 @dataclass(frozen=True, slots=True)
 class Text:
-    """A text label, always middle-anchored and upright; height is in module units."""
+    """A text label, always middle-anchored and upright; height is in module units.
+
+    Attributes:
+        position: The middle of the label.
+    """
 
     content: str
     position: Point

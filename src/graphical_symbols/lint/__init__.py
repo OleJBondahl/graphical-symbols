@@ -119,10 +119,11 @@ def ordered(findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
 def lint(symbol: Symbol) -> tuple[Finding, ...]:
     """Lint a flattened symbol in base orientation and return its findings.
 
-    Every rule of `CHECKS` runs; the findings of each rule the symbol's `lint_allow` names are
-    removed, whatever their severity or orientation; then `allow-unknown` and `allow-unused`
-    report the exemptions themselves, and cannot be exempted. An exemption of a known rule is
-    used when the rule fired in at least one orientation, judged before any exemption applies.
+    Every rule runs, the orientation-dependent ones in all 8 orientations.
+    The findings of each rule the symbol's `lint_allow` names are removed, whatever their
+    severity or orientation; then `allow-unknown` and `allow-unused` report the exemptions
+    themselves, and cannot be exempted. An exemption of a known rule is used
+    when the rule fired in at least one orientation, judged before any exemption applies.
 
     Args:
         symbol: A resolved symbol in base orientation.
