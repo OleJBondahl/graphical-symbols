@@ -712,17 +712,21 @@ that is a bigger, separate decision: nothing here depends on it.
 Decided (owner 2026-10-01): the repo's documentation is plain markdown in the repo, with no
 documentation site: `README.md` (install, one worked example, the concepts), `docs/GUIDE.md`
 (the concepts in more depth: how symbols are defined, built, linted and serialized) and
-`AGENTS.md` (how an agent works here). Every public name in `__all__` carries a short Google-style
-docstring. The README's Python examples are run by `tests/test_readme.py`, so they cannot drift.
+`AGENTS.md` (a pointer for any agent: `CLAUDE.md` holds the rules; the README and
+`docs/GUIDE.md` serve users). Every public name in `__all__` carries a short Google-style
+docstring. The Python examples of the README and `docs/GUIDE.md` are run by
+`tests/test_readme.py`, so they cannot drift. The docs may name the toolkit's users; the rule
+that nothing names a Schematika package covers code, tests and scripts (designer 2026-10-01).
 The release that carries this is `v0.3.0`; consumers install by exact git tag (`uv add
 "graphical-symbols @ git+https://github.com/OleJBondahl/graphical-symbols@v0.3.0"`). The package
 is not published to PyPI for now.
 Why: the toolkit is consumed by an exact tag already (D38's package data, Schematika's pin), a
-site or an index would add upkeep with no reader today, and the README test already keeps the
-examples true.
+site or an index would add upkeep with no reader today, and the tests keep the examples true.
+`CLAUDE.md` stays the one home of the agent rules: a draft `AGENTS.md` that restated them
+disagreed with `CLAUDE.md` about `docs/` on the day it was written.
 Cost if wrong: if a consumer outside the tag workflow appears, PyPI publication is a later,
 separate decision (trusted publishing and a release workflow); nothing here blocks it. The docs
-are only as true as their tests: prose outside the README's examples is not run.
+are only as true as their tests: their prose is not run.
 
 ## Open questions for the owner
 

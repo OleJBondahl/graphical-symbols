@@ -140,8 +140,8 @@ table, then orientation, then location (D23, D34).
 A symbol can exempt a rule with `lint_allow`, a list of `{ rule, reason }` (S00016, the
 connection point, exempts three). `lint` removes the findings of the named rules, and reports
 `allow-unknown` and `allow-unused` for exemptions that name no rule or never fire. The rules the
-resolver reports cannot be exempted (C3). The spec's push-button example fails `pitch-overflow` as written; see C1 in
-DECISIONS.md (C1).
+resolver reports cannot be exempted (C3). The spec's push-button example fails `pitch-overflow`
+as written; see C1 in DECISIONS.md.
 
 ## Building
 
@@ -172,10 +172,10 @@ them (D31). A data repo's test should assert it is empty, so a committed build c
 ## Serialized form
 
 Resolved JSON has the symbol's fields with composition flattened and the `lint_allow` list kept
-(D1, D11). The bundle is `{"schema": 1, "standard": ..., "symbols": {...}}` (D7). `load_bundle(path)` reads
-a `bundle.json` back into a `Library` without the TOML sources; it validates every symbol and
-requires the resolved form (D31). `electrical_symbols` in the Schematika monorepo loads its
-packaged bundle this way.
+(D1, D11). The bundle is `{"schema": 1, "standard": ..., "symbols": {...}}` (D7).
+`load_bundle(path)` reads a `bundle.json` back into a `Library` without the TOML sources; it
+validates every symbol and requires the resolved form (D31). `electrical_symbols` in the
+Schematika monorepo loads its packaged bundle this way.
 
 ## Rendering
 
