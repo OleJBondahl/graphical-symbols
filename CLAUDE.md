@@ -3,15 +3,15 @@
 Standard-agnostic Python toolkit for graphical-symbol data. It reads TOML symbol files, resolves
 composition, lints the wiring contract, renders SVG, and builds a resolved JSON bundle plus an SVG
 gallery. Data packages hold only data and reuse this toolkit: `electrical-symbols` (a package
-of the Schematika v2 monorepo, `../Schematika-v2`) now, ISO 14617 and ISA 5.1 later. Alpha,
+of the Fransys repo, `../fransys-dev`) now, ISO 14617 and ISA 5.1 later. Alpha,
 single owner.
 
-Schematika v2 consumes this repo by an exact git tag (its decision 0015): `electrical-symbols`,
-`schematika-layout` and `schematika-render` import it. A change Schematika needs lands here
-first, green and tagged `vX.Y.Z`, then Schematika bumps its pin. So a breaking change to a public
-name is a coordinated change: it is released under a new tag, and the pin bump in Schematika v2
+Fransys consumes this repo by an exact git tag (its decision 0015): `electrical-symbols`,
+`fransys-layout` and `fransys-render` import it. A change Fransys needs lands here
+first, green and tagged `vX.Y.Z`, then Fransys bumps its pin. So a breaking change to a public
+name is a coordinated change: it is released under a new tag, and the pin bump in Fransys
 carries the matching edit there. No code, test or script in this repo imports or names a
-Schematika package. The docs may name the toolkit's users.
+Fransys package. The docs may name the toolkit's users.
 
 ## The spec decides
 
@@ -32,7 +32,7 @@ self-contradictory, do not edit it: implement it as written, record the concern 
 ## The work
 
 The toolkit the spec describes is built (spec sections 4 to 12). Work now arrives as a work
-order from the Schematika workflow's orchestrator: a change a Schematika package needs, a
+order from the Fransys workflow's orchestrator: a change a Fransys package needs, a
 bug, or a new public function, each recorded in `docs/DECISIONS.md`. Keep the public names of
 spec section 11 exactly as written; a new name gets a decision entry.
 
@@ -54,7 +54,7 @@ spec section 11 exactly as written; a new name gets a decision entry.
   the attribution line your session gives; work on a feature branch from `main`, never commit to
   `main` directly. The orchestrator reviews, merges, pushes and tags the release (`vX.Y.Z`,
   matching `version` in `pyproject.toml`); an implementer does not.
-- Never edit another repo. A change Schematika v2 needs because of yours goes in your hand-back.
+- Never edit another repo. A change Fransys needs because of yours goes in your hand-back.
 
 ## Done means
 
