@@ -3,12 +3,12 @@
 Standard-agnostic toolkit for graphical-symbol data. Symbols are TOML files; the toolkit loads
 them, resolves composition, lints the wiring contract, renders SVG, and builds a resolved JSON
 bundle plus a gallery. Data packages hold only data and reuse the toolkit and its gates:
-`electrical-symbols` (IEC 60617-style symbols, in the Schematika v2 monorepo) now, ISO 14617 and
+`electrical-symbols` (IEC 60617-style symbols, Fransys' `packages/electrical-symbols`) now, ISO 14617 and
 ISA 5.1 later.
 
 Status: alpha. The toolkit the spec below describes is built: reading, resolving, linting, SVG and
 the build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
-(`v0.1.0` to `v0.3.0`); Schematika v2 pins one of them. Not on PyPI (D41).
+(`v0.1.0` to `v0.3.0`); Fransys pins one of them. Not on PyPI (D41).
 
 ## Install
 
