@@ -22,9 +22,7 @@ from symdef.lint.connectivity import (
 )
 from symdef.model import (
     Node,
-    PathKind,
     Port,
-    Potential,
     Severity,
     SymbolKind,
 )
@@ -51,7 +49,7 @@ def port(id_, x, y, direction):
     return Port(id_, P(x, y), direction)
 
 
-def path(a, b, *, through=False, kind=PathKind.CONDUCTOR):
+def path(a, b, *, through=False, kind="conductor"):
     return SymbolPath(a, b, kind, through)
 
 
@@ -120,7 +118,7 @@ class TestNodeInvalid:
         assert len(node_invalid(symbol)) == 2
 
     def test_a_potential_or_an_empty_node_is_not_invalid_on_its_own(self):
-        symbol = plain_symbol(ports=IN_OUT, nodes=(Node(("in",), Potential.EARTH), Node(())))
+        symbol = plain_symbol(ports=IN_OUT, nodes=(Node(("in",), "earth"), Node(())))
         assert node_invalid(symbol) == ()
 
 
@@ -157,7 +155,7 @@ class TestPathInvalid:
 
     def test_a_second_path_between_the_same_nodes_fires_at_the_later_path(self):
         symbol = plain_symbol(
-            ports=IN_OUT, paths=(path("in", "out"), path("out", "in", kind=PathKind.DIODE))
+            ports=IN_OUT, paths=(path("in", "out"), path("out", "in", kind="diode"))
         )
         (found,) = path_invalid(symbol)
         assert found.location == "paths[1]"
@@ -352,7 +350,7 @@ class TestThroughMissing:
         assert through_missing(node_symbol(paths=(path("in", "out", through=True),))) == ()
 
     def test_any_potential_silences_it(self):
-        symbol = node_symbol(nodes=(Node(("in",), Potential.PROTECTIVE_EARTH),))
+        symbol = node_symbol(nodes=(Node(("in",), "protective_earth"),))
         assert through_missing(symbol) == ()
 
     def test_one_node_is_not_enough(self):
@@ -401,7 +399,7 @@ class TestPortIsolated:
         assert len(port_isolated(isolated_symbol(nodes=(Node(("a",)), Node(("b",)))))) == 2
 
     def test_a_potential_on_its_node_silences_it(self):
-        symbol = isolated_symbol(nodes=(Node(("a",), Potential.EARTH),))
+        symbol = isolated_symbol(nodes=(Node(("a",), "earth"),))
         assert where(port_isolated(symbol)) == [("port-isolated", "ports[1]")]
 
     def test_a_node_listed_twice_ports_is_a_single_port_node(self):
@@ -417,11 +415,11 @@ class TestPortIsolated:
 
     def test_a_port_in_two_nodes_takes_the_potential_of_the_first(self):
         symbol = isolated_symbol(
-            nodes=(Node(("a",)), Node(("a",), Potential.EARTH)), paths=(path("b", "b"),)
+            nodes=(Node(("a",)), Node(("a",), "earth")), paths=(path("b", "b"),)
         )
         assert where(port_isolated(symbol)) == [("port-isolated", "ports[0]")]
         symbol = isolated_symbol(
-            nodes=(Node(("a",), Potential.EARTH), Node(("a",))), paths=(path("b", "b"),)
+            nodes=(Node(("a",), "earth"), Node(("a",))), paths=(path("b", "b"),)
         )
         assert port_isolated(symbol) == ()
 
@@ -456,9 +454,7 @@ class TestFixtures:
 class TestInEveryOrientation:
     @given(
         st.sampled_from(list(Orientation)),
-        st.sampled_from(
-            [(), (Node(("in",)),), (Node(("in", "out")),), (Node(("out",), Potential.EARTH),)]
-        ),
+        st.sampled_from([(), (Node(("in",)),), (Node(("in", "out")),), (Node(("out",), "earth"),)]),
         st.sampled_from([(), (path("in", "out"),), (path("in", "out", through=True),)]),
     )
     @settings(max_examples=60, deadline=None)

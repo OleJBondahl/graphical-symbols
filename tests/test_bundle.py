@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from roundtrip import normalised
+from words import WORDS
 
 import symdef
 from symdef.build import load_bundle, load_library, stale_build, write_build
@@ -187,7 +188,7 @@ class TestLoadBundle:
         repo = tmp_path / "repo"
         (repo / "symbols").mkdir(parents=True)
         (repo / "library.toml").write_text(
-            "standard = 'ISA 5.1'\ntitle = 't'\nnumber_pattern = '^[0-9A-Za-z.-]+$'\n",
+            "standard = 'ISA 5.1'\ntitle = 't'\nnumber_pattern = '^[0-9A-Za-z.-]+$'\n" + WORDS,
             encoding="utf-8",
         )
         source = (GUIDE / "symbols" / "S00227.toml").read_text(encoding="utf-8")

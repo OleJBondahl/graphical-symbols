@@ -14,9 +14,10 @@ from symdef.load import (
     parse_toml,
     validate_bundle,
 )
-from symdef.model import Finding, Library, LibraryConfig
+from symdef.model import Finding, Library, LibraryConfig, Vocabulary
 from symdef.resolve import resolve_library
 from symdef.serialize import GENERATED_DIRS, build_files, package_folder
+from symdef.vocabulary import vocabulary_findings
 
 
 def _named(name: str, findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
@@ -41,13 +42,16 @@ def _read_config(path: Path) -> tuple[LibraryConfig | None, tuple[Finding, ...]]
     return config, _named(path.name, problems)
 
 
-def _read_symbol(path: Path) -> tuple[dict[str, Any] | None, tuple[Finding, ...]]:
-    """Read one symbol file's TOML."""
+def _read_symbol(
+    path: Path, vocabulary: Vocabulary
+) -> tuple[dict[str, Any] | None, tuple[Finding, ...]]:
+    """Read one symbol file's TOML and check its words against the vocabulary."""
     text, found = _read(path)
     if text is None:
         return None, found
     data, problems = parse_toml(text)
-    return data, _named(path.name, problems)
+    words = vocabulary_findings(data, vocabulary, text) if data is not None else ()
+    return data, _named(path.name, (*problems, *words))
 
 
 def load_library(root: Path) -> Library:
@@ -72,19 +76,27 @@ def load_library(root: Path) -> Library:
     per_file: dict[str, tuple[Finding, ...]] = {}
     sources: dict[str, dict[str, Any]] = {}
     for path in sorted(directory.glob("*.toml"), key=lambda p: p.stem):
-        data, found = _read_symbol(path)
-        if data is None:
-            per_file[path.stem] = found
-        else:
+        data, per_file[path.stem] = _read_symbol(
+            path, config.vocabulary if config else Vocabulary()
+        )
+        if data is not None:
             sources[path.stem] = data
     if config is None:
         raise LibraryError((*problems, *(f for stem in sorted(per_file) for f in per_file[stem])))
     resolution = resolve_library(config, sources)
-    per_file |= {stem: _named(f"{stem}.toml", found) for stem, found in resolution.findings.items()}
+    for stem, found in resolution.findings.items():
+        per_file[stem] = (*per_file[stem], *_named(f"{stem}.toml", found))
     problems += tuple(f for stem in sorted(per_file) for f in per_file[stem])
     if problems:
         raise LibraryError(problems)
-    return Library(config.standard, config.title, config.number_pattern, resolution.symbols)
+    return Library(
+        config.standard,
+        config.title,
+        config.number_pattern,
+        resolution.symbols,
+        config.vocabulary,
+        config.required_slots,
+    )
 
 
 def load_bundle(json_path: Path) -> Library:

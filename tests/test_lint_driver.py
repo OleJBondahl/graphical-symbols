@@ -1,6 +1,7 @@
 """The `lint(symbol)` driver: running the rules, ordering, exemptions, orientations, totality."""
 
 import math
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -24,14 +25,13 @@ from symdef.geometry import (
 )
 from symdef.lint import CHECKS, RULES, lint, ordered, run_checks
 from symdef.lint.registry import RULE_IDS, Rule
+from symdef.lint.slots import slot_missing
 from symdef.model import (
     Allow,
     Anchor,
     Finding,
     Node,
-    PathKind,
     Port,
-    Potential,
     Severity,
     Slot,
     Symbol,
@@ -332,9 +332,17 @@ slots = st.builds(
 nodes = st.builds(
     Node,
     st.lists(port_ids, max_size=3).map(tuple),
-    st.one_of(st.none(), st.sampled_from(list(Potential))),
+    st.one_of(
+        st.none(), st.sampled_from(("earth", "protective_earth", "functional_earth", "frame"))
+    ),
 )
-paths = st.builds(SymbolPath, port_ids, port_ids, st.sampled_from(list(PathKind)), st.booleans())
+paths = st.builds(
+    SymbolPath,
+    port_ids,
+    port_ids,
+    st.sampled_from(("conductor", "switch_open", "switch_closed", "impedance", "source", "diode")),
+    st.booleans(),
+)
 pole_pitches = st.one_of(
     st.none(), st.sampled_from([0, 4, 8, -4, 6, 12]), st.integers(-20, 20), numbers
 )
@@ -377,7 +385,10 @@ through_symbols = st.builds(
         st.builds(
             Node,
             st.lists(st.sampled_from(["in", "out", "ghost"]), max_size=2).map(tuple),
-            st.one_of(st.none(), st.sampled_from(list(Potential))),
+            st.one_of(
+                st.none(),
+                st.sampled_from(("earth", "protective_earth", "functional_earth", "frame")),
+            ),
         ),
         max_size=2,
     ).map(tuple),
@@ -386,7 +397,9 @@ through_symbols = st.builds(
             SymbolPath,
             st.sampled_from(["in", "out", "ghost"]),
             st.sampled_from(["in", "out", "ghost"]),
-            st.sampled_from(list(PathKind)),
+            st.sampled_from(
+                ("conductor", "switch_open", "switch_closed", "impedance", "source", "diode")
+            ),
             st.booleans(),
         ),
         max_size=3,
@@ -399,6 +412,12 @@ symbols = st.one_of(garbage_symbols, through_symbols)
 NEW_RULES = sorted(r.id for r in RULES.values() if r.group in {"Connectivity", "Slots"})
 
 
+DUTIES_CHECKS = {
+    **CHECKS,
+    "slot-missing": partial(slot_missing, required_slots=("tag", "marking.<port>")),
+}
+
+
 def rules_fired_by(strategy, examples=600):
     """Return the rules whose check fires, in the base orientation, on some generated symbol."""
     fired: set[str] = set()
@@ -406,7 +425,7 @@ def rules_fired_by(strategy, examples=600):
     @given(strategy)
     @settings(max_examples=examples, deadline=None, database=None, derandomize=True)
     def collect(symbol):
-        fired.update(rule_id for rule_id, check in CHECKS.items() if check(symbol))
+        fired.update(rule_id for rule_id, check in DUTIES_CHECKS.items() if check(symbol))
 
     collect()
     return fired
@@ -448,12 +467,12 @@ class TestGuideExamples:
     def test_the_atomic_examples_and_the_qualifier_trip_none_of_the_rules_of_this_task(
         self, library, number
     ):
-        found = lint(library.get(number))
+        found = lint(library.get(number), library.required_slots)
         assert [f for f in found if f.rule in THIS_TASK] == []
 
     def test_the_connection_point_trips_none_of_them_except_for_exemptions_of_later_rules(
         self, library
     ):
-        found = lint(library.get("S00016"))
+        found = lint(library.get("S00016"), library.required_slots)
         assert [f.rule for f in found if f.rule in THIS_TASK - DRIVER_RULES] == []
         assert {f.rule for f in found if f.rule in DRIVER_RULES} <= {"allow-unused"}

@@ -15,9 +15,7 @@ from symdef.model import (
     Anchor,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Reference,
     Slot,
     Status,
@@ -48,7 +46,7 @@ def bare(**fields) -> Symbol:
         reference=Reference("X", "1"),
         elements=(),
         ports=(Port("in", Point(0, -2), N), Port("out", Point(0, 2), S)),
-        paths=(Path("in", "out", PathKind.CONDUCTOR, through=True),),
+        paths=(Path("in", "out", "conductor", through=True),),
     )
     return replace(base, **fields)
 
@@ -84,7 +82,7 @@ class TestOnePole:
         assert repeat(s227, 1).nodes == (Node(("1.in",)), Node(("1.out",)))
 
     def test_through_path_stays_through(self, s227):
-        assert repeat(s227, 1).paths == (Path("1.in", "1.out", PathKind.SWITCH_OPEN, through=True),)
+        assert repeat(s227, 1).paths == (Path("1.in", "1.out", "switch_open", through=True),)
 
     def test_elements_anchors_and_kind_are_unchanged(self, s227):
         result = repeat(s227, 1)
@@ -156,9 +154,9 @@ class TestThreePolesOfS00227:
 
     def test_only_pole_one_is_through(self, result):
         assert result.paths == (
-            Path("1.in", "1.out", PathKind.SWITCH_OPEN, through=True),
-            Path("2.in", "2.out", PathKind.SWITCH_OPEN, through=False),
-            Path("3.in", "3.out", PathKind.SWITCH_OPEN, through=False),
+            Path("1.in", "1.out", "switch_open", through=True),
+            Path("2.in", "2.out", "switch_open", through=False),
+            Path("3.in", "3.out", "switch_open", through=False),
         )
 
     def test_elements_are_kept_in_pole_order(self, result, s227):
@@ -195,10 +193,10 @@ class TestTwoPolesOfS00230:
 
     def test_paths_clear_through_on_pole_two_only(self, result):
         assert result.paths == (
-            Path("1.no", "1.com", PathKind.SWITCH_OPEN, through=True),
-            Path("1.nc", "1.com", PathKind.SWITCH_CLOSED),
-            Path("2.no", "2.com", PathKind.SWITCH_OPEN),
-            Path("2.nc", "2.com", PathKind.SWITCH_CLOSED),
+            Path("1.no", "1.com", "switch_open", through=True),
+            Path("1.nc", "1.com", "switch_closed"),
+            Path("2.no", "2.com", "switch_open"),
+            Path("2.nc", "2.com", "switch_closed"),
         )
 
     def test_nodes_repeat_per_pole(self, result):
@@ -245,13 +243,13 @@ class TestEdgeCases:
 
     def test_potential_is_preserved(self):
         symbol = bare(
-            nodes=(Node(("in",), Potential.EARTH), Node(("out",))),
-            paths=(Path("in", "out", PathKind.CONDUCTOR, through=True),),
+            nodes=(Node(("in",), "earth"), Node(("out",))),
+            paths=(Path("in", "out", "conductor", through=True),),
         )
         assert repeat(symbol, 2).nodes == (
-            Node(("1.in",), Potential.EARTH),
+            Node(("1.in",), "earth"),
             Node(("1.out",)),
-            Node(("2.in",), Potential.EARTH),
+            Node(("2.in",), "earth"),
             Node(("2.out",)),
         )
 
@@ -297,7 +295,7 @@ class TestEdgeCases:
     def test_dotted_ids_from_composition_are_prefixed_whole(self):
         symbol = bare(
             ports=(Port("c.in", Point(0, -2), N), Port("c.out", Point(0, 2), S)),
-            paths=(Path("c.in", "c.out", PathKind.CONDUCTOR, through=True),),
+            paths=(Path("c.in", "c.out", "conductor", through=True),),
             slots=(Slot("marking.c.in", Point(0.5, -1), E, (1, 1)),),
         )
         result = repeat(symbol, 2)
@@ -319,7 +317,7 @@ class TestPreconditions:
 
     def test_a_symbol_without_a_through_path_is_rejected(self):
         with pytest.raises(deal.PreContractError):
-            repeat(bare(paths=(Path("in", "out", PathKind.CONDUCTOR),)), 2)
+            repeat(bare(paths=(Path("in", "out", "conductor"),)), 2)
 
     def test_a_symbol_without_paths_is_rejected(self):
         with pytest.raises(deal.PreContractError):

@@ -812,3 +812,23 @@ Why: a data package whose folder is not its standard's squashed name (`electrica
 `IEC 60617`) needs a way to say so.
 Cost if wrong: drop the key; the default rule is unchanged. A library built in memory and written
 to a root with no `library.toml` cannot name its folder.
+
+## D46. A set declares its own vocabulary and required slots (SYMDEF SD6 and SD7)
+
+Decided: `library.toml` gains `[vocabulary]` (`path_kinds`, `potentials`, `links`, each a list of
+strings; a missing list is empty) and `[rules] required_slots` (for example `["tag",
+"marking.<port>"]`, where `<port>` means one slot per port). The toolkit has no built-in list.
+A symbol file using a path kind, node potential or `via` link not on its list fails to load with a
+`schema` finding that names the word, the file and the line (the first line that quotes the word;
+line 1 if the word is spelled with an escape). The check runs in `load_library`, which has the
+file text. The closed enums `PathKind` and `Potential` are gone from `symdef.__all__`:
+`Path.kind` is a `str` and `Node.potential` is `str | None`; JSON output is unchanged. The
+structural check and `schema/symbol.schema.json` accept any string there. `Vocabulary` is a new
+public name; `LibraryConfig` and `Library` gain `vocabulary` and `required_slots` (empty by
+default); `lint(symbol, required_slots=())` takes the duty list, and a bundle carries neither.
+The pole-pitch multiple-of-4 rule stays fixed. `[vocabulary]` and `[rules]` are strict tables: an
+unknown key is a `schema` finding on `library.toml`.
+Why: a set for another domain (pipes, ISA instruments) needs its own words and duties; the
+toolkit supplies mechanism, not policy.
+Cost if wrong: a consumer of `PathKind` or `Potential` compares strings instead; a set that
+declares nothing cannot use any path kind.

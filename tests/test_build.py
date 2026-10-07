@@ -349,17 +349,17 @@ class TestPackageKey:
         root = tmp_path / "repo"
         shutil.copytree(GUIDE, root)
         config = root / "library.toml"
-        config.write_text(config.read_text(encoding="utf-8") + extra, encoding="utf-8")
+        config.write_text(extra + config.read_text(encoding="utf-8"), encoding="utf-8")
         return root
 
     def test_the_bundle_goes_to_the_named_package(self, tmp_path):
-        root = self.repo(tmp_path, '\npackage = "my_pkg"\n')
+        root = self.repo(tmp_path, 'package = "my_pkg"\n')
         write_build(load_library(root), root)
         assert (root / "src" / "my_pkg" / "bundle.json").is_file()
         assert not (root / "src" / "iec60617").exists()
 
     def test_stale_build_agrees_with_the_named_package(self, tmp_path):
-        root = self.repo(tmp_path, '\npackage = "my_pkg"\n')
+        root = self.repo(tmp_path, 'package = "my_pkg"\n')
         library = load_library(root)
         assert stale_build(library, root) != ()
         write_build(library, root)

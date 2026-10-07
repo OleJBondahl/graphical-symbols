@@ -37,15 +37,14 @@ from symdef.model import (
     LibraryConfig,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Reference,
     Severity,
     Slot,
     Status,
     Symbol,
     SymbolKind,
+    Vocabulary,
 )
 
 # Every number in a file is finite with an absolute value of at most this (1e6 M is 2.5 km).
@@ -221,7 +220,7 @@ _PORT = _table(
 _NODE = _table(
     {
         "ports": _array(_string),
-        "potential": _enum("earth", "protective_earth", "functional_earth", "frame"),
+        "potential": _string,
     },
     required=("ports",),
 )
@@ -229,7 +228,7 @@ _PATH = _table(
     {
         "from": _string,
         "to": _string,
-        "kind": _enum("conductor", "switch_open", "switch_closed", "impedance", "source", "diode"),
+        "kind": _string,
         "through": _boolean,
     },
     required=("from", "to", "kind"),
@@ -246,7 +245,7 @@ _PART = _table(
         "attach": _string,
         "to": _string,
         "length": _number,
-        "via": _enum("mechanical_link"),
+        "via": _string,
         "at": _POINT,
         "repeat": _integer,
     },
@@ -466,12 +465,9 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
             Port(p["id"], _point(p["at"]), Direction[p["dir"]], p.get("description", ""))
             for p in (ports if isinstance(ports, list) else ())
         ),
-        nodes=tuple(
-            Node(tuple(n["ports"]), Potential(n["potential"]) if "potential" in n else None)
-            for n in data.get("nodes", ())
-        ),
+        nodes=tuple(Node(tuple(n["ports"]), n.get("potential")) for n in data.get("nodes", ())),
         paths=tuple(
-            Path(p["from"], p["to"], PathKind(p["kind"]), p.get("through", False))
+            Path(p["from"], p["to"], p["kind"], p.get("through", False))
             for p in data.get("paths", ())
         ),
         anchors=tuple(
@@ -580,11 +576,28 @@ def library_from_bundle(data: Mapping[str, Any]) -> Library:
     return Library(data["standard"], data["standard"], "", symbols)
 
 
+_VOCABULARY_LISTS = ("path_kinds", "potentials", "links")
+_VOCABULARY = _table(dict.fromkeys(_VOCABULARY_LISTS, _array(_string)))
+_RULES = _table({"required_slots": _array(_string)})
+
+
+@deal.pure
+def _tables_problems(data: Mapping[str, Any]) -> list[Finding]:
+    """Check the optional `[vocabulary]` and `[rules]` tables of `library.toml`."""
+    found: list[Finding] = []
+    for key, check in (("vocabulary", _VOCABULARY), ("rules", _RULES)):
+        if key in data:
+            found += check(data[key], _child("", key))
+    return found
+
+
 @deal.pure
 def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
     """Read `library.toml`: `standard`, `title` and `number_pattern`, all strings, the last a regex.
 
-    An optional `package` names the data package's folder under `src/` (D45).
+    An optional `package` names the data package's folder under `src/` (D45). The optional
+    tables `[vocabulary]` (`path_kinds`, `potentials`, `links`) and `[rules]` (`required_slots`)
+    hold lists of strings; an absent list is empty.
 
     Args:
         text: The file's TOML text.
@@ -604,6 +617,7 @@ def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
     package = data.get("package", "")
     if not isinstance(package, str) or (package and not _PACKAGE.fullmatch(package)):
         problems.append(_finding("/package", "must be a Python package name: letters, digits, _"))
+    problems += _tables_problems(data)
     pattern = data.get("number_pattern")
     if isinstance(pattern, str):
         try:
@@ -616,6 +630,14 @@ def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
             )
     if problems:
         return None, tuple(problems)
+    vocabulary = data.get("vocabulary", {})
+    words = Vocabulary(*(tuple(vocabulary.get(k, ())) for k in _VOCABULARY_LISTS))
+    required = tuple(data.get("rules", {}).get("required_slots", ()))
     return LibraryConfig(
-        data["standard"], data["title"], data["number_pattern"], data.get("package", "")
+        data["standard"],
+        data["title"],
+        data["number_pattern"],
+        data.get("package", ""),
+        words,
+        required,
     ), ()

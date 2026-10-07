@@ -97,9 +97,7 @@
       "additionalProperties": false,
       "properties": {
         "ports": { "type": "array", "items": { "type": "string" } },
-        "potential": {
-          "enum": ["earth", "protective_earth", "functional_earth", "frame"]
-        }
+        "potential": { "type": "string" }
       }
     },
     "path": {
@@ -109,16 +107,7 @@
       "properties": {
         "from": { "type": "string" },
         "to": { "type": "string" },
-        "kind": {
-          "enum": [
-            "conductor",
-            "switch_open",
-            "switch_closed",
-            "impedance",
-            "source",
-            "diode"
-          ]
-        },
+        "kind": { "type": "string" },
         "through": { "type": "boolean" }
       }
     },
@@ -161,7 +150,7 @@
         "attach": { "type": "string" },
         "to": { "type": "string" },
         "length": { "$ref": "#/$defs/number" },
-        "via": { "enum": ["mechanical_link"] },
+        "via": { "type": "string" },
         "at": { "$ref": "#/$defs/point" },
         "repeat": { "$ref": "#/$defs/integer" }
       }

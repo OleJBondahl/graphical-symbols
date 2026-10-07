@@ -30,9 +30,7 @@ from symdef.model import (
     Library,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Reference,
     Slot,
     Status,
@@ -241,7 +239,7 @@ class TestSymbolToData:
     def test_nodes_list_the_implicit_single_port_nodes_too(self):
         symbol = bare(
             ports=(Port("a", Point(0, 0), N), Port("b", Point(1, 0), N), Port("c", Point(2, 0), N)),
-            nodes=(Node(("b",), Potential.EARTH),),
+            nodes=(Node(("b",), "earth"),),
         )
         assert symbol_to_data(symbol)["nodes"] == [
             {"ports": ["b"], "potential": "earth"},
@@ -251,7 +249,7 @@ class TestSymbolToData:
 
     def test_paths_anchors_and_slots(self):
         symbol = bare(
-            paths=(Path("in", "out", PathKind.DIODE, through=True),),
+            paths=(Path("in", "out", "diode", through=True),),
             anchors=(Anchor("link", Point(-0.5, 0), Direction.W),),
             slots=(Slot("tag", Point(1, 2), Direction.E, (6, 1)),),
         )
@@ -399,12 +397,23 @@ _symbols = st.builds(
     ports=st.lists(st.builds(Port, _ids, _points, _directions, _names), max_size=3).map(tuple),
     nodes=st.lists(
         st.builds(
-            Node, st.lists(_ids, max_size=2).map(tuple), st.none() | st.sampled_from(Potential)
+            Node,
+            st.lists(_ids, max_size=2).map(tuple),
+            st.none() | st.sampled_from(("earth", "protective_earth", "functional_earth", "frame")),
         ),
         max_size=2,
     ).map(tuple),
     paths=st.lists(
-        st.builds(Path, _ids, _ids, st.sampled_from(PathKind), st.booleans()), max_size=2
+        st.builds(
+            Path,
+            _ids,
+            _ids,
+            st.sampled_from(
+                ("conductor", "switch_open", "switch_closed", "impedance", "source", "diode")
+            ),
+            st.booleans(),
+        ),
+        max_size=2,
     ).map(tuple),
     anchors=st.lists(st.builds(Anchor, _ids, _points, _directions), max_size=2).map(tuple),
     slots=st.lists(

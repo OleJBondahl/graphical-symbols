@@ -25,26 +25,6 @@ class SymbolKind(Enum):
     QUALIFIER = "qualifier"
 
 
-class PathKind(Enum):
-    """The electrical meaning of a path between two nodes."""
-
-    CONDUCTOR = "conductor"
-    SWITCH_OPEN = "switch_open"
-    SWITCH_CLOSED = "switch_closed"
-    IMPEDANCE = "impedance"
-    SOURCE = "source"
-    DIODE = "diode"
-
-
-class Potential(Enum):
-    """The fixed potential a node stands for."""
-
-    EARTH = "earth"
-    PROTECTIVE_EARTH = "protective_earth"
-    FUNCTIONAL_EARTH = "functional_earth"
-    FRAME = "frame"
-
-
 class Severity(Enum):
     """How serious a finding is; a data repo gate rejects both."""
 
@@ -74,11 +54,12 @@ class Node:
 
     Attributes:
         ports: Port ids.
-        potential: The fixed potential the node stands for, or None for an ordinary node.
+        potential: A word from the symbol set's `potentials` for the fixed potential the node
+            stands for, or None for an ordinary node.
     """
 
     ports: tuple[str, ...]
-    potential: Potential | None = None
+    potential: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,14 +69,14 @@ class Path:
     Attributes:
         from_port: Id of the port at one end.
         to_port: Id of the port at the other end.
-        kind: The electrical meaning of the relation.
+        kind: A word from the symbol set's `path_kinds`: the meaning of the relation.
         through: Whether this is the symbol's through path, the one `repeat` requires and
             keeps on pole 1 only.
     """
 
     from_port: str
     to_port: str
-    kind: PathKind
+    kind: str
     through: bool = False
 
 
@@ -194,13 +175,28 @@ class Finding:
 
 
 @dataclass(frozen=True, slots=True)
+class Vocabulary:
+    """The words a symbol set declares in `library.toml [vocabulary]`; empty lists by default."""
+
+    path_kinds: tuple[str, ...] = ()
+    potentials: tuple[str, ...] = ()
+    links: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class LibraryConfig:
-    """The standard-specific settings from `library.toml`."""
+    """The standard-specific settings from `library.toml`.
+
+    `required_slots` is `[rules] required_slots`: slot ids every `kind = "symbol"` file carries,
+    where `marking.<port>` stands for one slot per port.
+    """
 
     standard: str
     title: str
     number_pattern: str
     package: str = ""
+    vocabulary: Vocabulary = Vocabulary()
+    required_slots: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -214,6 +210,8 @@ class Library:
     title: str
     number_pattern: str
     symbols: Mapping[str, Symbol]
+    vocabulary: Vocabulary = Vocabulary()
+    required_slots: tuple[str, ...] = ()
 
     def get(self, number: str) -> Symbol:
         """Return the symbol with this reference number.

@@ -127,14 +127,14 @@ def symbol_to_data(symbol: Symbol) -> dict[str, Any]:
         "nodes": [
             {"ports": list(node.ports)}
             if node.potential is None
-            else {"ports": list(node.ports), "potential": node.potential.value}
+            else {"ports": list(node.ports), "potential": node.potential}
             for node in nodes_of(symbol)
         ],
         "paths": [
             {
                 "from": path.from_port,
                 "to": path.to_port,
-                "kind": path.kind.value,
+                "kind": path.kind,
                 "through": path.through,
             }
             for path in symbol.paths

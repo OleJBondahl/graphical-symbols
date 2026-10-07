@@ -33,7 +33,7 @@ from symdef.lint.ports import (
     port_position_shared,
     port_spacing,
 )
-from symdef.model import Allow, Node, PathKind, Port, Severity, Slot
+from symdef.model import Allow, Node, Port, Severity, Slot
 from symdef.model import Path as SymbolPath
 from symdef.orient import orient
 
@@ -221,7 +221,7 @@ def orientations_of(findings):
 # box does not turn with the symbol and lands in a wire lane after R90.
 TURNED_INTO_A_LANE = plain_symbol(
     ports=(port("in", 0, -2, N), port("out", 0, 2, S)),
-    paths=(SymbolPath("in", "out", PathKind.CONDUCTOR),),
+    paths=(SymbolPath("in", "out", "conductor"),),
     elements=(Line(P(0, -2), P(0, -1)), Line(P(0, 2), P(0, 1))),
     slots=(slot("marking.in", 0.75, -3, N, (1, 3)),),
 )

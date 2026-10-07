@@ -110,6 +110,4 @@ convention = "google"
 # member of the public data model.
 ignore_names = [
     "THICK", "VERIFIED", "UNVERIFIED", "ELEMENT", "QUALIFIER",
-    "SWITCH_OPEN", "SWITCH_CLOSED", "IMPEDANCE", "SOURCE", "DIODE", "CONDUCTOR",
-    "EARTH", "PROTECTIVE_EARTH", "FUNCTIONAL_EARTH", "FRAME",
 ]

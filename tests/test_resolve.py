@@ -18,9 +18,7 @@ from symdef.model import (
     LibraryConfig,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Severity,
     Slot,
 )
@@ -161,7 +159,7 @@ class TestGuideFixtures:
     def test_push_button_inherits_nodes_and_the_through_path(self, resolution):
         push = resolution.symbols["S00254"]
         assert push.nodes == (Node(("in",)), Node(("out",)))
-        assert push.paths == (Path("in", "out", PathKind.SWITCH_OPEN, through=True),)
+        assert push.paths == (Path("in", "out", "switch_open", through=True),)
 
     def test_anchors_are_not_inherited(self, resolution):
         assert resolution.symbols["S00254"].anchors == ()
@@ -296,9 +294,9 @@ class TestRepeatedPart:
 
     def test_only_pole_one_stays_the_through_path(self, resolution):
         assert resolution.symbols["S00040"].paths == (
-            Path("in1", "out1", PathKind.SWITCH_OPEN, through=True),
-            Path("in2", "out2", PathKind.SWITCH_OPEN, through=False),
-            Path("in3", "out3", PathKind.SWITCH_OPEN, through=False),
+            Path("in1", "out1", "switch_open", through=True),
+            Path("in2", "out2", "switch_open", through=False),
+            Path("in3", "out3", "switch_open", through=False),
         )
 
     def test_nodes_repeat_per_pole(self, resolution):
@@ -376,7 +374,7 @@ class TestTwoLevelComposite:
     def test_nodes_and_paths_are_inherited_through_both_levels(self, resolution):
         top = resolution.symbols["S00050"]
         assert top.nodes == (Node(("in",)), Node(("out",)))
-        assert top.paths == (Path("in", "out", PathKind.SWITCH_OPEN, through=True),)
+        assert top.paths == (Path("in", "out", "switch_open", through=True),)
 
 
 class TestBoundLeadsThroughComposition:
@@ -478,9 +476,7 @@ class TestInheritance:
         )
         resolution = resolve(TWO_PORT, top)
         assert resolution.findings == {}
-        assert resolution.symbols["S00060"].paths == (
-            Path("q", "p", PathKind.CONDUCTOR, through=True),
-        )
+        assert resolution.symbols["S00060"].paths == (Path("q", "p", "conductor", through=True),)
 
     def test_a_declared_path_between_other_nodes_is_added(self):
         top = composite(
@@ -490,9 +486,9 @@ class TestInheritance:
             'paths = [{ from = "ao", to = "bi", kind = "conductor" }]\n',
         )
         assert resolve(TWO_PORT, top).symbols["S00060"].paths == (
-            Path("ai", "ao", PathKind.SWITCH_OPEN, through=False),
-            Path("bi", "bo", PathKind.SWITCH_OPEN, through=False),
-            Path("ao", "bi", PathKind.CONDUCTOR, through=False),
+            Path("ai", "ao", "switch_open", through=False),
+            Path("bi", "bo", "switch_open", through=False),
+            Path("ao", "bi", "conductor", through=False),
         )
 
     def test_a_single_inherited_through_path_stays_through(self):
@@ -526,8 +522,8 @@ class TestInheritance:
             'paths = [{ from = "ai", to = "ao", kind = "switch_open", through = true }]\n',
         )
         assert resolve(TWO_PORT, top).symbols["S00060"].paths == (
-            Path("bi", "bo", PathKind.SWITCH_OPEN, through=False),
-            Path("ai", "ao", PathKind.SWITCH_OPEN, through=True),
+            Path("bi", "bo", "switch_open", through=False),
+            Path("ai", "ao", "switch_open", through=True),
         )
 
     def test_a_declared_node_may_restate_an_inherited_one_to_add_a_potential(self):
@@ -540,7 +536,7 @@ class TestInheritance:
         resolution = resolve(TWO_PORT, top)
         assert resolution.findings == {}
         assert resolution.symbols["S00060"].nodes == (
-            Node(("p",), Potential.EARTH),
+            Node(("p",), "earth"),
             Node(("q",)),
         )
 
@@ -557,9 +553,7 @@ class TestInheritance:
             'ports = { pe = "g.e" }\n'
             'nodes = [{ ports = ["pe"] }]\n',
         )
-        assert resolve(earth, top).symbols["S00060"].nodes == (
-            Node(("pe",), Potential.PROTECTIVE_EARTH),
-        )
+        assert resolve(earth, top).symbols["S00060"].nodes == (Node(("pe",), "protective_earth"),)
 
     def test_any_other_declared_node_is_kept_for_the_linter_to_report(self):
         top = composite(
@@ -591,7 +585,7 @@ class TestInheritance:
             Port("r", Point(0, -2), N, "top"),
         )
         assert symbol.nodes == (Node(("p", "r")), Node(("q",)))
-        assert symbol.paths == (Path("p", "q", PathKind.SWITCH_OPEN, through=True),)
+        assert symbol.paths == (Path("p", "q", "switch_open", through=True),)
 
 
 class TestPartUnknown:

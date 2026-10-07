@@ -34,9 +34,7 @@ from symdef.model import (
     Finding,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Reference,
     Severity,
     Slot,
@@ -396,12 +394,10 @@ def test_nodes_paths_anchors_and_allowances_are_checked():
     base["anchors"] = [{"id": "link", "at": [0, 0], "dir": "E"}]
     base["lint_allow"] = [{"rule": "x", "reason": "y"}]
     assert validate(base) == ()
-    assert locations(edited(base, "nodes", 0, "potential", value="ground")) == {
-        "/nodes/0/potential"
-    }
+    assert locations(edited(base, "nodes", 0, "potential", value=3)) == {"/nodes/0/potential"}
     assert locations(edited(base, "nodes", 0, "ports", value="a")) == {"/nodes/0/ports"}
     assert locations(edited(base, "nodes", 0, "ports", value=[1])) == {"/nodes/0/ports/0"}
-    assert locations(edited(base, "paths", 0, "kind", value="wire")) == {"/paths/0/kind"}
+    assert locations(edited(base, "paths", 0, "kind", value=3)) == {"/paths/0/kind"}
     assert locations(edited(base, "paths", 0, "through", value="yes")) == {"/paths/0/through"}
     assert locations(edited(base, "paths", 0, "from", value=1)) == {"/paths/0/from"}
     assert locations(edited(base, "anchors", 0, "dir", value="up")) == {"/anchors/0/dir"}
@@ -432,7 +428,7 @@ def test_slot_keys_with_slashes_are_escaped_in_locations():
 def test_parts_are_checked():
     data = composite()
     assert locations(edited(data, "parts", 1, "orient", value="R45")) == {"/parts/1/orient"}
-    assert locations(edited(data, "parts", 1, "via", value="glue")) == {"/parts/1/via"}
+    assert locations(edited(data, "parts", 1, "via", value=3)) == {"/parts/1/via"}
     assert locations(edited(data, "parts", 1, "length", value="2")) == {"/parts/1/length"}
     assert locations(edited(data, "parts", 1, "repeat", value=1.5)) == {"/parts/1/repeat"}
     assert locations(edited(data, "parts", 2, "at", value=[1])) == {"/parts/2/at"}
@@ -482,10 +478,10 @@ def test_symbol_from_data_builds_every_field():
         Port("in", Point(0, -2), Direction.N, "top"),
         Port("out", Point(0, 2), Direction.S),
     )
-    assert symbol.nodes == (Node(("in",), Potential.PROTECTIVE_EARTH),)
+    assert symbol.nodes == (Node(("in",), "protective_earth"),)
     assert symbol.paths == (
-        Path("in", "out", PathKind.SWITCH_OPEN, through=True),
-        Path("out", "in", PathKind.DIODE),
+        Path("in", "out", "switch_open", through=True),
+        Path("out", "in", "diode"),
     )
     assert symbol.anchors == (Anchor("link", Point(-0.5, 0), Direction.W),)
     assert symbol.lint_allow == (Allow("port-lane-clear", "junction"),)
@@ -531,7 +527,7 @@ def test_symbol_from_data_accepts_the_explicit_resolved_form():
     data = resolved()
     data["nodes"] = [{"ports": ["in"], "potential": "earth"}]
     symbol = symbol_from_data(data)
-    assert symbol.nodes == (Node(("in",), Potential.EARTH),)
+    assert symbol.nodes == (Node(("in",), "earth"),)
     assert symbol.ports == (Port("in", Point(0, -2), Direction.N, ""),)
     assert symbol.slots == (Slot("tag", Point(0, 0), Direction.W, (6, 1)),)
     assert symbol.elements[1] == Polyline((Point(0, 0), Point(1, 0)), closed=False, fill=Fill.NONE)

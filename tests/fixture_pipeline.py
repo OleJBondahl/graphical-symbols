@@ -49,7 +49,10 @@ def run_fixture_by_file(rule_id: str, root: Path = BROKEN) -> dict[str, tuple[Fi
     }
     resolution = resolve_library(config, sources)
     return {
-        stem: (*resolution.findings.get(stem, ()), *lint(resolution.symbols[stem]))
+        stem: (
+            *resolution.findings.get(stem, ()),
+            *lint(resolution.symbols[stem], config.required_slots),
+        )
         if stem in resolution.symbols
         else resolution.findings[stem]
         for stem in sorted(set(resolution.findings) | set(resolution.symbols))

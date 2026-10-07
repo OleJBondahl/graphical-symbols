@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 from dataclasses import replace
+from functools import partial
 from types import MappingProxyType
 
 import deal
@@ -116,7 +117,7 @@ def ordered(findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
 
 
 @deal.pure
-def lint(symbol: Symbol) -> tuple[Finding, ...]:
+def lint(symbol: Symbol, required_slots: tuple[str, ...] = ()) -> tuple[Finding, ...]:
     """Lint a flattened symbol in base orientation and return its findings.
 
     Every rule runs, the orientation-dependent ones in all 8 orientations.
@@ -127,11 +128,14 @@ def lint(symbol: Symbol) -> tuple[Finding, ...]:
 
     Args:
         symbol: A resolved symbol in base orientation.
+        required_slots: The slots a `kind = "symbol"` file must carry, the set's
+            `Library.required_slots`; with none, the `slot-missing` rule never fires.
 
     Returns:
         The findings, ordered by the guide table's rule order, then orientation, then location.
     """
-    raw = run_checks(symbol, RULES, CHECKS)
+    checks = {**CHECKS, "slot-missing": partial(slot_missing, required_slots=required_slots)}
+    raw = run_checks(symbol, RULES, checks)
     return ordered(
         (
             *exempt(raw, symbol.lint_allow),

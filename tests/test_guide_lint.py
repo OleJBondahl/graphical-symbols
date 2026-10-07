@@ -32,7 +32,7 @@ def pole_extent(symbol):
 
 @pytest.mark.parametrize("number", CLEAN)
 def test_the_atomic_examples_and_the_qualifier_lint_to_nothing(library, number):
-    assert lint(library.get(number)) == ()
+    assert lint(library.get(number), library.required_slots) == ()
 
 
 def test_the_connection_point_uses_every_exemption_it_declares(library):
@@ -42,7 +42,7 @@ def test_the_connection_point_uses_every_exemption_it_declares(library):
         "port-lane-clear",
         "slot-missing",
     }
-    without = lint(replace(symbol, lint_allow=()))
+    without = lint(replace(symbol, lint_allow=()), library.required_slots)
     assert {f.rule for f in without} == {"port-on-body-edge", "port-lane-clear", "slot-missing"}
 
 

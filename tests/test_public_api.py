@@ -26,7 +26,7 @@ GUIDE_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "guide"
 
 # Guide section 11's API block, plus `Element` (the block writes it as the union of the shapes).
 SECTION_11_NAMES = [
-    *("Point", "Box", "Direction", "Orientation", "PathKind", "Line", "Polyline", "Circle", "Arc"),
+    *("Point", "Box", "Direction", "Orientation", "Line", "Polyline", "Circle", "Arc"),
     *("Text", "Port", "Node", "Path", "Anchor", "Slot", "Reference", "Symbol", "Library"),
     *("Finding", "load_library", "load_bundle", "orient", "translate", "repeat", "body_box"),
     *("keepout_box", "slot_box", "lint", "to_svg", "write_build", "stale_build", "Element"),
@@ -86,7 +86,7 @@ SECTION_11_SIGNATURES = {
     "body_box": positional("symbol"),
     "keepout_box": positional("symbol"),
     "slot_box": positional("slot"),
-    "lint": positional("symbol"),
+    "lint": [*positional("symbol"), ("required_slots", "POSITIONAL_OR_KEYWORD", "()")],
     "to_svg": [
         *positional("symbol"),
         ("module_mm", "KEYWORD_ONLY", "2.5"),
@@ -123,7 +123,9 @@ SECTION_11_FIELDS = {
         *("name", "kind", "status", "reference", "elements", "ports", "nodes", "paths"),
         *("anchors", "slots", "pole_pitch", "lint_allow"),
     ],
-    "Library": ["standard", "title", "number_pattern", "symbols"],
+    "Library": [
+        *("standard", "title", "number_pattern", "symbols", "vocabulary", "required_slots"),
+    ],
     "Finding": ["rule", "severity", "message", "location", "orientation"],
 }
 

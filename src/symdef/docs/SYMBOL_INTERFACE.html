@@ -529,7 +529,15 @@ iec60617/                                data only
 <p>The toolkit knows nothing about any standard. Everything standard-specific is in the data repo's <code>library.toml</code>:</p>
 <pre data-lang="toml-config"><code>standard = "IEC 60617"
 title = "IEC 60617 symbols"
-number_pattern = '^S\d{5}$'</code></pre>
+number_pattern = '^S\d{5}$'
+
+[vocabulary]
+path_kinds = ["conductor", "switch_open", "switch_closed", "impedance", "source", "diode"]
+potentials = ["earth", "protective_earth", "functional_earth", "frame"]
+links = ["mechanical_link"]
+
+[rules]
+required_slots = ["tag", "marking.&lt;port&gt;"]</code></pre>
 <p>Later standards (ISO 14617, ISA 5.1) are sibling data repos that reuse the toolkit and every gate.</p>
 <h3>Gates in a data repo (<code>just ci</code>)</h3>
 <ul>

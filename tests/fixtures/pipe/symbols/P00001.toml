@@ -1,0 +1,24 @@
+schema = 1
+name = "Pipe, straight"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "ISO 14617", number = "P00001" }
+
+ports = [
+  { id = "in",  at = [0, -3], dir = "N" },
+  { id = "out", at = [0, 3],  dir = "S" },
+]
+
+nodes = [
+  { ports = ["in"], potential = "vent" },
+]
+
+paths = [
+  { from = "in", to = "out", kind = "pipe", through = true },
+]
+
+elements = [
+  { line = [[0, -3], [0, 3]] },
+]
+
+[slots]

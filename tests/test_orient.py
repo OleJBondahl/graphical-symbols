@@ -23,9 +23,7 @@ from symdef.model import (
     Anchor,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Reference,
     Slot,
     Status,
@@ -204,8 +202,8 @@ def test_everything_else_is_unchanged_by_orient_and_translate():
     s = sym(
         Line(Point(0, 0), Point(1, 0)),
         ports=(Port("a", Point(0, 0), N, "d"),),
-        nodes=(Node(("a",), Potential.EARTH),),
-        paths=(Path("a", "a", PathKind.DIODE, through=True),),
+        nodes=(Node(("a",), "earth"),),
+        paths=(Path("a", "a", "diode", through=True),),
         pole_pitch=8,
         lint_allow=(Allow("port-off-geometry", "why"),),
     )
@@ -297,7 +295,16 @@ _symbols = st.builds(
     ports=st.lists(st.builds(Port, _ids, _points, _directions), max_size=3).map(tuple),
     nodes=st.lists(st.builds(Node, st.lists(_ids, max_size=2).map(tuple)), max_size=2).map(tuple),
     paths=st.lists(
-        st.builds(Path, _ids, _ids, st.sampled_from(PathKind), st.booleans()), max_size=2
+        st.builds(
+            Path,
+            _ids,
+            _ids,
+            st.sampled_from(
+                ("conductor", "switch_open", "switch_closed", "impedance", "source", "diode")
+            ),
+            st.booleans(),
+        ),
+        max_size=2,
     ).map(tuple),
     anchors=st.lists(st.builds(Anchor, _ids, _points, _directions), max_size=2).map(tuple),
     slots=st.lists(

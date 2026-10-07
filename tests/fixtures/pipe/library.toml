@@ -1,0 +1,7 @@
+standard = "ISO 14617"
+title = "ISO 14617 symbols"
+number_pattern = '^P\d{5}$'
+
+[vocabulary]
+path_kinds = ["pipe"]
+potentials = ["vent"]

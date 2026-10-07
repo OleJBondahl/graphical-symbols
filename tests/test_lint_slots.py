@@ -30,7 +30,7 @@ from symdef.lint.slots import (
     slot_overlap_slot,
     slot_unknown_port,
 )
-from symdef.model import Allow, PathKind, Port, Severity, Slot, SymbolKind
+from symdef.model import Allow, Port, Severity, Slot, SymbolKind
 from symdef.model import Path as SymbolPath
 from symdef.orient import orient
 
@@ -66,7 +66,7 @@ FULL_SLOTS = (
     slot("marking.in", 0.25, -1.5, E, (1.5, 1)),
     slot("marking.out", 0.25, 1.5, E, (1.5, 1)),
 )
-THROUGH = (SymbolPath("in", "out", PathKind.SWITCH_OPEN, through=True),)
+THROUGH = (SymbolPath("in", "out", "switch_open", through=True),)
 
 
 def a_symbol(**changes):
@@ -92,13 +92,21 @@ class TestRegistration:
         assert dependent == ORIENTATION_DEPENDENT
 
 
+DUTIES = ("tag", "marking.<port>")
+
+
+def with_duties(symbol):
+    """`slot_missing` with the duties the guide fixtures declare."""
+    return slot_missing(symbol, DUTIES)
+
+
 class TestSlotMissing:
     def test_a_symbol_with_a_tag_and_every_marking_is_clean(self):
-        assert slot_missing(a_symbol()) == ()
+        assert with_duties(a_symbol()) == ()
 
     def test_a_missing_tag_fires_at_the_tag_slot(self):
         symbol = a_symbol(slots=FULL_SLOTS[1:])
-        (found,) = slot_missing(symbol)
+        (found,) = with_duties(symbol)
         assert (found.rule, found.severity, found.location) == (
             "slot-missing",
             Severity.ERROR,
@@ -109,32 +117,32 @@ class TestSlotMissing:
 
     def test_a_missing_marking_fires_at_the_missing_slot_and_names_the_port(self):
         symbol = a_symbol(slots=FULL_SLOTS[:2])
-        (found,) = slot_missing(symbol)
+        (found,) = with_duties(symbol)
         assert found.location == "slots.marking.out"
         assert "'out'" in found.message
 
     def test_every_missing_slot_gets_its_own_finding(self):
         symbol = a_symbol(slots=())
-        assert [f.location for f in slot_missing(symbol)] == [
+        assert [f.location for f in with_duties(symbol)] == [
             "slots.tag",
             "slots.marking.in",
             "slots.marking.out",
         ]
 
     def test_a_symbol_without_ports_still_needs_a_tag(self):
-        assert where(slot_missing(plain_symbol(kind=SYMBOL))) == [("slot-missing", "slots.tag")]
+        assert where(with_duties(plain_symbol(kind=SYMBOL))) == [("slot-missing", "slots.tag")]
 
     @pytest.mark.parametrize("kind", [SymbolKind.ELEMENT, SymbolKind.QUALIFIER])
     def test_other_kinds_are_exempt(self, kind):
-        assert slot_missing(a_symbol(kind=kind, slots=())) == ()
+        assert with_duties(a_symbol(kind=kind, slots=())) == ()
 
     def test_the_value_slot_is_optional_and_extra_slots_are_ignored(self):
         extra = (*FULL_SLOTS, slot("value", 0, 3, S, (1, 1)), slot("other", 0, 5, S, (1, 1)))
-        assert slot_missing(a_symbol(slots=extra)) == ()
+        assert with_duties(a_symbol(slots=extra)) == ()
 
     def test_a_marking_for_another_port_does_not_count(self):
         symbol = a_symbol(slots=(*FULL_SLOTS[:2], slot("marking.ghost", 0.25, 1.5, E, (1, 1))))
-        assert where(slot_missing(symbol)) == [("slot-missing", "slots.marking.out")]
+        assert where(with_duties(symbol)) == [("slot-missing", "slots.marking.out")]
 
     def test_slot_ids_are_compared_exactly(self):
         symbol = a_symbol(
@@ -144,7 +152,7 @@ class TestSlotMissing:
                 slot("marking.OUT", 0, 0, E, (1, 1)),
             )
         )
-        assert [f.location for f in slot_missing(symbol)] == ["slots.tag", "slots.marking.out"]
+        assert [f.location for f in with_duties(symbol)] == ["slots.tag", "slots.marking.out"]
 
     def test_a_port_id_with_dots_needs_the_dotted_marking_slot(self):
         symbol = plain_symbol(
@@ -152,15 +160,15 @@ class TestSlotMissing:
             ports=(port("1.in", 0, -2, N),),
             slots=(slot("tag", 0, 0, W, (1, 1)), slot("marking.1.in", 0, 0, E, (1, 1))),
         )
-        assert slot_missing(symbol) == ()
-        assert where(slot_missing(replace(symbol, slots=symbol.slots[:1]))) == [
+        assert with_duties(symbol) == ()
+        assert where(with_duties(replace(symbol, slots=symbol.slots[:1]))) == [
             ("slot-missing", "slots.marking.1.in")
         ]
 
     def test_ports_sharing_an_id_need_one_marking_slot_only(self):
         symbol = a_symbol(ports=(*IN_OUT, port("in", 3, -2, N)))
-        assert slot_missing(symbol) == ()
-        assert len(slot_missing(replace(symbol, slots=FULL_SLOTS[:1]))) == 2
+        assert with_duties(symbol) == ()
+        assert len(with_duties(replace(symbol, slots=FULL_SLOTS[:1]))) == 2
 
 
 class TestSlotUnknownPort:
@@ -563,10 +571,12 @@ class TestFixtures:
 class TestGuideExamples:
     @pytest.mark.parametrize("number", ["S00227", "S00230", "S00305", "S00171", "S00016"])
     def test_the_guide_examples_trip_no_slots_rule(self, library, number):
-        assert [f for f in lint(library.get(number)) if f.rule in SLOT_RULES] == []
+        assert [
+            f for f in lint(library.get(number), library.required_slots) if f.rule in SLOT_RULES
+        ] == []
 
     def test_the_connection_points_missing_slots_are_the_ones_it_exempts(self, library):
-        found = slot_missing(library.get("S00016"))
+        found = slot_missing(library.get("S00016"), library.required_slots)
         assert [f.location for f in found] == [
             "slots.tag",
             "slots.marking.n",
@@ -587,7 +597,7 @@ class TestInvariantRulesInEveryOrientation:
     def test_the_slot_id_rules_do_not_change_when_the_symbol_is_oriented(self, orientation, slots):
         symbol = a_symbol(slots=slots)
         turned = orient(symbol, orientation)
-        for check in (slot_missing, slot_unknown_port):
+        for check in (with_duties, slot_unknown_port):
             assert where(check(turned)) == where(check(symbol))
 
     def test_a_slot_box_keeps_its_size_when_the_symbol_turns(self):

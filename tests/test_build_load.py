@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from words import WORDS
 
 import symdef
 from symdef.build import load_library
@@ -14,7 +15,7 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 GUIDE = FIXTURES / "guide"
 BROKEN = FIXTURES / "broken"
 
-CONFIG = 'standard = "IEC 60617"\ntitle = "t"\nnumber_pattern = \'^S\\d{5}$\'\n'
+CONFIG = 'standard = "IEC 60617"\ntitle = "t"\nnumber_pattern = \'^S\\d{5}$\'\n' + WORDS
 
 
 def broken_library(rule_id: str, tmp_path: Path) -> Path:

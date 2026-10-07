@@ -10,9 +10,7 @@ from symdef.model import (
     Library,
     Node,
     Path,
-    PathKind,
     Port,
-    Potential,
     Reference,
     Severity,
     Slot,
@@ -41,20 +39,6 @@ def port(port_id, direction=Direction.N):
 def test_enum_values_are_the_file_spellings():
     assert [s.value for s in Status] == ["unverified", "verified"]
     assert [k.value for k in SymbolKind] == ["symbol", "element", "qualifier"]
-    assert [k.value for k in PathKind] == [
-        "conductor",
-        "switch_open",
-        "switch_closed",
-        "impedance",
-        "source",
-        "diode",
-    ]
-    assert [p.value for p in Potential] == [
-        "earth",
-        "protective_earth",
-        "functional_earth",
-        "frame",
-    ]
     assert [s.value for s in Severity] == ["error", "warning"]
 
 
@@ -72,7 +56,7 @@ def test_symbol_defaults():
 def test_small_type_defaults():
     assert Port("in", Point(0, 0), Direction.N).description == ""
     assert Node(("in",)).potential is None
-    assert Path("in", "out", PathKind.CONDUCTOR).through is False
+    assert Path("in", "out", "conductor").through is False
     assert Reference("X", "1").edition is None
     assert Reference("X", "1").form is None
     assert Finding("r", Severity.ERROR, "m").location is None
@@ -96,7 +80,7 @@ def test_malformed_symbols_are_constructible():
     odd = sym(
         ports=(port("a"), port("a")),
         nodes=(Node(("ghost",)),),
-        paths=(Path("a", "a", PathKind.SOURCE, through=True),),
+        paths=(Path("a", "a", "source", through=True),),
         anchors=(Anchor("k", Point(0.3, 0), Direction.W),),
         slots=(Slot("tag", Point(0, 0), Direction.E, (-1.0, 0.0)),),
     )
@@ -113,7 +97,7 @@ def test_nodes_of_gives_each_unlisted_port_its_own_node_in_port_order():
 
 
 def test_nodes_of_keeps_declared_nodes_first_then_the_rest():
-    declared = Node(("c", "a"), Potential.FRAME)
+    declared = Node(("c", "a"), "frame")
     s = sym(ports=(port("a"), port("b"), port("c"), port("d")), nodes=(declared,))
     assert nodes_of(s) == (declared, Node(("b",)), Node(("d",)))
 
