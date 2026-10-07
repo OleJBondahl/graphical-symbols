@@ -9,9 +9,10 @@ Status: alpha. The toolkit the spec below describes is built: reading, resolving
 the build, with every lint rule and gate proven by a failing fixture. Published on PyPI from v0.4.0;
 v0.1.0 to v0.3.0 were git tags named `graphical-symbols`.
 
-Every IEC-style example symbol in this repository, the gallery and the docs included, is an
-original drawing made here in the shape the standard describes. None is copied from the
-standard's own drawings, and each stays `status = "unverified"` until compared with them.
+Every example symbol in this repository, the docs and the gallery included, is drawn
+independently in the style of a published standard (IEC 60617 for the `S000xx` numbers). None
+is copied from the IEC database or from any standard's own drawings. Each is marked
+`status = "unverified"`: nobody has checked it against the standard.
 
 Documentation: <https://olejbondahl.github.io/symdef/> (tutorial, guide, symbol interface, API
 reference and a gallery).
@@ -26,11 +27,10 @@ or `pip install symdef`.
 
 Python 3.14 or later, with no runtime dependencies.
 
-Every module is pure except `symdef` (the package's re-export list), `symdef.files` (reads and
-writes `library.toml`, the symbol files and the build), `symdef.project` (`init`, `build` and
-`check`, which use `symdef.files`), `symdef.cli` (prints and exits) and `symdef.__main__` (runs
-`symdef.cli`): the same input gives the same output, with no file I/O, clock, randomness or
-global state. More depth: [docs/GUIDE.md](docs/GUIDE.md).
+The functions in `symdef.files`, `symdef.project` and `symdef.cli` read or write files, or
+print. Everything else is pure: the same input gives the same output, with no file I/O, clock,
+randomness or global state. The top-level `symdef` namespace re-exports both kinds. More
+depth: [docs/GUIDE.md](docs/GUIDE.md).
 
 ## The design
 

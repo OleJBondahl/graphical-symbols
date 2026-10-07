@@ -1,8 +1,7 @@
 # symdef: agent guide
 
 Standard-agnostic Python toolkit for graphical-symbol data. It reads TOML symbol files, resolves
-composition, lints the wiring contract, renders SVG, and builds a resolved JSON bundle plus an SVG
-gallery. Data packages hold only data and reuse this toolkit: `electrical-symbols` (a package
+composition, lints the wiring contract, renders SVG, and builds a resolved JSON bundle plus an SVG gallery. Users drive it with `symdef init`, `symdef build` and `symdef check`, or through the Python API. Data packages hold only data and reuse this toolkit: `electrical-symbols` (a package
 of the Fransys repo, `../fransys-dev`) now, ISO 14617 and ISA 5.1 later. Alpha,
 single owner.
 
@@ -13,19 +12,17 @@ Fransys bumps its pin. No code, test or script here imports or names a Fransys p
 
 ## The spec decides
 
-`src/graphical_symbols/docs/SYMBOL_INTERFACE.html` (the spec; older entries in
+`src/symdef/docs/SYMBOL_INTERFACE.html` (the spec; older entries in
 `docs/DECISIONS.md` call it the guide) is the only design document. It ships as package data,
 readable at runtime through `importlib.resources`; `electrical-symbols`' verbatim gate reads it
-from the installed distribution (D38). It is final and binding. Read all of it before doing
-anything. Never edit it. Definitions in it
+from the installed distribution (D38). It is binding. Read all of it before doing anything. It changes only through a designer-approved spec, with a dated entry in its change list and in `docs/DECISIONS.md`. Definitions in it
 (extents, overlap, orientations, the wire lane, placement, `repeat`, the 33 lint rules, the JSON
 output format) are exact: implement them as written. The toolkit has one rule beyond the spec's
 33, `lead-off-port` (D40).
 
 Where the spec is silent, decide yourself and record the decision in `docs/DECISIONS.md`, one entry
 each: what you decided, why, what it costs if wrong. If you believe the spec is wrong or
-self-contradictory, do not edit it: implement it as written, record the concern in
-`docs/DECISIONS.md` and report it to the owner at the end.
+self-contradictory, do not edit it: implement it as written, record the concern in `docs/DECISIONS.md` and name it in your hand-back.
 
 ## The work
 
@@ -46,12 +43,16 @@ spec section 11 exactly as written; a new name gets a decision entry.
   no clock or randomness, and writes no module or global state. A function raises only the errors
   its docstring names. The gate enforces it with the standard library's `ast`. No contract
   library: users pay for nothing they did not ask for (owner 2026-10-07).
-- `docs/` holds `DECISIONS.md` and `GUIDE.md` only; plans stay out of the repo.
+- `docs/` holds `DECISIONS.md`, the site's pages (`GUIDE.md`, `TUTORIAL.md` and `site/`), and
+  `tutorial-set/`, the tutorial's data package. Plans stay out of the repo.
 - Frozen slotted dataclasses; transforms are free functions; no positional port aliases.
 - Every gate and lint rule is proven able to fail with a deliberately broken fixture.
 - `just ci` passes before every commit; quote its output. Look at rendered output: convert SVGs to
   PNG and view them (`uv run --with cairosvg` or playwright, from a scratch directory outside
   the repo).
+- Commands: `just ci` is the gate (check, dead-code, purity, cov at 100%, and the 3.14 test
+  run). `just site` builds the docs site into `.site/`; it is strict, so a broken link fails
+  it. `just fmt` formats and autofixes.
 - Git: stage named paths only; Conventional Commits ending with
   the attribution line your session gives; work on a feature branch from `main`, never commit to
   `main` directly. The orchestrator reviews, merges, pushes and tags the release (`vX.Y.Z`,
