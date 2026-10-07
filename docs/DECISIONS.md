@@ -786,3 +786,15 @@ ruff and ty targets). `just ci` ends with `just test314`: `uv run --python 3.14 
 (`lazy import json`) in `src/symdef/units.py` makes the 3.14 run stop with a `SyntaxError`.
 Why: more consumers install it; the code already ran on 3.14 (2261 tests pass).
 Cost if wrong: raise the floor back to 3.15; the extra test run adds about 45 s to the gate.
+
+## D44. Published to PyPI by trusted publishing; docs on GitHub Pages (SYMDEF SD3, reverses D41)
+
+Decided (owner 2026-10-07): a tag `vX.Y.Z` runs `.github/workflows/publish.yml`: it checks the tag
+equals the package version, builds with `uv build`, and uploads with PyPI trusted publishing and
+attestations, from the GitHub environment `pypi`, with `id-token: write` and no token secret.
+`.github/workflows/docs.yml` deploys a minimal site (README, guide, decisions and the spec, built
+by `scripts/build_site.py` with the dev dependency `markdown`) to GitHub Pages on the same tag.
+Every action is pinned by full commit SHA with its version in a comment. A release is cut only
+from a commit whose local `just ci` passed; no workflow runs the gate.
+Why: consumers install by an exact PyPI version instead of a git tag.
+Cost if wrong: delete the workflows and yank the release; the git tag install still works.

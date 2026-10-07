@@ -23,6 +23,7 @@ Repository = "https://github.com/OleJBondahl/symdef"
 dev = [
     "hypothesis==6.168.0",
     "jsonschema==4.26.0",
+    "markdown==3.11",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "ruff==0.16.8",
