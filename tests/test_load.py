@@ -818,3 +818,23 @@ class TestNonStringKeys:
 
     def test_a_non_string_is_not_a_file_stem(self):
         assert not is_file_stem(1)
+
+
+def test_parse_config_reads_the_optional_package_key():
+    config, findings = parse_config(CONFIG + 'package = "my_pkg"\n')
+    assert findings == ()
+    assert config is not None
+    assert config.package == "my_pkg"
+
+
+def test_parse_config_without_the_package_key_leaves_it_empty():
+    config, _ = parse_config(CONFIG)
+    assert config is not None
+    assert config.package == ""
+
+
+@pytest.mark.parametrize("value", ['"a/b"', '"1x"', '"a-b"', "3", "true"])
+def test_parse_config_refuses_a_package_that_is_not_a_package_name(value):
+    config, findings = parse_config(CONFIG + f"package = {value}\n")
+    assert config is None
+    assert [f.location for f in findings] == ["/package"]

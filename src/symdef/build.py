@@ -16,7 +16,7 @@ from symdef.load import (
 )
 from symdef.model import Finding, Library, LibraryConfig
 from symdef.resolve import resolve_library
-from symdef.serialize import GENERATED_DIRS, build_files, package_name
+from symdef.serialize import GENERATED_DIRS, build_files, package_folder
 
 
 def _named(name: str, findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
@@ -114,22 +114,34 @@ def load_bundle(json_path: Path) -> Library:
     return library_from_bundle(data)
 
 
-def _check_names(library: Library) -> None:
+def _package_key(root: Path) -> str:
+    """Return the `package` key of `root/library.toml`, or `""` when it is absent or unreadable.
+
+    `load_library` is where a bad `library.toml` is reported; a build only reads the one key.
+    """
+    config, _ = _read_config(root / "library.toml")
+    return config.package if config else ""
+
+
+def _check_names(library: Library, package: str) -> None:
     """Refuse a library that would need an unsafe file or directory name, before any file is made.
 
-    A number must be a file stem, and the standard must give a package name (D8, D35).
+    A number must be a file stem, and the standard must give a package folder (D8, D35, D45).
     """
     for number in library.symbols:
         if not is_file_stem(number):
             msg = f"symbol number {number!r} cannot be used as a file name"
             raise ValueError(msg)
-    if not package_name(library.standard):
+    if not package_folder(library.standard, package):
         msg = f"the standard {library.standard!r} has no letter or digit to make a package name of"
         raise ValueError(msg)
 
 
 def write_build(library: Library, root: Path) -> tuple[Path, ...]:
     """Write the build of a library under a data repo: `build/` and `src/<package>/bundle.json`.
+
+    `<package>` is the `package` key of `root/library.toml` when it has one, else made from the
+    standard (D8, D45).
 
     Files are written as bytes, so line endings are LF on every platform, and missing directories
     are created. Nothing is deleted: a file that an earlier build wrote and this one does not
@@ -148,9 +160,10 @@ def write_build(library: Library, root: Path) -> tuple[Path, ...]:
             letter or digit to make a package name of; nothing is written.
         OSError: If a path cannot be written; files already written stay.
     """
-    _check_names(library)
+    package = _package_key(root)
+    _check_names(library, package)
     written = []
-    for relative, data in build_files(library).items():
+    for relative, data in build_files(library, package).items():
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
@@ -178,8 +191,9 @@ def stale_build(library: Library, root: Path) -> tuple[Path, ...]:
             letter or digit to make a package name of.
         OSError: If a file cannot be read; it is not treated as stale.
     """
-    _check_names(library)
-    files = build_files(library)
+    package = _package_key(root)
+    _check_names(library, package)
+    files = build_files(library, package)
     stale = {
         relative
         for relative, data in files.items()

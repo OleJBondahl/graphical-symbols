@@ -489,6 +489,7 @@ def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
 
 # A number is a file stem (`5.1.toml`, `ISO-14617-1.1.toml`) and `write_build` names files after
 # it: letters, digits, `_` and `-`, in parts joined by single dots, so no separator, no `..`.
+_PACKAGE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _STEM = re.compile(r"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*")
 
 
@@ -583,6 +584,8 @@ def library_from_bundle(data: Mapping[str, Any]) -> Library:
 def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
     """Read `library.toml`: `standard`, `title` and `number_pattern`, all strings, the last a regex.
 
+    An optional `package` names the data package's folder under `src/` (D45).
+
     Args:
         text: The file's TOML text.
 
@@ -598,6 +601,9 @@ def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
             problems.append(_finding("", f"missing required key {key!r}"))
         elif not isinstance(data[key], str):
             problems.append(_finding(_child("", key), "must be a string"))
+    package = data.get("package", "")
+    if not isinstance(package, str) or (package and not _PACKAGE.fullmatch(package)):
+        problems.append(_finding("/package", "must be a Python package name: letters, digits, _"))
     pattern = data.get("number_pattern")
     if isinstance(pattern, str):
         try:
@@ -610,4 +616,6 @@ def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
             )
     if problems:
         return None, tuple(problems)
-    return LibraryConfig(data["standard"], data["title"], data["number_pattern"]), ()
+    return LibraryConfig(
+        data["standard"], data["title"], data["number_pattern"], data.get("package", "")
+    ), ()

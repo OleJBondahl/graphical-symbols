@@ -200,6 +200,7 @@ class LibraryConfig:
     standard: str
     title: str
     number_pattern: str
+    package: str = ""
 
 
 @dataclass(frozen=True, slots=True)

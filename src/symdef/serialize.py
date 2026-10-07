@@ -210,13 +210,20 @@ def package_name(standard: str) -> str:
 
 
 @deal.pure
-def build_files(library: Library) -> dict[str, bytes]:
+def package_folder(standard: str, package: str) -> str:
+    """Return the data package's folder: the `package` key, else `package_name` (D45)."""
+    return package or package_name(standard)
+
+
+@deal.pure
+def build_files(library: Library, package: str = "") -> dict[str, bytes]:
     """Return every file `write_build` writes, by path relative to the repo root (with `/`).
 
     `build/resolved/<n>.json`, `build/svg/<n>.svg`, `build/annotated/<n>.svg`, `build/README.md`
     and `src/<package>/bundle.json`, as UTF-8 bytes in path order. Text that UTF-8 cannot encode
     (a lone surrogate in a name) is written as `?`, so the result never depends on the input being
-    well formed. `write_build` and `stale_build` both use this, so they cannot disagree.
+    well formed. `package` is the `library.toml` key (D45). `write_build` and `stale_build` both
+    use this, so they cannot disagree.
     """
     files = {"build/README.md": readme(library)}
     for number in sorted(library.symbols):
@@ -226,5 +233,7 @@ def build_files(library: Library) -> dict[str, bytes]:
         files[f"build/annotated/{number}.svg"] = to_svg(
             symbol, annotate=True, texts=sample_texts(symbol)
         )
-    files[f"src/{package_name(library.standard)}/bundle.json"] = to_json(bundle_to_data(library))
+    files[f"src/{package_folder(library.standard, package)}/bundle.json"] = to_json(
+        bundle_to_data(library)
+    )
     return {path: files[path].encode("utf-8", errors="replace") for path in sorted(files)}

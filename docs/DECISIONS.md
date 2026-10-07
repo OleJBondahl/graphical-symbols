@@ -798,3 +798,17 @@ Every action is pinned by full commit SHA with its version in a comment. A relea
 from a commit whose local `just ci` passed; no workflow runs the gate.
 Why: consumers install by an exact PyPI version instead of a git tag.
 Cost if wrong: delete the workflows and yank the release; the git tag install still works.
+
+## D45. Optional `package` key in `library.toml` (SYMDEF SD8, amends D8)
+
+Decided: `library.toml` may carry `package = "name"`, the data package's folder under `src/`
+(letters, digits and `_`, not starting with a digit; anything else is a `schema` finding at
+`/package`). `LibraryConfig` gains `package`, empty by default. `Library` does not change:
+section 11 of the spec fixes its fields, and a test pins them. `write_build` and `stale_build`
+already take the repo root, so they read the key from `root/library.toml` and pass it to
+`build_files(library, package)`; a root without a readable `library.toml` gets the folder D8 makes
+from the standard. This is the fix D8 named for itself.
+Why: a data package whose folder is not its standard's squashed name (`electrical_symbols` for
+`IEC 60617`) needs a way to say so.
+Cost if wrong: drop the key; the default rule is unchanged. A library built in memory and written
+to a root with no `library.toml` cannot name its folder.

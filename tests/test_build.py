@@ -340,3 +340,36 @@ class TestOddText:
 def test_the_package_exports_the_build_functions():
     assert symdef.write_build is write_build
     assert symdef.stale_build is stale_build
+
+
+class TestPackageKey:
+    """The optional `package` key of `library.toml` names the data package's folder (D45)."""
+
+    def repo(self, tmp_path, extra=""):
+        root = tmp_path / "repo"
+        shutil.copytree(GUIDE, root)
+        config = root / "library.toml"
+        config.write_text(config.read_text(encoding="utf-8") + extra, encoding="utf-8")
+        return root
+
+    def test_the_bundle_goes_to_the_named_package(self, tmp_path):
+        root = self.repo(tmp_path, '\npackage = "my_pkg"\n')
+        write_build(load_library(root), root)
+        assert (root / "src" / "my_pkg" / "bundle.json").is_file()
+        assert not (root / "src" / "iec60617").exists()
+
+    def test_stale_build_agrees_with_the_named_package(self, tmp_path):
+        root = self.repo(tmp_path, '\npackage = "my_pkg"\n')
+        library = load_library(root)
+        assert stale_build(library, root) != ()
+        write_build(library, root)
+        assert stale_build(library, root) == ()
+
+    def test_without_the_key_the_folder_comes_from_the_standard(self, tmp_path):
+        root = self.repo(tmp_path)
+        write_build(load_library(root), root)
+        assert (root / BUNDLE).is_file()
+
+    def test_a_root_without_library_toml_gets_the_default_folder(self, tmp_path):
+        write_build(LIBRARY, tmp_path)
+        assert (tmp_path / BUNDLE).is_file()

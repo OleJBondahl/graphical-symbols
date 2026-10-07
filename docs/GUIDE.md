@@ -35,7 +35,7 @@ wires run on a 1 M grid. The wiring contract is linted in all 8 orientations (`O
 ## Layout of a data repo
 
 ```
-library.toml          standard, title, number_pattern
+library.toml          standard, title, number_pattern, package (optional)
 symbols/<number>.toml one file per symbol; the file stem is the reference number
 build/                generated: resolved JSON, SVGs, a gallery README
 src/<package>/bundle.json   generated: every symbol, resolved
@@ -48,6 +48,9 @@ standard = "IEC 60617"
 title = "IEC 60617 symbols"
 number_pattern = '^S\d{5}$'
 ```
+
+`src/<package>` is the standard lowercased with only letters and digits (`IEC 60617` gives
+`iec60617`). An optional `package = "name"` line in `library.toml` names the folder instead (D45).
 
 A reference number must be a file stem: letters, digits, `_` and `-` in parts joined by single
 dots (D31). Data repos hold data only; the toolkit and its gates come from this package.
