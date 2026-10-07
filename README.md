@@ -40,7 +40,7 @@ The key ideas:
 ## What is here
 
 The data model and `orient`, the boxes and `repeat`, the TOML reader with its JSON Schema
-(`schema/symbol.schema.json`), the composition resolver, 34 lint rules, plain and annotated SVG,
+(`src/symdef/schema/symbol.schema.json`), the composition resolver, 34 lint rules, plain and annotated SVG,
 and the build (resolved JSON per symbol, the bundle, SVGs, a gallery README). Decisions the spec
 leaves open, and concerns about the spec, are in [docs/DECISIONS.md](docs/DECISIONS.md).
 

@@ -43,7 +43,9 @@ from symdef.serialize import bundle_to_data, symbol_to_data, to_json
 TESTS = FilePath(__file__).resolve().parent
 GUIDE = TESTS / "fixtures" / "guide"
 EXPECTED = TESTS / "fixtures" / "expected"
-SCHEMA = json.loads((TESTS.parent / "schema" / "symbol.schema.json").read_text(encoding="utf-8"))
+SCHEMA = json.loads(
+    (TESTS.parent / "src" / "symdef" / "schema" / "symbol.schema.json").read_text(encoding="utf-8")
+)
 JSON_SCHEMA = Draft202012Validator(SCHEMA)
 
 LIBRARY = load_library(GUIDE)

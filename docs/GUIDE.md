@@ -103,7 +103,7 @@ parts = [
 ports = { in = "contact.in", out = "contact.out" }
 ```
 
-`schema/symbol.schema.json` describes the file structurally only (D4). The rules that need
+`src/symdef/schema/symbol.schema.json` describes the file structurally only (D4). The rules that need
 meaning are lint rules. A line may bind to a port with `port`, and the file's `schema` integer
 did not step for it (D40).
 

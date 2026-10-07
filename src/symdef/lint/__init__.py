@@ -79,7 +79,16 @@ CHECKS: Mapping[str, Check] = MappingProxyType(
     }
 )
 
-__all__ = ["CHECKS", "RULES", "RULE_IDS", "Rule", "lint", "ordered", "run_checks"]
+__all__ = [
+    "CHECKS",
+    "RULES",
+    "RULE_IDS",
+    "Rule",
+    "finding_key",
+    "lint",
+    "ordered",
+    "run_checks",
+]
 
 
 @deal.pure

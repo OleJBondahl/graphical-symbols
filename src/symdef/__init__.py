@@ -19,7 +19,7 @@ from symdef.geometry import (
     Text,
     Weight,
 )
-from symdef.lint import lint
+from symdef.lint import RULES, finding_key, lint
 from symdef.model import (
     Allow,
     Anchor,
@@ -46,6 +46,7 @@ __all__ = [
     "DEFAULT_MODULE_MM",
     "GRID_DIVISION",
     "LIBRARY_VERSION",
+    "RULES",
     "Allow",
     "Anchor",
     "Arc",
@@ -78,6 +79,7 @@ __all__ = [
     "Vocabulary",
     "Weight",
     "body_box",
+    "finding_key",
     "keepout_box",
     "lint",
     "load_bundle",

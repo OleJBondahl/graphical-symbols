@@ -14,7 +14,7 @@ from jsonschema import Draft202012Validator
 from symdef.load import symbol_from_data, validate
 
 TESTS = Path(__file__).resolve().parent
-SCHEMA_PATH = TESTS.parent / "schema" / "symbol.schema.json"
+SCHEMA_PATH = TESTS.parent / "src" / "symdef" / "schema" / "symbol.schema.json"
 FIXTURES = TESTS / "fixtures"
 VALID = sorted((FIXTURES / "schema" / "valid").glob("*.toml"))
 INVALID = sorted((FIXTURES / "schema" / "invalid").glob("*.toml"))

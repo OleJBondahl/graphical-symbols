@@ -832,3 +832,17 @@ Why: a set for another domain (pipes, ISA instruments) needs its own words and d
 toolkit supplies mechanism, not policy.
 Cost if wrong: a consumer of `PathKind` or `Potential` compares strings instead; a set that
 declares nothing cannot use any path kind.
+
+## D47. The surface is every name the docs call; the schema ships in the wheel (SYMDEF SD10 and SD11)
+
+Decided: `RULES` and `finding_key` join `symdef.__all__` (and `finding_key` joins
+`symdef.lint.__all__`), and a test reads the python blocks of the README and the guide and fails
+for any `from symdef... import name` whose name is not in that module's `__all__`.
+`schema/symbol.schema.json` moves to `src/symdef/schema/symbol.schema.json`, so the wheel carries
+it, and gains `"$id": "https://olejbondahl.github.io/symdef/symbol.schema.json"`; the docs site
+publishes the same file at that address. An editor that reads a `#:schema` line then completes and
+checks a symbol file as it is typed. The schema checks structure only; the declared words stay a
+load check (D46).
+Why: a user should find every documented name on the surface, and an editor needs a schema it can
+fetch.
+Cost if wrong: move the file back; the `$id` is only an address.

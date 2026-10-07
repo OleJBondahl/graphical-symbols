@@ -1,10 +1,10 @@
 """Read symbol files and `library.toml`: text or decoded data in, findings out, never raises.
 
-`validate` is the hand-written twin of `schema/symbol.schema.json`; the agreement test keeps the
-two in step. Both are structural only: types, required keys, enums and array shapes. The id
-pattern, the grid, positive sizes and the number pattern are lint rules. The one bound on values
-is that every number is finite with an absolute value of at most 1e6 module units, which keeps
-all later arithmetic total.
+`validate` is the hand-written twin of `schema/symbol.schema.json` (in the package); the agreement
+test keeps the two in step. Both are structural only: types, required keys, enums and array shapes.
+The id pattern, the grid, positive sizes and the number pattern are lint rules. The one bound on
+values is that every number is finite with an absolute value of at most 1e6 module units, which
+keeps all later arithmetic total.
 """
 
 import json
