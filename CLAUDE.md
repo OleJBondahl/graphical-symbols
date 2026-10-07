@@ -38,11 +38,14 @@ spec section 11 exactly as written; a new name gets a decision entry.
 
 - Python 3.15 (`.python-version`); `requires-python` is `>=3.14`, and `just
   ci` runs the tests on 3.14 too, `uv` only (never bare `python` or `pip`), ruff, ty, pytest, hypothesis,
-  vulture, deal. Every dependency pinned to the exact latest stable version. Runtime dependency:
-  `deal` only (`jsonschema` may be a dev dependency for the agreement test). TOML is read with the
+  vulture. Every dependency pinned to the exact latest stable version. No runtime dependency
+  (`jsonschema` may be a dev dependency for the agreement test). TOML is read with the
   standard library's `tomllib`.
-- Pure core: every module-level function in a pure module is `@deal.pure` and does not raise. Only
-  the modules that read or write files are impure. `scripts/fp_purity_gate.py` enforces it.
+- Pure core: every module under `src/symdef/` is pure except those listed in
+  `scripts/fp_purity_gate.py`'s `IMPURE_MODULES`. A pure module does no file or console I/O, reads
+  no clock or randomness, and writes no module or global state. A function raises only the errors
+  its docstring names. The gate enforces it with the standard library's `ast`. No contract
+  library: users pay for nothing they did not ask for (owner 2026-10-07).
 - `docs/` holds `DECISIONS.md` and `GUIDE.md` only; plans stay out of the repo.
 - Frozen slotted dataclasses; transforms are free functions; no positional port aliases.
 - Every gate and lint rule is proven able to fail with a deliberately broken fixture.
