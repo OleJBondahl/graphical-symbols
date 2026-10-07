@@ -7,18 +7,18 @@ from build_symbol import plain_symbol
 from hypothesis import given
 from hypothesis import strategies as st
 
-from graphical_symbols.build import load_library
-from graphical_symbols.geometry import Direction, Point
-from graphical_symbols.lint import RULES, Rule, lint
-from graphical_symbols.lint.file import (
+from symdef.build import load_library
+from symdef.geometry import Direction, Point
+from symdef.lint import RULES, Rule, lint
+from symdef.lint.file import (
     is_valid_id,
     metadata_findings,
     part_id_findings,
     symbol_id_findings,
 )
-from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Anchor, LibraryConfig, Port, Severity
-from graphical_symbols.repeat import repeat
+from symdef.lint.registry import quote, rule_finding
+from symdef.model import Anchor, LibraryConfig, Port, Severity
+from symdef.repeat import repeat
 
 P = Point
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"

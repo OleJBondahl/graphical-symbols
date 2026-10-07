@@ -7,11 +7,11 @@ from pathlib import Path
 
 import pytest
 
-import graphical_symbols
-from graphical_symbols.build import load_library, stale_build, write_build
-from graphical_symbols.geometry import Direction, Line, Point, Text
-from graphical_symbols.model import Library, Port, Slot, Status
-from graphical_symbols.serialize import build_files, package_name
+import symdef
+from symdef.build import load_library, stale_build, write_build
+from symdef.geometry import Direction, Line, Point, Text
+from symdef.model import Library, Port, Slot, Status
+from symdef.serialize import build_files, package_name
 
 TESTS = Path(__file__).resolve().parent
 GUIDE = TESTS / "fixtures" / "guide"
@@ -338,5 +338,5 @@ class TestOddText:
 
 
 def test_the_package_exports_the_build_functions():
-    assert graphical_symbols.write_build is write_build
-    assert graphical_symbols.stale_build is stale_build
+    assert symdef.write_build is write_build
+    assert symdef.stale_build is stale_build

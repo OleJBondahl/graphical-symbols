@@ -2,8 +2,8 @@
 
 import deal
 
-from graphical_symbols.lint.registry import RESOLVER_RULES, RULE_IDS, quote, rule_finding
-from graphical_symbols.model import Allow, Finding
+from symdef.lint.registry import RESOLVER_RULES, RULE_IDS, quote, rule_finding
+from symdef.model import Allow, Finding
 
 
 @deal.pure

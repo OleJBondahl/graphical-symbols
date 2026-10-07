@@ -11,11 +11,11 @@ from typing import Any
 
 import deal
 
-from graphical_symbols.geometry import Element, Line, Orientation, Point, Style, Weight
-from graphical_symbols.lint.file import metadata_findings, part_id_findings
-from graphical_symbols.lint.registry import finding_key, quote, rule_finding
-from graphical_symbols.load import symbol_from_data, validate
-from graphical_symbols.model import (
+from symdef.geometry import Element, Line, Orientation, Point, Style, Weight
+from symdef.lint.file import metadata_findings, part_id_findings
+from symdef.lint.registry import finding_key, quote, rule_finding
+from symdef.load import symbol_from_data, validate
+from symdef.model import (
     Anchor,
     Finding,
     LibraryConfig,
@@ -26,8 +26,8 @@ from graphical_symbols.model import (
     Symbol,
     nodes_of,
 )
-from graphical_symbols.orient import orient, translate
-from graphical_symbols.repeat import repeat
+from symdef.orient import orient, translate
+from symdef.repeat import repeat
 
 _PLACEMENT_KEYS = ("to", "length", "via")
 

@@ -16,7 +16,7 @@ from typing import Any
 
 import deal
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -29,7 +29,7 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
-from graphical_symbols.model import (
+from symdef.model import (
     Allow,
     Anchor,
     Finding,

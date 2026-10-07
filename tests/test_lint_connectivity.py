@@ -9,10 +9,10 @@ from fixture_pipeline import run_fixture, run_fixture_by_file
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from graphical_symbols.build import load_library
-from graphical_symbols.geometry import Direction, Orientation, Point
-from graphical_symbols.lint import CHECKS, RULES, lint
-from graphical_symbols.lint.connectivity import (
+from symdef.build import load_library
+from symdef.geometry import Direction, Orientation, Point
+from symdef.lint import CHECKS, RULES, lint
+from symdef.lint.connectivity import (
     node_invalid,
     path_invalid,
     port_isolated,
@@ -20,7 +20,7 @@ from graphical_symbols.lint.connectivity import (
     through_count,
     through_missing,
 )
-from graphical_symbols.model import (
+from symdef.model import (
     Node,
     PathKind,
     Port,
@@ -28,10 +28,10 @@ from graphical_symbols.model import (
     Severity,
     SymbolKind,
 )
-from graphical_symbols.model import (
+from symdef.model import (
     Path as SymbolPath,
 )
-from graphical_symbols.orient import orient
+from symdef.orient import orient
 
 P = Point
 N, E, S, W = Direction.N, Direction.E, Direction.S, Direction.W

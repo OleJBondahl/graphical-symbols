@@ -11,7 +11,7 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from jsonschema import Draft202012Validator
 
-from graphical_symbols.load import symbol_from_data, validate
+from symdef.load import symbol_from_data, validate
 
 TESTS = Path(__file__).resolve().parent
 SCHEMA_PATH = TESTS.parent / "schema" / "symbol.schema.json"

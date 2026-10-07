@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from graphical_symbols.boxes import body_box, slot_box
-from graphical_symbols.build import load_library
-from graphical_symbols.lint import lint
-from graphical_symbols.load import parse_config
-from graphical_symbols.model import Severity, Slot
-from graphical_symbols.repeat import repeat
-from graphical_symbols.resolve import resolve_library
+from symdef.boxes import body_box, slot_box
+from symdef.build import load_library
+from symdef.lint import lint
+from symdef.load import parse_config
+from symdef.model import Severity, Slot
+from symdef.repeat import repeat
+from symdef.resolve import resolve_library
 
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
 CLEAN = ["S00227", "S00230", "S00305", "S00016", "S00171"]

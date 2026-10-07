@@ -10,8 +10,8 @@ from fixture_pipeline import run_fixture_by_file
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from graphical_symbols.build import load_library
-from graphical_symbols.geometry import (
+from symdef.build import load_library
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -22,8 +22,8 @@ from graphical_symbols.geometry import (
     Polyline,
     Text,
 )
-from graphical_symbols.lint import CHECKS, RULES, lint
-from graphical_symbols.lint.ports import (
+from symdef.lint import CHECKS, RULES, lint
+from symdef.lint.ports import (
     lead_off_port,
     port_duplicate_id,
     port_lane_clear,
@@ -33,9 +33,9 @@ from graphical_symbols.lint.ports import (
     port_position_shared,
     port_spacing,
 )
-from graphical_symbols.model import Allow, Node, PathKind, Port, Severity, Slot
-from graphical_symbols.model import Path as SymbolPath
-from graphical_symbols.orient import orient
+from symdef.model import Allow, Node, PathKind, Port, Severity, Slot
+from symdef.model import Path as SymbolPath
+from symdef.orient import orient
 
 P = Point
 N, E, S, W = Direction.N, Direction.E, Direction.S, Direction.W

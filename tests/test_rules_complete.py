@@ -8,8 +8,8 @@ import pytest
 from fixture_pipeline import BROKEN, run_fixture
 from test_lint_registry import GUIDE, guide_rules
 
-from graphical_symbols.lint import CHECKS, RULE_IDS, RULES
-from graphical_symbols.model import Severity
+from symdef.lint import CHECKS, RULE_IDS, RULES
+from symdef.model import Severity
 
 E, W = Severity.ERROR, Severity.WARNING
 THE_RULES = {

@@ -7,8 +7,8 @@ from xml.sax.saxutils import escape
 
 import deal
 
-from graphical_symbols.boxes import body_box, keepout_box, slot_box
-from graphical_symbols.geometry import (
+from symdef.boxes import body_box, keepout_box, slot_box
+from symdef.geometry import (
     Arc,
     Box,
     Circle,
@@ -24,8 +24,8 @@ from graphical_symbols.geometry import (
     arc_point,
     arc_sweep,
 )
-from graphical_symbols.model import Anchor, Port, Slot, Symbol
-from graphical_symbols.units import DEFAULT_MODULE_MM
+from symdef.model import Anchor, Port, Slot, Symbol
+from symdef.units import DEFAULT_MODULE_MM
 
 _HALF_TURN = 180
 _FULL_TURN = 360

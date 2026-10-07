@@ -12,8 +12,8 @@ from types import MappingProxyType
 
 import deal
 
-from graphical_symbols.geometry import Orientation
-from graphical_symbols.model import Finding, Severity, Symbol
+from symdef.geometry import Orientation
+from symdef.model import Finding, Severity, Symbol
 
 _QUOTE_LIMIT = 60
 

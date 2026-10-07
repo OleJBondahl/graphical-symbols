@@ -2,9 +2,9 @@
 
 import deal
 
-from graphical_symbols.geometry import Direction
-from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Finding, Port, Symbol, SymbolKind, nodes_of
+from symdef.geometry import Direction
+from symdef.lint.registry import quote, rule_finding
+from symdef.model import Finding, Port, Symbol, SymbolKind, nodes_of
 
 _PAIR = 2
 

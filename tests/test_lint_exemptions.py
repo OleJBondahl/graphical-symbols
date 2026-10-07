@@ -2,9 +2,9 @@
 
 import pytest
 
-from graphical_symbols.lint.exemptions import allow_unknown, allow_unused, exempt
-from graphical_symbols.lint.registry import RESOLVER_RULES
-from graphical_symbols.model import Allow, Finding, Severity
+from symdef.lint.exemptions import allow_unknown, allow_unused, exempt
+from symdef.lint.registry import RESOLVER_RULES
+from symdef.model import Allow, Finding, Severity
 
 # The rules only the resolver reports: `lint` never runs them, so `lint_allow` cannot cover them.
 RESOLVER_ONLY = [

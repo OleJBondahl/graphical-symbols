@@ -1,6 +1,6 @@
 """The orientation that undoes another, for the tests: only R90 and R270 are not their own."""
 
-from graphical_symbols.geometry import Orientation
+from symdef.geometry import Orientation
 
 _INVERSES = {Orientation.R90: Orientation.R270, Orientation.R270: Orientation.R90}
 

@@ -4,8 +4,8 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from graphical_symbols.boxes import body_box, element_box, keepout_box, slot_box
-from graphical_symbols.geometry import (
+from symdef.boxes import body_box, element_box, keepout_box, slot_box
+from symdef.geometry import (
     Arc,
     Box,
     Circle,
@@ -16,8 +16,8 @@ from graphical_symbols.geometry import (
     Polyline,
     Text,
 )
-from graphical_symbols.model import Reference, Slot, Status, Symbol, SymbolKind
-from graphical_symbols.orient import orient
+from symdef.model import Reference, Slot, Status, Symbol, SymbolKind
+from symdef.orient import orient
 
 
 def sym(*elements, slots=()):

@@ -9,8 +9,8 @@ from build_symbol import plain_symbol
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-import graphical_symbols.svg as svg_module
-from graphical_symbols import (
+import symdef.svg as svg_module
+from symdef import (
     Anchor,
     Arc,
     Circle,

@@ -4,9 +4,9 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from graphical_symbols.errors import LibraryError
-from graphical_symbols.lint.registry import rule_finding
-from graphical_symbols.load import (
+from symdef.errors import LibraryError
+from symdef.lint.registry import rule_finding
+from symdef.load import (
     is_file_stem,
     library_from_bundle,
     parse_config,
@@ -14,9 +14,9 @@ from graphical_symbols.load import (
     parse_toml,
     validate_bundle,
 )
-from graphical_symbols.model import Finding, Library, LibraryConfig
-from graphical_symbols.resolve import resolve_library
-from graphical_symbols.serialize import GENERATED_DIRS, build_files, package_name
+from symdef.model import Finding, Library, LibraryConfig
+from symdef.resolve import resolve_library
+from symdef.serialize import GENERATED_DIRS, build_files, package_name
 
 
 def _named(name: str, findings: tuple[Finding, ...]) -> tuple[Finding, ...]:

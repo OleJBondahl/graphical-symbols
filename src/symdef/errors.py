@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from graphical_symbols.model import Finding
+    from symdef.model import Finding
 
 
 class GraphicalSymbolsError(Exception):

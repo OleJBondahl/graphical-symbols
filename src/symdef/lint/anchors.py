@@ -2,9 +2,9 @@
 
 import deal
 
-from graphical_symbols.lint.geometry import point_on_geometry
-from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Finding, Symbol
+from symdef.lint.geometry import point_on_geometry
+from symdef.lint.registry import quote, rule_finding
+from symdef.model import Finding, Symbol
 
 
 @deal.pure

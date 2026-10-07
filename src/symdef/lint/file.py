@@ -6,8 +6,8 @@ from typing import Any
 
 import deal
 
-from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Finding, LibraryConfig, Symbol
+from symdef.lint.registry import quote, rule_finding
+from symdef.model import Finding, LibraryConfig, Symbol
 
 _ID = re.compile(r"[a-z][a-z0-9_]*")
 _POLE_PORT = re.compile(r"(?:[1-9][0-9]*\.)+[a-z][a-z0-9_]*")

@@ -8,9 +8,9 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from graphical_symbols.geometry import Direction, Line, Point, Style, Weight
-from graphical_symbols.load import parse_toml, symbol_from_data
-from graphical_symbols.model import (
+from symdef.geometry import Direction, Line, Point, Style, Weight
+from symdef.load import parse_toml, symbol_from_data
+from symdef.model import (
     Allow,
     Anchor,
     Node,
@@ -25,8 +25,8 @@ from graphical_symbols.model import (
     SymbolKind,
     nodes_of,
 )
-from graphical_symbols.orient import translate
-from graphical_symbols.repeat import repeat
+from symdef.orient import translate
+from symdef.repeat import repeat
 
 SYMBOLS = FilePath(__file__).resolve().parent / "fixtures" / "guide" / "symbols"
 N, E, S, W = Direction.N, Direction.E, Direction.S, Direction.W

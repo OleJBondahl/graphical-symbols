@@ -1,7 +1,7 @@
-# Guide to graphical-symbols
+# Guide to symdef
 
 For someone writing a data repo of symbols or consuming the toolkit. The binding spec is
-[SYMBOL_INTERFACE.html](../src/graphical_symbols/docs/SYMBOL_INTERFACE.html) (the "spec" below):
+[SYMBOL_INTERFACE.html](../src/symdef/docs/SYMBOL_INTERFACE.html) (the "spec" below):
 this guide names the concepts and the calls, and the spec has the exact definitions. Where the
 spec was silent, the choice is a numbered entry in [DECISIONS.md](DECISIONS.md) (D1, D2, ...).
 
@@ -107,7 +107,7 @@ did not step for it (D40).
 ## Loading and resolving
 
 ```python
-from graphical_symbols import load_library
+from symdef import load_library
 
 library = load_library(root)    # root is the data repo's directory
 contact = library.get("S00227")  # UnknownSymbolError if absent
@@ -123,8 +123,8 @@ Composite inheritance is D20; structural problems only the resolver sees are D17
 ## Linting
 
 ```python
-from graphical_symbols import lint
-from graphical_symbols.lint import RULES
+from symdef import lint
+from symdef.lint import RULES
 
 assert len(RULES) == 34
 for finding in lint(contact):
@@ -146,7 +146,7 @@ as written; see C1 in DECISIONS.md.
 ## Building
 
 ```python
-from graphical_symbols import stale_build, write_build
+from symdef import stale_build, write_build
 
 write_build(library, root)
 assert stale_build(library, root) == ()
@@ -180,7 +180,7 @@ Fransys monorepo loads its packaged bundle this way.
 ## Rendering
 
 ```python
-from graphical_symbols import Orientation, orient, repeat, to_fragment, to_svg
+from symdef import Orientation, orient, repeat, to_fragment, to_svg
 
 breaker = orient(repeat(contact, 3), Orientation.R0)
 svg = to_svg(breaker, annotate=True, texts={"tag": "-Q1"})
@@ -195,17 +195,14 @@ placeable `<g>` fragment instead of a document (D39). Both are total: any input 
 
 ## Consuming
 
-Pin the toolkit by an exact git tag, never a branch or a range:
+Pin the toolkit to an exact version from PyPI, never a range:
 
 ```toml
-dependencies = ["graphical-symbols"]
-
-[tool.uv.sources]
-graphical-symbols = { git = "https://github.com/OleJBondahl/graphical-symbols", tag = "vX.Y.Z" }
+dependencies = ["symdef==X.Y.Z"]
 ```
 
-Replace `vX.Y.Z` with a released tag. A change a consumer
-needs lands here first, is released under a new tag, and the consumer then bumps its pin.
+Replace `X.Y.Z` with a released version. A change a consumer needs lands here first, is
+released under a new tag, and the consumer then bumps its pin.
 `LIBRARY_VERSION` is the installed version as a constant. The one runtime dependency is `deal`
 (D36). The spec ships as package data and is read through `importlib.resources` (D38).
 

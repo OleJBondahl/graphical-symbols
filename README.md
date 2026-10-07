@@ -1,4 +1,4 @@
-# graphical-symbols
+# symdef
 
 Standard-agnostic toolkit for graphical-symbol data. Symbols are TOML files; the toolkit loads
 them, resolves composition, lints the wiring contract, renders SVG, and builds a resolved JSON
@@ -8,12 +8,12 @@ ISA 5.1 later.
 
 Status: alpha. The toolkit the spec below describes is built: reading, resolving, linting, SVG and
 the build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
-(`v0.1.0` to `v0.3.0`); Fransys pins one of them. Not on PyPI (D41).
+(`v0.1.0` to `v0.3.0` as `graphical-symbols`; `v0.4.0` on as `symdef`); Fransys pins one of them.
 
 ## Install
 
 ```
-uv add "graphical-symbols @ git+https://github.com/OleJBondahl/graphical-symbols@v0.3.0"
+uv add "symdef==0.4.0"
 ```
 
 Python 3.15 or later. The one runtime dependency is `deal`. More depth:
@@ -21,9 +21,9 @@ Python 3.15 or later. The one runtime dependency is `deal`. More depth:
 
 ## The design
 
-[src/graphical_symbols/docs/SYMBOL_INTERFACE.html](src/graphical_symbols/docs/SYMBOL_INTERFACE.html)
+[src/symdef/docs/SYMBOL_INTERFACE.html](src/symdef/docs/SYMBOL_INTERFACE.html)
 is the binding, final spec. Open it in a browser; it ships as package data, readable at runtime
-through `importlib.resources.files("graphical_symbols").joinpath("docs/SYMBOL_INTERFACE.html")`.
+through `importlib.resources.files("symdef").joinpath("docs/SYMBOL_INTERFACE.html")`.
 The key ideas:
 
 - A symbol is a definition: no tag, terminal numbers, position or orientation. Those belong to
@@ -48,8 +48,8 @@ leaves open, and concerns about the spec, are in [docs/DECISIONS.md](docs/DECISI
 A data repo has `library.toml` and `symbols/<number>.toml`; `root` below is its directory.
 
 ```python
-from graphical_symbols import lint, load_library
-from graphical_symbols.lint import RULES
+from symdef import lint, load_library
+from symdef.lint import RULES
 
 library = load_library(root)  # raises LibraryError, listing every problem in the files
 contact = library.get("S00227")  # by number; iterating a library is sorted by number
@@ -64,7 +64,7 @@ Symbols are immutable; `orient`, `translate` and `repeat` return new ones. A rep
 an ordinary symbol with ports such as `1.in` and `3.out`.
 
 ```python
-from graphical_symbols import Orientation, keepout_box, orient, repeat, to_svg
+from symdef import Orientation, keepout_box, orient, repeat, to_svg
 
 breaker = orient(repeat(contact, 3), Orientation.R0)
 print(keepout_box(breaker))
@@ -78,7 +78,7 @@ normalised name (lowercase letters and digits, D8): the example's standard is `I
 package is `iec60617`.
 
 ```python
-from graphical_symbols import load_bundle, stale_build, write_build
+from symdef import load_bundle, stale_build, write_build
 
 write_build(library, root)
 assert stale_build(library, root) == ()

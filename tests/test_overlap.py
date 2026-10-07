@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Box,
     Circle,
@@ -18,7 +18,7 @@ from graphical_symbols.geometry import (
     Text,
     arc_point,
 )
-from graphical_symbols.lint.overlap import boxes_overlap, overlaps_rect, wire_lane
+from symdef.lint.overlap import boxes_overlap, overlaps_rect, wire_lane
 
 P = Point
 SOLID = Fill.SOLID

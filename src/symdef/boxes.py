@@ -4,7 +4,7 @@ import math
 
 import deal
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Box,
     Circle,
@@ -17,7 +17,7 @@ from graphical_symbols.geometry import (
     arc_point,
     arc_sweep,
 )
-from graphical_symbols.model import Slot, Symbol
+from symdef.model import Slot, Symbol
 
 _AXIS_ANGLES = (0, 90, 180, 270)
 _FULL_TURN = 360

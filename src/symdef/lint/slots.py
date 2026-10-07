@@ -2,10 +2,10 @@
 
 import deal
 
-from graphical_symbols.boxes import body_box, slot_box
-from graphical_symbols.lint.overlap import boxes_overlap, overlaps_rect
-from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Finding, Symbol, SymbolKind
+from symdef.boxes import body_box, slot_box
+from symdef.lint.overlap import boxes_overlap, overlaps_rect
+from symdef.lint.registry import quote, rule_finding
+from symdef.model import Finding, Symbol, SymbolKind
 
 _MARKING = "marking."
 _NAMED_OFFENDERS = 3

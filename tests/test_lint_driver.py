@@ -8,10 +8,10 @@ from build_symbol import plain_symbol
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-import graphical_symbols
-from graphical_symbols import lint as exported_lint
-from graphical_symbols.build import load_library
-from graphical_symbols.geometry import (
+import symdef
+from symdef import lint as exported_lint
+from symdef.build import load_library
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -22,9 +22,9 @@ from graphical_symbols.geometry import (
     Polyline,
     Text,
 )
-from graphical_symbols.lint import CHECKS, RULES, lint, ordered, run_checks
-from graphical_symbols.lint.registry import RULE_IDS, Rule
-from graphical_symbols.model import (
+from symdef.lint import CHECKS, RULES, lint, ordered, run_checks
+from symdef.lint.registry import RULE_IDS, Rule
+from symdef.model import (
     Allow,
     Anchor,
     Finding,
@@ -37,8 +37,8 @@ from graphical_symbols.model import (
     Symbol,
     SymbolKind,
 )
-from graphical_symbols.model import Path as SymbolPath
-from graphical_symbols.orient import orient
+from symdef.model import Path as SymbolPath
+from symdef.orient import orient
 
 P = Point
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
@@ -68,7 +68,7 @@ THIS_TASK = {
 class TestRegistration:
     def test_lint_is_the_packages_function(self):
         assert exported_lint is lint
-        assert graphical_symbols.__all__.count("lint") == 1
+        assert symdef.__all__.count("lint") == 1
 
     def test_the_guide_names_34_rules(self):
         assert len(RULE_IDS) == 34

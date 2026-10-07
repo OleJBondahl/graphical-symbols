@@ -4,9 +4,9 @@ from dataclasses import replace
 
 import deal
 
-from graphical_symbols.geometry import Element, Line, Point, Style, Weight
-from graphical_symbols.model import Node, Path, Port, Slot, Symbol, nodes_of
-from graphical_symbols.orient import translate
+from symdef.geometry import Element, Line, Point, Style, Weight
+from symdef.model import Node, Path, Port, Slot, Symbol, nodes_of
+from symdef.orient import translate
 
 _DEFAULT_PITCH = 4
 _LINK = "link"

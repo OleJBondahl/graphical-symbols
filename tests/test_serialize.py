@@ -10,8 +10,8 @@ from hypothesis import strategies as st
 from jsonschema import Draft202012Validator
 from roundtrip import normalised, round_trips
 
-from graphical_symbols.build import load_library
-from graphical_symbols.geometry import (
+from symdef.build import load_library
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -23,8 +23,8 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
-from graphical_symbols.load import symbol_from_data, validate
-from graphical_symbols.model import (
+from symdef.load import symbol_from_data, validate
+from symdef.model import (
     Allow,
     Anchor,
     Library,
@@ -39,8 +39,8 @@ from graphical_symbols.model import (
     Symbol,
     SymbolKind,
 )
-from graphical_symbols.repeat import repeat
-from graphical_symbols.serialize import bundle_to_data, symbol_to_data, to_json
+from symdef.repeat import repeat
+from symdef.serialize import bundle_to_data, symbol_to_data, to_json
 
 TESTS = FilePath(__file__).resolve().parent
 GUIDE = TESTS / "fixtures" / "guide"

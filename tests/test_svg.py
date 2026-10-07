@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from graphical_symbols import (
+from symdef import (
     Arc,
     Circle,
     Direction,
@@ -24,8 +24,8 @@ from graphical_symbols import (
     to_fragment,
     to_svg,
 )
-from graphical_symbols.boxes import element_box
-from graphical_symbols.geometry import arc_point
+from symdef.boxes import element_box
+from symdef.geometry import arc_point
 
 NS = {"s": "http://www.w3.org/2000/svg"}
 
@@ -470,7 +470,7 @@ def test_fragment_never_draws_a_slots_sample_text():
 
 
 def test_to_fragment_is_a_public_name():
-    import graphical_symbols
+    import symdef
 
-    assert "to_fragment" in graphical_symbols.__all__
-    assert graphical_symbols.to_fragment is to_fragment
+    assert "to_fragment" in symdef.__all__
+    assert symdef.to_fragment is to_fragment

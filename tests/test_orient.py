@@ -5,7 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 from orientations import inverse
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -18,7 +18,7 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
-from graphical_symbols.model import (
+from symdef.model import (
     Allow,
     Anchor,
     Node,
@@ -32,7 +32,7 @@ from graphical_symbols.model import (
     Symbol,
     SymbolKind,
 )
-from graphical_symbols.orient import (
+from symdef.orient import (
     orient,
     orient_direction,
     orient_point,

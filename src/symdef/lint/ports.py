@@ -2,12 +2,12 @@
 
 import deal
 
-from graphical_symbols.boxes import body_box, keepout_box, slot_box
-from graphical_symbols.geometry import Box, Direction, Line, Point
-from graphical_symbols.lint.geometry import point_on_geometry
-from graphical_symbols.lint.overlap import boxes_overlap, overlaps_rect, wire_lane
-from graphical_symbols.lint.registry import quote, rule_finding
-from graphical_symbols.model import Finding, Port, Symbol, nodes_of
+from symdef.boxes import body_box, keepout_box, slot_box
+from symdef.geometry import Box, Direction, Line, Point
+from symdef.lint.geometry import point_on_geometry
+from symdef.lint.overlap import boxes_overlap, overlaps_rect, wire_lane
+from symdef.lint.registry import quote, rule_finding
+from symdef.model import Finding, Port, Symbol, nodes_of
 
 # How far past the symbol's own extent the finite frame of a wire lane reaches, in module units.
 _LANE_MARGIN = 1.0

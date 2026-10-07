@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-import graphical_symbols
-from graphical_symbols import (
+import symdef
+from symdef import (
     Box,
     Element,
     Orientation,
@@ -35,13 +35,13 @@ SECTION_11_NAMES = [
 
 @pytest.mark.parametrize("name", SECTION_11_NAMES)
 def test_a_section_11_name_is_public(name):
-    assert name in graphical_symbols.__all__
-    assert getattr(graphical_symbols, name) is not None
+    assert name in symdef.__all__
+    assert getattr(symdef, name) is not None
 
 
 def test_the_placement_type_is_the_consumers_own():
-    assert "Placement" not in graphical_symbols.__all__
-    assert not hasattr(graphical_symbols, "Placement")
+    assert "Placement" not in symdef.__all__
+    assert not hasattr(symdef, "Placement")
 
 
 def test_the_guide_drawing_library_snippet_runs_on_the_guide_fixtures():
@@ -100,7 +100,7 @@ SECTION_11_SIGNATURES = {
 
 @pytest.mark.parametrize("name", SECTION_11_SIGNATURES)
 def test_a_section_11_function_has_the_guides_signature(name):
-    assert shape(getattr(graphical_symbols, name)) == SECTION_11_SIGNATURES[name]
+    assert shape(getattr(symdef, name)) == SECTION_11_SIGNATURES[name]
 
 
 # The field order of each section 11 dataclass. `Symbol` ends with `lint_allow`, which the guide's
@@ -130,14 +130,14 @@ SECTION_11_FIELDS = {
 
 @pytest.mark.parametrize("name", SECTION_11_FIELDS)
 def test_a_section_11_dataclass_has_the_guides_fields_in_order(name):
-    cls = getattr(graphical_symbols, name)
+    cls = getattr(symdef, name)
     assert [field.name for field in dataclasses.fields(cls)] == SECTION_11_FIELDS[name]
 
 
 def test_the_library_methods_are_the_guides():
-    assert shape(graphical_symbols.Library.get) == positional("self", "number")
-    assert callable(graphical_symbols.Library.__iter__)
-    assert callable(graphical_symbols.Library.__len__)
+    assert shape(symdef.Library.get) == positional("self", "number")
+    assert callable(symdef.Library.__iter__)
+    assert callable(symdef.Library.__len__)
 
 
 def test_the_signature_check_can_fail():

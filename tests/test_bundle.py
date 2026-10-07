@@ -6,12 +6,12 @@ from pathlib import Path
 import pytest
 from roundtrip import normalised
 
-import graphical_symbols
-from graphical_symbols.build import load_bundle, load_library, stale_build, write_build
-from graphical_symbols.errors import LibraryError
-from graphical_symbols.load import library_from_bundle, parse_json, validate_bundle
-from graphical_symbols.model import Library
-from graphical_symbols.serialize import bundle_to_data, to_json
+import symdef
+from symdef.build import load_bundle, load_library, stale_build, write_build
+from symdef.errors import LibraryError
+from symdef.load import library_from_bundle, parse_json, validate_bundle
+from symdef.model import Library
+from symdef.serialize import bundle_to_data, to_json
 
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
 LIBRARY = load_library(GUIDE)
@@ -210,7 +210,7 @@ class TestLoadBundle:
         assert stale_build(load_bundle(tmp_path / BUNDLE), tmp_path) == ()
 
     def test_it_is_exported_by_the_package(self):
-        assert graphical_symbols.load_bundle is load_bundle
+        assert symdef.load_bundle is load_bundle
 
     def test_a_missing_file_raises_library_error(self, tmp_path):
         with pytest.raises(LibraryError) as raised:

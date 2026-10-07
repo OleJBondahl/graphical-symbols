@@ -8,7 +8,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -20,7 +20,7 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
-from graphical_symbols.load import (
+from symdef.load import (
     is_file_stem,
     parse_config,
     parse_toml,
@@ -28,7 +28,7 @@ from graphical_symbols.load import (
     validate,
     validate_bundle,
 )
-from graphical_symbols.model import (
+from symdef.model import (
     Allow,
     Anchor,
     Finding,

@@ -3,8 +3,8 @@ requires = ["hatchling==1.32.3"]
 build-backend = "hatchling.build"
 
 [project]
-name = "graphical-symbols"
-version = "0.3.0"
+name = "symdef"
+version = "0.4.0"
 description = "Standard-agnostic core for graphical symbols as strict, typed, immutable Python values"
 readme = "README.md"
 requires-python = ">=3.15"
@@ -15,6 +15,9 @@ authors = [{ name = "Ole Johan Bondahl" }]
 dependencies = [
     "deal==4.24.6",
 ]
+
+[project.urls]
+Repository = "https://github.com/OleJBondahl/symdef"
 
 [dependency-groups]
 dev = [
@@ -28,14 +31,14 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/graphical_symbols"]
+packages = ["src/symdef"]
 
 [tool.ty.environment]
 python-version = "3.15"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=graphical_symbols --cov-report=term-missing --cov-fail-under=100"
+addopts = "--cov=symdef --cov-report=term-missing --cov-fail-under=100"
 
 [tool.ruff]
 line-length = 100
@@ -82,8 +85,8 @@ select = [
     "ANN",  # flake8-annotations
 ]
 # TC001/TC003 (move/lazy-import type-only-looking imports) ignored under target-version
-# py315: proven unsafe here, not just a style choice. Moving graphical_symbols.model /
-# graphical_symbols.geometry names into `if TYPE_CHECKING:` breaks dataclass field
+# py315: proven unsafe here, not just a style choice. Moving symdef.model /
+# symdef.geometry names into `if TYPE_CHECKING:` breaks dataclass field
 # annotations at runtime -- `deal`'s contract wrapper calls inspect.signature(), which
 # calls annotationlib.get_annotations() on frozen dataclasses (model.py's Port etc.),
 # raising `NameError: name 'Point' is not defined` because TYPE_CHECKING is False at

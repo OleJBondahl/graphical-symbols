@@ -18,8 +18,8 @@ from itertools import pairwise
 
 import deal
 
-from graphical_symbols.boxes import element_box
-from graphical_symbols.geometry import (
+from symdef.boxes import element_box
+from symdef.geometry import (
     Arc,
     Box,
     Circle,
@@ -33,7 +33,7 @@ from graphical_symbols.geometry import (
     arc_point,
     arc_sweep,
 )
-from graphical_symbols.lint.geometry import TOLERANCE, segments
+from symdef.lint.geometry import TOLERANCE, segments
 
 # Half the width of a wire lane, in module units (guide section 8, point 3).
 LANE_HALF_WIDTH = 0.25

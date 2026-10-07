@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import deal
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -16,7 +16,7 @@ from graphical_symbols.geometry import (
     Polyline,
     Text,
 )
-from graphical_symbols.model import Symbol
+from symdef.model import Symbol
 
 _QUARTER = 90
 _FULL_TURN = 360

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from graphical_symbols import (
+from symdef import (
     Anchor,
     Direction,
     Line,
@@ -27,8 +27,8 @@ from graphical_symbols import (
     slot_box,
     to_svg,
 )
-from graphical_symbols.build import load_library
-from graphical_symbols.gallery import sample_texts
+from symdef.build import load_library
+from symdef.gallery import sample_texts
 
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
 LIBRARY = load_library(GUIDE)

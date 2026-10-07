@@ -4,9 +4,9 @@ import math
 
 from build_symbol import plain_symbol
 
-from graphical_symbols.geometry import Arc, Circle, Direction, Fill, Line, Point, Polyline, Text
-from graphical_symbols.lint.anchors import anchor_duplicate_id, anchor_off_geometry
-from graphical_symbols.model import Anchor, Severity
+from symdef.geometry import Arc, Circle, Direction, Fill, Line, Point, Polyline, Text
+from symdef.lint.anchors import anchor_duplicate_id, anchor_off_geometry
+from symdef.model import Anchor, Severity
 
 P = Point
 

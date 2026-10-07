@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
-import graphical_symbols
-from graphical_symbols.build import load_library
-from graphical_symbols.errors import LibraryError, UnknownSymbolError
-from graphical_symbols.model import Library
+import symdef
+from symdef.build import load_library
+from symdef.errors import LibraryError, UnknownSymbolError
+from symdef.model import Library
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 GUIDE = FIXTURES / "guide"
@@ -64,7 +64,7 @@ class TestGuideLibrary:
             load_library(GUIDE).get("S99999")
 
     def test_is_exported_by_the_package(self):
-        assert graphical_symbols.load_library is load_library
+        assert symdef.load_library is load_library
 
 
 class TestFailures:

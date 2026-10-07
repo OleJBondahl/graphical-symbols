@@ -1,4 +1,4 @@
-# graphical-symbols task runner
+# symdef task runner
 # Usage: just <target>
 
 default:
@@ -18,7 +18,7 @@ dead-code:
 purity:
     uv run python scripts/fp_purity_gate.py
 
-# pytest with coverage; graphical_symbols must stay at 100 percent (--cov-fail-under=100 is
+# pytest with coverage; symdef must stay at 100 percent (--cov-fail-under=100 is
 # baked into [tool.pytest.ini_options] addopts)
 cov:
     uv run pytest --cov-report=term-missing

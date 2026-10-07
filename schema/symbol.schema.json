@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "graphical-symbols symbol file",
+  "title": "symdef symbol file",
   "description": "A symbol source file (atomic or composite, TOML decoded to JSON) or a resolved symbol. Structural only: the id pattern, the drawing and wiring grids, positive sizes and the number pattern are lint rules, not schema rules. The one bound on values: every number is at most 1e6 in absolute value.",
   "type": "object",
   "required": ["schema", "name", "kind", "status", "reference"],

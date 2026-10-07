@@ -2,8 +2,8 @@
 
 from dataclasses import replace
 
-from graphical_symbols.geometry import Line, Point
-from graphical_symbols.model import Reference, Status, Symbol, SymbolKind
+from symdef.geometry import Line, Point
+from symdef.model import Reference, Status, Symbol, SymbolKind
 
 PLAIN = Symbol(
     name="Plain",

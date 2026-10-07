@@ -11,11 +11,11 @@ from typing import Any
 
 import deal
 
-from graphical_symbols.boxes import body_box, keepout_box
-from graphical_symbols.gallery import readme, sample_texts
-from graphical_symbols.geometry import Arc, Box, Circle, Element, Line, Point, Polyline, Text
-from graphical_symbols.model import Library, Slot, Symbol, nodes_of
-from graphical_symbols.svg import to_svg
+from symdef.boxes import body_box, keepout_box
+from symdef.gallery import readme, sample_texts
+from symdef.geometry import Arc, Box, Circle, Element, Line, Point, Polyline, Text
+from symdef.model import Library, Slot, Symbol, nodes_of
+from symdef.svg import to_svg
 
 _SCHEMA_VERSION = 1
 

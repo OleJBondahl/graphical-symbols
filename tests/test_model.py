@@ -2,9 +2,9 @@ import dataclasses
 
 import pytest
 
-from graphical_symbols.errors import GraphicalSymbolsError, LibraryError, UnknownSymbolError
-from graphical_symbols.geometry import Direction, Line, Orientation, Point
-from graphical_symbols.model import (
+from symdef.errors import GraphicalSymbolsError, LibraryError, UnknownSymbolError
+from symdef.geometry import Direction, Line, Orientation, Point
+from symdef.model import (
     Anchor,
     Finding,
     Library,

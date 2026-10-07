@@ -4,9 +4,9 @@ from collections.abc import Callable
 from dataclasses import replace
 from typing import Any
 
-from graphical_symbols.load import symbol_from_data
-from graphical_symbols.model import Slot, Symbol, nodes_of
-from graphical_symbols.serialize import symbol_to_data
+from symdef.load import symbol_from_data
+from symdef.model import Slot, Symbol, nodes_of
+from symdef.serialize import symbol_to_data
 
 
 def _slot_id(slot: Slot) -> str:

@@ -5,7 +5,7 @@ import math
 import pytest
 from build_symbol import plain_symbol
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Circle,
     Direction,
@@ -16,13 +16,13 @@ from graphical_symbols.geometry import (
     Style,
     Text,
 )
-from graphical_symbols.lint.geometry import (
+from symdef.lint.geometry import (
     degenerate,
     off_drawing_grid,
     point_on_geometry,
     text_too_large,
 )
-from graphical_symbols.model import Anchor, Port, Severity, Slot
+from symdef.model import Anchor, Port, Severity, Slot
 
 P = Point
 

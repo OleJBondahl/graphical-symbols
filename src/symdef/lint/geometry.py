@@ -5,7 +5,7 @@ from itertools import pairwise
 
 import deal
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Circle,
     Element,
@@ -17,9 +17,9 @@ from graphical_symbols.geometry import (
     arc_point,
     arc_sweep,
 )
-from graphical_symbols.lint.registry import rule_finding
-from graphical_symbols.model import Finding, Symbol
-from graphical_symbols.units import GRID_DIVISION
+from symdef.lint.registry import rule_finding
+from symdef.model import Finding, Symbol
+from symdef.units import GRID_DIVISION
 
 # The distance under which a point counts as on a curve; the guide's tolerance for derived values.
 TOLERANCE = 1e-9

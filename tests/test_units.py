@@ -1,4 +1,4 @@
-from graphical_symbols.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
+from symdef.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
 
 
 def test_constants():

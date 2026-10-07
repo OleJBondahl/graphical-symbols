@@ -768,3 +768,12 @@ wrong: add a bound and a `schema` finding, as D22 did for numbers and `repeat`.
 - Use `finding_key` (`graphical_symbols.lint.registry`, D34) to sort the concatenated
   `LibraryError.findings` and `lint` results; wrap `load_bundle` at import time for `LibraryError`.
 - Lint `repeat(s, 3)` for every symbol with a through path, and report the C1 outcome.
+
+## D42. The toolkit is `symdef`, version 0.4.0 (SYMDEF SD1)
+
+Decided: the distribution and the import are both `symdef`; the first release under the name is
+0.4.0, continuing the line of `graphical-symbols` 0.3.0. The package folder is `src/symdef`, the
+repository URL in `pyproject.toml` is `https://github.com/OleJBondahl/symdef` (GitHub redirects
+the old URL). Earlier entries keep the old name as they were written.
+Why: a short name that is free on PyPI, one name for repository, distribution and import.
+Cost if wrong: another rename of the same shape; consumers change their pin and imports once more.

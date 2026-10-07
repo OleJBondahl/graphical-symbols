@@ -3,24 +3,18 @@
 import re
 from pathlib import Path
 
-from graphical_symbols.geometry import Orientation
-from graphical_symbols.lint import RULES
-from graphical_symbols.lint.registry import (
+from symdef.geometry import Orientation
+from symdef.lint import RULES
+from symdef.lint.registry import (
     GUIDE_INDEX,
     GUIDE_ORDER,
     RULE_IDS,
     finding_key,
     natural_key,
 )
-from graphical_symbols.model import Finding, Severity
+from symdef.model import Finding, Severity
 
-GUIDE = (
-    Path(__file__).resolve().parent.parent
-    / "src"
-    / "graphical_symbols"
-    / "docs"
-    / "SYMBOL_INTERFACE.html"
-)
+GUIDE = Path(__file__).resolve().parent.parent / "src" / "symdef" / "docs" / "SYMBOL_INTERFACE.html"
 _ROW = re.compile(
     r"<tr>(?:<td rowspan=\"\d+\">(?P<group>[^<]+)</td>)?<td><code>(?P<rule>[a-z-]+)</code>"
     r"(?P<warning> \(warning\))?</td>"

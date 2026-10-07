@@ -1,6 +1,6 @@
 """Fail when a module-level function in a pure module lacks @deal.pure.
 
-Pure modules are every `.py` file under `src/graphical_symbols/`, subpackages included, except
+Pure modules are every `.py` file under `src/symdef/`, subpackages included, except
 the top-level `build.py` (the impure shell) and the top-level `__init__.py`. Modules are
 identified by their path relative to the package, so `lint/__init__.py` is scanned.
 
@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGE_DIR = ROOT / "src" / "graphical_symbols"
+PACKAGE_DIR = ROOT / "src" / "symdef"
 IMPURE_MODULES = frozenset({"build.py", "__init__.py"})  # paths relative to the package
 
 

@@ -1,10 +1,10 @@
 """Standard-agnostic core for graphical symbols."""
 
-from graphical_symbols._version import LIBRARY_VERSION
-from graphical_symbols.boxes import body_box, keepout_box, slot_box
-from graphical_symbols.build import load_bundle, load_library, stale_build, write_build
-from graphical_symbols.errors import GraphicalSymbolsError, LibraryError, UnknownSymbolError
-from graphical_symbols.geometry import (
+from symdef._version import LIBRARY_VERSION
+from symdef.boxes import body_box, keepout_box, slot_box
+from symdef.build import load_bundle, load_library, stale_build, write_build
+from symdef.errors import GraphicalSymbolsError, LibraryError, UnknownSymbolError
+from symdef.geometry import (
     Arc,
     Box,
     Circle,
@@ -19,8 +19,8 @@ from graphical_symbols.geometry import (
     Text,
     Weight,
 )
-from graphical_symbols.lint import lint
-from graphical_symbols.model import (
+from symdef.lint import lint
+from symdef.model import (
     Allow,
     Anchor,
     Finding,
@@ -38,10 +38,10 @@ from graphical_symbols.model import (
     Symbol,
     SymbolKind,
 )
-from graphical_symbols.orient import orient, translate
-from graphical_symbols.repeat import repeat
-from graphical_symbols.svg import to_fragment, to_svg
-from graphical_symbols.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
+from symdef.orient import orient, translate
+from symdef.repeat import repeat
+from symdef.svg import to_fragment, to_svg
+from symdef.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
 
 __all__ = [
     "DEFAULT_MODULE_MM",

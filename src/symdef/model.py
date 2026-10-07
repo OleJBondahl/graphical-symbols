@@ -6,8 +6,8 @@ from enum import Enum
 
 import deal
 
-from graphical_symbols.errors import UnknownSymbolError
-from graphical_symbols.geometry import Direction, Element, Orientation, Point
+from symdef.errors import UnknownSymbolError
+from symdef.geometry import Direction, Element, Orientation, Point
 
 
 class Status(Enum):

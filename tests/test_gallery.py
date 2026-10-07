@@ -3,9 +3,9 @@
 from dataclasses import replace
 from pathlib import Path
 
-from graphical_symbols.build import load_library
-from graphical_symbols.gallery import readme, sample_texts
-from graphical_symbols.model import Library, Status, SymbolKind
+from symdef.build import load_library
+from symdef.gallery import readme, sample_texts
+from symdef.model import Library, Status, SymbolKind
 
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"
 LIBRARY = load_library(GUIDE)

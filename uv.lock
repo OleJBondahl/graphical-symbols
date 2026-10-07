@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.15"
 
 [[package]]
@@ -66,39 +66,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c1/da/76d4c3898ed8901116c8ad9dc1e5babd466e50289ce3808de55f72760d0f/deal-4.24.6.tar.gz", hash = "sha256:1cf4d4bbcb2e84767535e066d3888d2809662d7356dee420331380ff94210a1d", size = 723315, upload-time = "2025-11-30T10:55:43.765Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/71/4d/2a940ef9caa02bb3d6ca2a78ecbcaf158e98da972a54bc3fd8f29f7d86a9/deal-4.24.6-py3-none-any.whl", hash = "sha256:44afc0b11df6be5a4edd81409c7cd02ab0188ad9e90e93a71b4ef3d46d04c546", size = 204440, upload-time = "2025-11-30T10:55:40.954Z" },
-]
-
-[[package]]
-name = "graphical-symbols"
-version = "0.3.0"
-source = { editable = "." }
-dependencies = [
-    { name = "deal" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "hypothesis" },
-    { name = "jsonschema" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "ty" },
-    { name = "vulture" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "deal", specifier = "==4.24.6" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "hypothesis", specifier = "==6.168.0" },
-    { name = "jsonschema", specifier = "==4.26.0" },
-    { name = "pytest", specifier = "==9.1.1" },
-    { name = "pytest-cov", specifier = "==7.1.0" },
-    { name = "ruff", specifier = "==0.16.8" },
-    { name = "ty", specifier = "==0.0.82" },
-    { name = "vulture", specifier = "==2.16" },
 ]
 
 [[package]]
@@ -319,6 +286,39 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88", size = 30594, upload-time = "2021-05-16T22:03:42.897Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575, upload-time = "2021-05-16T22:03:41.177Z" },
+]
+
+[[package]]
+name = "symdef"
+version = "0.4.0"
+source = { editable = "." }
+dependencies = [
+    { name = "deal" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "jsonschema" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "ty" },
+    { name = "vulture" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "deal", specifier = "==4.24.6" }]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "hypothesis", specifier = "==6.168.0" },
+    { name = "jsonschema", specifier = "==4.26.0" },
+    { name = "pytest", specifier = "==9.1.1" },
+    { name = "pytest-cov", specifier = "==7.1.0" },
+    { name = "ruff", specifier = "==0.16.8" },
+    { name = "ty", specifier = "==0.0.82" },
+    { name = "vulture", specifier = "==2.16" },
 ]
 
 [[package]]

@@ -2,7 +2,7 @@ import dataclasses
 
 import pytest
 
-from graphical_symbols.geometry import (
+from symdef.geometry import (
     Arc,
     Box,
     Circle,

@@ -10,11 +10,11 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 from orientations import inverse
 
-from graphical_symbols.geometry import Direction, Line, Orientation, Point, Style, Weight
-from graphical_symbols.lint import lint
-from graphical_symbols.lint.registry import GUIDE_INDEX, finding_key
-from graphical_symbols.load import symbol_from_data
-from graphical_symbols.model import (
+from symdef.geometry import Direction, Line, Orientation, Point, Style, Weight
+from symdef.lint import lint
+from symdef.lint.registry import GUIDE_INDEX, finding_key
+from symdef.load import symbol_from_data
+from symdef.model import (
     LibraryConfig,
     Node,
     Path,
@@ -24,8 +24,8 @@ from graphical_symbols.model import (
     Severity,
     Slot,
 )
-from graphical_symbols.orient import orient_direction, orient_point
-from graphical_symbols.resolve import Resolution, resolve_library
+from symdef.orient import orient_direction, orient_point
+from symdef.resolve import Resolution, resolve_library
 
 GUIDE = FilePath(__file__).resolve().parent / "fixtures" / "guide"
 CONFIG = LibraryConfig("IEC 60617", "IEC 60617 symbols", r"^S\d{5}$")

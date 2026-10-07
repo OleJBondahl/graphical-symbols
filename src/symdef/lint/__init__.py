@@ -6,9 +6,9 @@ from types import MappingProxyType
 
 import deal
 
-from graphical_symbols.geometry import Orientation
-from graphical_symbols.lint.anchors import anchor_duplicate_id, anchor_off_geometry
-from graphical_symbols.lint.connectivity import (
+from symdef.geometry import Orientation
+from symdef.lint.anchors import anchor_duplicate_id, anchor_off_geometry
+from symdef.lint.connectivity import (
     node_invalid,
     path_invalid,
     port_isolated,
@@ -16,10 +16,10 @@ from graphical_symbols.lint.connectivity import (
     through_count,
     through_missing,
 )
-from graphical_symbols.lint.exemptions import allow_unknown, allow_unused, exempt
-from graphical_symbols.lint.file import symbol_id_findings
-from graphical_symbols.lint.geometry import degenerate, off_drawing_grid, text_too_large
-from graphical_symbols.lint.ports import (
+from symdef.lint.exemptions import allow_unknown, allow_unused, exempt
+from symdef.lint.file import symbol_id_findings
+from symdef.lint.geometry import degenerate, off_drawing_grid, text_too_large
+from symdef.lint.ports import (
     lead_off_port,
     port_duplicate_id,
     port_lane_clear,
@@ -29,22 +29,22 @@ from graphical_symbols.lint.ports import (
     port_position_shared,
     port_spacing,
 )
-from graphical_symbols.lint.registry import (
+from symdef.lint.registry import (
     RULE_IDS,
     RULES,
     Check,
     Rule,
     finding_key,
 )
-from graphical_symbols.lint.slots import (
+from symdef.lint.slots import (
     pitch_overflow,
     slot_missing,
     slot_overlap_body,
     slot_overlap_slot,
     slot_unknown_port,
 )
-from graphical_symbols.model import Finding, Symbol
-from graphical_symbols.orient import orient
+from symdef.model import Finding, Symbol
+from symdef.orient import orient
 
 # One entry per rule that inspects a symbol; the rule's `Rule` row is in `registry.RULES`. The
 # rest of `RULES` is computed elsewhere: the resolver's rules, and the two exemption rules below.

@@ -11,7 +11,7 @@ GUIDE_TITLE = "<title>Symbol interface design guide</title>"
 
 
 def test_the_guide_resolves_as_package_data():
-    resource = importlib.resources.files("graphical_symbols").joinpath("docs/SYMBOL_INTERFACE.html")
+    resource = importlib.resources.files("symdef").joinpath("docs/SYMBOL_INTERFACE.html")
     assert resource.is_file()
     text = resource.read_text(encoding="utf-8")
     assert GUIDE_TITLE in text

@@ -3,7 +3,7 @@
 import pytest
 from fixture_pipeline import BROKEN, TOLERATED_EXTRA, run_fixture, run_fixture_by_file
 
-from graphical_symbols.lint import CHECKS, RULES
+from symdef.lint import CHECKS, RULES
 
 
 def problem_with_fixture(rule_id: str, root=BROKEN) -> str | None:

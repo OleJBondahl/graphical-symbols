@@ -1,4 +1,4 @@
-"""Write `src/graphical_symbols/_version.py` from the version in `pyproject.toml`.
+"""Write `src/symdef/_version.py` from the version in `pyproject.toml`.
 
 The package version is then a constant the layout reads without asking package metadata. Run
 it after changing `version`; `tests/test_version.py` fails while the two disagree.
@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PYPROJECT = ROOT / "pyproject.toml"
-VERSION_MODULE = ROOT / "src" / "graphical_symbols" / "_version.py"
+VERSION_MODULE = ROOT / "src" / "symdef" / "_version.py"
 
 
 def project_version(pyproject_text: str) -> str:

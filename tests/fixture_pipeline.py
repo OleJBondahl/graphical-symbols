@@ -7,10 +7,10 @@ on `sys.path` because `tests/` has no `__init__.py`.
 import tomllib
 from pathlib import Path
 
-from graphical_symbols.lint import lint
-from graphical_symbols.load import parse_config
-from graphical_symbols.model import Finding
-from graphical_symbols.resolve import resolve_library
+from symdef.lint import lint
+from symdef.load import parse_config
+from symdef.model import Finding
+from symdef.resolve import resolve_library
 
 BROKEN = Path(__file__).resolve().parent / "fixtures" / "broken"
 
