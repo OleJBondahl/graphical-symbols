@@ -14,7 +14,7 @@ check:
 dead-code:
     uv run vulture src --min-confidence 60
 
-# every module-level def in a pure module carries @deal.pure
+# every pure module passes the stdlib-ast purity gate (scripts/fp_purity_gate.py)
 purity:
     uv run python scripts/fp_purity_gate.py
 

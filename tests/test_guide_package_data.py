@@ -1,6 +1,6 @@
 """The design guide ships as package data, readable from an installed distribution (D38).
 
-`electrical-symbols`' verbatim gate reads this resource, not a sibling checkout path, so this
+A data package's verbatim gate reads this resource, not a sibling checkout path, so this
 package must resolve it through `importlib.resources` regardless of whether it is installed from
 a source checkout, a git dependency or a built wheel.
 """

@@ -77,7 +77,7 @@ def test_the_tutorial_runs_from_an_empty_folder_to_a_page(tmp_path, monkeypatch,
         elif kind == "shows":
             assert (tmp_path / args).read_text(encoding="utf-8") == body, f"{args} differs"
         else:
-            exec(compile(body, "TUTORIAL.md python block", "exec"), namespace)  # noqa: S102
+            exec(compile(body, "TUTORIAL.md python block", "exec"), namespace)  # noqa: S102 - runs the tutorial's own code blocks, the test's purpose
     assert commands >= 9
     assert "<svg" in (tmp_path / "page.html").read_text(encoding="utf-8")
     assert "<g" in (tmp_path / "sheet.svg").read_text(encoding="utf-8")
