@@ -1,7 +1,7 @@
 """Fail when a module-level function in a pure module lacks @deal.pure.
 
 Pure modules are every `.py` file under `src/symdef/`, subpackages included, except
-the top-level `build.py` (the impure shell) and the top-level `__init__.py`. Modules are
+the top-level impure shell and the top-level `__init__.py`. Modules are
 identified by their path relative to the package, so `lint/__init__.py` is scanned.
 
 Usage:
@@ -14,7 +14,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGE_DIR = ROOT / "src" / "symdef"
-IMPURE_MODULES = frozenset({"build.py", "__init__.py"})  # paths relative to the package
+IMPURE_MODULES = frozenset(
+    {"files.py", "project.py", "cli.py", "__main__.py", "__init__.py"}
+)  # paths relative to the package
 
 
 def _decorator_name(dec: ast.expr) -> str:

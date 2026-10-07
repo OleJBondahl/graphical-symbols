@@ -27,7 +27,7 @@ from symdef import (
     slot_box,
     to_svg,
 )
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.gallery import sample_texts
 
 GUIDE = Path(__file__).resolve().parent / "fixtures" / "guide"

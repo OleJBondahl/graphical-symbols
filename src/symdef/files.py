@@ -126,7 +126,7 @@ def load_bundle(json_path: Path) -> Library:
     return library_from_bundle(data)
 
 
-def _package_key(root: Path) -> str:
+def package_key(root: Path) -> str:
     """Return the `package` key of `root/library.toml`, or `""` when it is absent or unreadable.
 
     `load_library` is where a bad `library.toml` is reported; a build only reads the one key.
@@ -172,7 +172,7 @@ def write_build(library: Library, root: Path) -> tuple[Path, ...]:
             letter or digit to make a package name of; nothing is written.
         OSError: If a path cannot be written; files already written stay.
     """
-    package = _package_key(root)
+    package = package_key(root)
     _check_names(library, package)
     written = []
     for relative, data in build_files(library, package).items():
@@ -203,7 +203,7 @@ def stale_build(library: Library, root: Path) -> tuple[Path, ...]:
             letter or digit to make a package name of.
         OSError: If a file cannot be read; it is not treated as stale.
     """
-    package = _package_key(root)
+    package = package_key(root)
     _check_names(library, package)
     files = build_files(library, package)
     stale = {

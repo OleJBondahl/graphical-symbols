@@ -7,7 +7,7 @@ from build_symbol import plain_symbol
 from hypothesis import given
 from hypothesis import strategies as st
 
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.geometry import Direction, Point
 from symdef.lint import RULES, Rule, lint
 from symdef.lint.file import (

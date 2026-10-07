@@ -16,6 +16,9 @@ dependencies = [
     "deal==4.24.6",
 ]
 
+[project.scripts]
+symdef = "symdef.cli:main"
+
 [project.urls]
 Repository = "https://github.com/OleJBondahl/symdef"
 

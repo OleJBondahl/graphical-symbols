@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from symdef.boxes import body_box, slot_box
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.lint import lint
 from symdef.load import parse_config
 from symdef.model import Severity, Slot

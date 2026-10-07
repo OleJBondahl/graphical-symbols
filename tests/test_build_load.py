@@ -7,8 +7,8 @@ import pytest
 from words import WORDS
 
 import symdef
-from symdef.build import load_library
 from symdef.errors import LibraryError, UnknownSymbolError
+from symdef.files import load_library
 from symdef.model import Library
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"

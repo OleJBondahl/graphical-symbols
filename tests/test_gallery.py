@@ -3,7 +3,7 @@
 from dataclasses import replace
 from pathlib import Path
 
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.gallery import readme, sample_texts
 from symdef.model import Library, Status, SymbolKind
 

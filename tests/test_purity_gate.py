@@ -41,7 +41,7 @@ def test_decorated_function_is_not_reported(tmp_path):
 
 
 def test_impure_modules_are_skipped_by_path_relative_to_the_package(tmp_path):
-    root = package(tmp_path, {"build.py": UNDECORATED, "__init__.py": UNDECORATED})
+    root = package(tmp_path, {"files.py": UNDECORATED, "__init__.py": UNDECORATED})
     assert gate.scan(root) == []
 
 
@@ -51,13 +51,13 @@ def test_subpackages_are_scanned_and_only_top_level_names_are_impure(tmp_path):
         {
             "lint/__init__.py": UNDECORATED,
             "lint/rules.py": UNDECORATED,
-            "lint/build.py": UNDECORATED,
+            "lint/files.py": UNDECORATED,
             "lint/ok.py": DECORATED,
         },
     )
     assert names(gate.scan(root), root) == [
         ("lint/__init__.py", "f"),
-        ("lint/build.py", "f"),
+        ("lint/files.py", "f"),
         ("lint/rules.py", "f"),
     ]
 

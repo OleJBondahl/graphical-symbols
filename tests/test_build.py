@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 import symdef
-from symdef.build import load_library, stale_build, write_build
+from symdef.files import load_library, stale_build, write_build
 from symdef.geometry import Direction, Line, Point, Text
 from symdef.model import Library, Port, Slot, Status
 from symdef.serialize import build_files, package_name

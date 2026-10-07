@@ -11,7 +11,7 @@ from hypothesis import strategies as st
 
 import symdef
 from symdef import lint as exported_lint
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.geometry import (
     Arc,
     Circle,

@@ -846,3 +846,29 @@ load check (D46).
 Why: a user should find every documented name on the surface, and an editor needs a schema it can
 fetch.
 Cost if wrong: move the file back; the `$id` is only an address.
+
+## D48. The newcomer's path: `symdef init`, `build` and `check` (SYMDEF SD9)
+
+Decided: a command line `symdef` (`[project.scripts]`, also `python -m symdef`) with three verbs
+on a folder, each also a function: `init(root)` writes `library.toml`, one symbol
+(`symbols/resistor.toml`) and `.gitattributes` with LF line ends, and refuses a folder that already
+holds any of them; `build(root)` loads, lints and writes `build/` and the bundle, raising
+`LibraryError` and writing nothing if a file fails to load or lint reports an error;
+`check(root)` returns the findings of the gates every set needs and never raises for a bad set.
+The starter texts live in `symdef.starter`, are written by code and are loaded, linted and built
+by a test, so they cannot drift from the format. Both starter files open with the `#:schema` line
+of D47. The command exits 0, 1 when it found problems, 2 on bad usage, and prints each distinct
+finding once.
+`check` runs: files load and resolve (a number equals its file stem and fits `number_pattern`
+there); every symbol lints clean, warnings included; a symbol with a through path lints clean as
+`repeat(symbol, 3)`; the build is not stale (`stale-build`); the packaged bundle holds the source's
+symbols (`bundle-differs`) and they lint clean. These are the generic gates 1 to 6 of the first data
+package's gate file. The bundle already lives in its package (D45), so no relocation exception is
+left.
+The functions are `symdef.init`, `symdef.build` and `symdef.check`. `build` would shadow the
+module `symdef.build`, so that module is renamed `symdef.files`; it stays the impure shell with
+`project`, `cli` and `__main__`, which `scripts/fp_purity_gate.py` lists.
+Why: a newcomer needs a first working set in three commands, and a test needs one call for every
+gate.
+Cost if wrong: drop the verbs; the renamed module only matters to code that imported
+`symdef.build`, which was not on the public surface.

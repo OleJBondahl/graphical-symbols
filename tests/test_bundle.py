@@ -8,8 +8,8 @@ from roundtrip import normalised
 from words import WORDS
 
 import symdef
-from symdef.build import load_bundle, load_library, stale_build, write_build
 from symdef.errors import LibraryError
+from symdef.files import load_bundle, load_library, stale_build, write_build
 from symdef.load import library_from_bundle, parse_json, validate_bundle
 from symdef.model import Library
 from symdef.serialize import bundle_to_data, to_json

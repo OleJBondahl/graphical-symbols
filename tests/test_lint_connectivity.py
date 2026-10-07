@@ -9,7 +9,7 @@ from fixture_pipeline import run_fixture, run_fixture_by_file
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.geometry import Direction, Orientation, Point
 from symdef.lint import CHECKS, RULES, lint
 from symdef.lint.connectivity import (

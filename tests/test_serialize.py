@@ -10,7 +10,7 @@ from hypothesis import strategies as st
 from jsonschema import Draft202012Validator
 from roundtrip import normalised, round_trips
 
-from symdef.build import load_library
+from symdef.files import load_library
 from symdef.geometry import (
     Arc,
     Circle,

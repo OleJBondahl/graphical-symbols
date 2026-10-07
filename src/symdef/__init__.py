@@ -2,8 +2,8 @@
 
 from symdef._version import LIBRARY_VERSION
 from symdef.boxes import body_box, keepout_box, slot_box
-from symdef.build import load_bundle, load_library, stale_build, write_build
 from symdef.errors import GraphicalSymbolsError, LibraryError, UnknownSymbolError
+from symdef.files import load_bundle, load_library, stale_build, write_build
 from symdef.geometry import (
     Arc,
     Box,
@@ -38,6 +38,7 @@ from symdef.model import (
     Vocabulary,
 )
 from symdef.orient import orient, translate
+from symdef.project import build, check, init
 from symdef.repeat import repeat
 from symdef.svg import to_fragment, to_svg
 from symdef.units import DEFAULT_MODULE_MM, GRID_DIVISION, on_grid, snap
@@ -79,7 +80,10 @@ __all__ = [
     "Vocabulary",
     "Weight",
     "body_box",
+    "build",
+    "check",
     "finding_key",
+    "init",
     "keepout_box",
     "lint",
     "load_bundle",
