@@ -777,3 +777,12 @@ repository URL in `pyproject.toml` is `https://github.com/OleJBondahl/symdef` (G
 the old URL). Earlier entries keep the old name as they were written.
 Why: a short name that is free on PyPI, one name for repository, distribution and import.
 Cost if wrong: another rename of the same shape; consumers change their pin and imports once more.
+
+## D43. `requires-python = ">=3.14"`, tested on 3.14 in `just ci` (SYMDEF SD2)
+
+Decided: the package supports Python 3.14 and later. Development stays on 3.15 (`.python-version`,
+ruff and ty targets). `just ci` ends with `just test314`: `uv run --python 3.14 --isolated pytest
+--no-cov`, a throwaway environment, so the promise cannot rot. Proof it can fail: a 3.15-only line
+(`lazy import json`) in `src/symdef/units.py` makes the 3.14 run stop with a `SyntaxError`.
+Why: more consumers install it; the code already ran on 3.14 (2261 tests pass).
+Cost if wrong: raise the floor back to 3.15; the extra test run adds about 45 s to the gate.

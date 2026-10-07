@@ -16,7 +16,7 @@ the build, with every lint rule and gate proven by a failing fixture. Released b
 uv add "symdef==0.4.0"
 ```
 
-Python 3.15 or later. The one runtime dependency is `deal`. More depth:
+Python 3.14 or later. The one runtime dependency is `deal`. More depth:
 [docs/GUIDE.md](docs/GUIDE.md).
 
 ## The design

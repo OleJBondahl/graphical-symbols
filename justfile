@@ -23,7 +23,11 @@ purity:
 cov:
     uv run pytest --cov-report=term-missing
 
-ci: check dead-code purity cov
+# the tests on Python 3.14, the oldest supported version (requires-python), in a throwaway env
+test314:
+    uv run --python 3.14 --isolated pytest --no-cov -q -p no:cacheprovider
+
+ci: check dead-code purity cov test314
 
 fmt:
     uv run ruff format src tests scripts
