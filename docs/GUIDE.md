@@ -177,8 +177,8 @@ them (D31). A data repo's test should assert it is empty, so a committed build c
 Resolved JSON has the symbol's fields with composition flattened and the `lint_allow` list kept
 (D1, D11). The bundle is `{"schema": 1, "standard": ..., "symbols": {...}}` (D7).
 `load_bundle(path)` reads a `bundle.json` back into a `Library` without the TOML sources; it
-validates every symbol and requires the resolved form (D31). `electrical_symbols` in the
-Fransys monorepo loads its packaged bundle this way.
+validates every symbol and requires the resolved form (D31). A data package loads its
+packaged bundle this way at import.
 
 ## Rendering
 

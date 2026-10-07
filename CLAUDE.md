@@ -54,6 +54,7 @@ spec section 11 exactly as written; a new name gets a decision entry.
   `main` directly. The orchestrator reviews, merges, pushes and tags the release (`vX.Y.Z`,
   matching `version` in `pyproject.toml`); an implementer does not.
 - Never edit another repo. A change Fransys needs because of yours goes in your hand-back.
+- User-facing files (README.md, `docs/`, the package's docs and docstrings) name no user of the toolkit, Fransys included. They are complete on their own; the docs site holds everything a user needs (owner 2026-10-07).
 
 ## Done means
 

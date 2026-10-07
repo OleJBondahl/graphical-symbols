@@ -2,19 +2,20 @@
 
 Standard-agnostic toolkit for graphical-symbol data. Symbols are TOML files; the toolkit loads
 them, resolves composition, lints the wiring contract, renders SVG, and builds a resolved JSON
-bundle plus a gallery. Data packages hold only data and reuse the toolkit and its gates:
-`electrical-symbols` (IEC 60617-style symbols, Fransys' `packages/electrical-symbols`) now, ISO 14617 and
-ISA 5.1 later.
+bundle plus a gallery. Data packages hold only data and reuse the toolkit and its gates, for any standard: IEC 60617,
+ISO 14617, ISA 5.1 or your own.
 
 Status: alpha. The toolkit the spec below describes is built: reading, resolving, linting, SVG and
-the build, with every lint rule and gate proven by a failing fixture. Released by exact git tags
-(`v0.1.0` to `v0.3.0` as `graphical-symbols`; `v0.4.0` on as `symdef`); Fransys pins one of them.
+the build, with every lint rule and gate proven by a failing fixture. Published on PyPI from v0.4.0;
+v0.1.0 to v0.3.0 were git tags named `graphical-symbols`.
 
 ## Install
 
 ```
-uv add "symdef==0.4.0"
+uv add symdef
 ```
+
+or `pip install symdef`.
 
 Python 3.14 or later. The one runtime dependency is `deal`. More depth:
 [docs/GUIDE.md](docs/GUIDE.md).
