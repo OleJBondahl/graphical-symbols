@@ -1,0 +1,28 @@
+schema = 1
+name = "Connection point"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00016" }
+
+ports = [
+  { id = "n", at = [0, 0], dir = "N" },
+  { id = "e", at = [0, 0], dir = "E" },
+  { id = "s", at = [0, 0], dir = "S" },
+  { id = "w", at = [0, 0], dir = "W" },
+]
+
+nodes = [
+  { ports = ["n", "e", "s", "w"] },
+]
+
+elements = [
+  { circle = [0, 0], r = 0.25, fill = "solid" },
+]
+
+lint_allow = [
+  { rule = "port-on-body-edge", reason = "junction: wires meet at the centre of the dot" },
+  { rule = "port-lane-clear",   reason = "junction: wires start inside the dot" },
+  { rule = "slot-missing",      reason = "a junction carries no tag or markings" },
+]
+
+[slots]

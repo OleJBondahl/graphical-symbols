@@ -6,3 +6,6 @@ __pycache__/
 .superpowers/
 claude-tools/
 dist/
+.site-src/
+.site/
+/mkdocs.yml

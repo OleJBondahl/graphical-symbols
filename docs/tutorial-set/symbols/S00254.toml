@@ -1,0 +1,18 @@
+schema = 1
+name = "Switch, manually operated, push-button, automatic return"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00254" }
+pole_pitch = 8
+
+parts = [
+  { as = "contact",  use = "S00227" },
+  { as = "actuator", use = "S00171", attach = "link", to = "contact.link", length = 2, via = "mechanical_link" },
+]
+
+ports = { in = "contact.in", out = "contact.out" }
+
+[slots]
+tag           = { at = [-3.5, 0], side = "W", box = [6, 1] }
+"marking.in"  = "contact.marking.in"
+"marking.out" = "contact.marking.out"

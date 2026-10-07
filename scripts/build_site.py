@@ -1,69 +1,158 @@
-"""Render the README, the guide and the decisions into a minimal static site for GitHub Pages.
+"""Stage the docs site and build it with Zensical, strict: a broken link fails the build.
 
 Usage:
-    uv run python scripts/build_site.py OUT_DIR
+    uv run python scripts/build_site.py
+
+Pages are staged into `.site-src/pages/` and built into `.site/`; both are gitignored and
+rebuilt each run.
 """
 
+import inspect
+import posixpath
 import re
 import shutil
+import subprocess
 import sys
+from annotationlib import Format
+from collections.abc import Callable
 from pathlib import Path
+from urllib.parse import quote
 
-import markdown
+import symdef
+from symdef.gallery import sample_texts
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/OleJBondahl/symdef"
-SPEC = ROOT / "src" / "symdef" / "docs" / "SYMBOL_INTERFACE.html"
+SPEC = "src/symdef/docs/SYMBOL_INTERFACE.html"
+SCHEMA = "src/symdef/schema/symbol.schema.json"
 PAGES = {
-    "README.md": "index.html",
-    "docs/GUIDE.md": "guide.html",
-    "docs/DECISIONS.md": "decisions.html",
+    "README.md": "index.md",
+    "docs/TUTORIAL.md": "tutorial.md",
+    "docs/GUIDE.md": "guide.md",
+    "docs/DECISIONS.md": "decisions.md",
+    SPEC: "SYMBOL_INTERFACE.html",
+    SCHEMA: "symbol.schema.json",
 }
-PAGE = (
-    "<!doctype html><html lang='en'><meta charset='utf-8'><title>symdef</title>"
-    "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-    "<style>body{{max-width:48rem;margin:2rem auto;padding:0 1rem;font:16px/1.5 sans-serif}}"
-    "pre{{overflow-x:auto;background:#f4f4f4;padding:.5rem}}</style>"
-    "<nav><a href='index.html'>symdef</a> | <a href='guide.html'>Guide</a> | "
-    "<a href='decisions.html'>Decisions</a> | <a href='SYMBOL_INTERFACE.html'>Spec</a></nav>"
-    "{body}</html>"
-)
-HREF = re.compile(r'href="([^"#]+)(#[^"]*)?"')
+LINK = re.compile(r"\]\(([^)\s#]+)(#[^)\s]*)?\)")
 
 
-def _target(path: str) -> str:
-    """Map a repository-relative link to its place on the site, or to GitHub."""
-    name = path.rsplit("../", 1)[-1]
-    if name.endswith("SYMBOL_INTERFACE.html"):
-        return "SYMBOL_INTERFACE.html"
-    for source, page in PAGES.items():
-        if name == source or name == Path(source).name:
-            return page
-    return f"{REPO}/blob/main/{name}"
+def _target(repo_path: str) -> str:
+    """Map a repository path to its place on the site, or to GitHub."""
+    return PAGES.get(repo_path) or f"{REPO}/blob/main/{repo_path}"
 
 
-def _relink(html: str) -> str:
-    """Point every relative link at a site page or at the repository on GitHub."""
+def relink(text: str, source: str) -> str:
+    """Point every relative Markdown link of `source` at a site page or at the repository."""
+    folder = posixpath.dirname(source)
 
     def fix(match: re.Match[str]) -> str:
         path, frag = match.group(1), match.group(2) or ""
         if "://" in path or path.startswith("mailto:"):
             return match.group(0)
-        return f'href="{_target(path)}{frag}"'
+        return f"]({_target(posixpath.normpath(posixpath.join(folder, path)))}{frag})"
 
-    return HREF.sub(fix, html)
+    out, fenced = [], False
+    for line in text.splitlines(keepends=True):
+        edge = line.lstrip().startswith("```")
+        fenced ^= edge
+        out.append(line if fenced or edge else LINK.sub(fix, line))
+    return "".join(out)
 
 
-def main(out: Path) -> None:
-    """Write the pages and the spec into `out`."""
-    out.mkdir(parents=True, exist_ok=True)
+def _kind(obj: object) -> str:
+    if inspect.isclass(obj):
+        return "class"
+    return "function" if callable(obj) else "constant"
+
+
+def _signature(obj: Callable[..., object]) -> str:
+    """The signature, or `(...)` for a class that inherits a builtin one (an exception)."""
+    try:
+        return str(inspect.signature(obj, annotation_format=Format.FORWARDREF))
+    except ValueError:
+        return "(...)"
+
+
+def _entry(name: str) -> str:
+    obj = getattr(symdef, name)
+    kind = _kind(obj)
+    lines = [f"## `{name}`", "", f"*{kind}*", ""]
+    if kind == "constant":
+        lines += [f"Value: `{obj!r}`", ""]
+    else:
+        lines += [f"```python\n{name}{_signature(obj)}\n```", ""]
+        doc = inspect.getdoc(obj)
+        if doc:
+            lines += [f"```text\n{doc}\n```", ""]
+    return "\n".join(lines)
+
+
+def api_markdown() -> str:
+    """The API reference: each name of `symdef.__all__` in order, with its facts."""
+    head = "# API reference\n\nEvery name `symdef` exports, in the order of `symdef.__all__`.\n\n"
+    return head + "\n".join(_entry(name) for name in symdef.__all__)
+
+
+def gallery_markdown(root: Path, site_src: Path) -> str:
+    """Write each symbol of `docs/tutorial-set` as two SVGs and return the gallery page."""
+    library = symdef.load_library(root / "docs" / "tutorial-set")
+    images = site_src / "gallery"
+    images.mkdir(parents=True)
+    lines = [
+        "# Gallery",
+        "",
+        "Every symbol of the tutorial set, plain and annotated with its ports, anchors and slots.",
+        "",
+    ]
+    for number in sorted(library.symbols):
+        symbol = library.symbols[number]
+        stem = quote(number, safe="", errors="replace")
+        (images / f"{stem}.svg").write_text(symdef.to_svg(symbol), encoding="utf-8")
+        annotated = symdef.to_svg(symbol, annotate=True, texts=sample_texts(symbol))
+        (images / f"{stem}-annotated.svg").write_text(annotated, encoding="utf-8")
+        lines += [
+            f"## {number} {symbol.name}",
+            "",
+            f"Status: `{symbol.status.value}`",
+            "",
+            f"![{number}](gallery/{stem}.svg) ![{number} annotated](gallery/{stem}-annotated.svg)",
+            "",
+        ]
+    return "\n".join(lines)
+
+
+def stage(root: Path, out: Path) -> Path:
+    """Rebuild `out/.site-src/pages/` and `out/mkdocs.yml` from `root`'s sources; return `out`."""
+    site_src = out / ".site-src" / "pages"
+    shutil.rmtree(site_src.parent, ignore_errors=True)
+    site_src.mkdir(parents=True)
     for source, page in PAGES.items():
-        body = markdown.markdown(
-            (ROOT / source).read_text(encoding="utf-8"), extensions=["fenced_code", "tables"]
-        )
-        (out / page).write_text(PAGE.format(body=_relink(body)), encoding="utf-8")
-    shutil.copy(SPEC, out / "SYMBOL_INTERFACE.html")
+        if page.endswith(".md"):
+            text = (root / source).read_text(encoding="utf-8")
+            (site_src / page).write_text(relink(text, source), encoding="utf-8")
+        else:
+            shutil.copy2(root / source, site_src / page)
+    (site_src / "gallery.md").write_text(gallery_markdown(root, site_src), encoding="utf-8")
+    (site_src / "api.md").write_text(api_markdown(), encoding="utf-8")
+    shutil.copy2(root / "docs" / "site" / "mkdocs.yml", out / "mkdocs.yml")
+    return out
+
+
+def build(project: Path) -> None:
+    """Run Zensical strict from `project`, the folder that holds the config."""
+    subprocess.run(
+        [sys.executable, "-m", "zensical", "build", "--strict", "-f", "mkdocs.yml"],
+        cwd=project,
+        check=True,
+    )
+
+
+def main() -> None:
+    """Stage the repository's site and build it into `.site/`."""
+    shutil.rmtree(ROOT / ".site", ignore_errors=True)
+    build(stage(ROOT, ROOT))
+    sys.stdout.write(f"site built: {ROOT / '.site'}\n")
 
 
 if __name__ == "__main__":
-    main(Path(sys.argv[1]))
+    main()

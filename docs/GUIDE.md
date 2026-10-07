@@ -1,6 +1,8 @@
 # Guide to symdef
 
-For someone writing a data repo of symbols or consuming the toolkit. The binding spec is
+For someone writing a symbol set or consuming the toolkit. It assumes no standard: your set names its own
+words and rules. The examples use one set of IEC 60617 symbols, because that is what the test fixtures hold.
+New here? Start with the [tutorial](TUTORIAL.md). The binding spec is
 [SYMBOL_INTERFACE.html](../src/symdef/docs/SYMBOL_INTERFACE.html) (the "spec" below):
 this guide names the concepts and the calls, and the spec has the exact definitions. Where the
 spec was silent, the choice is a numbered entry in [DECISIONS.md](DECISIONS.md) (D1, D2, ...).
@@ -8,16 +10,16 @@ spec was silent, the choice is a numbered entry in [DECISIONS.md](DECISIONS.md) 
 ## Concepts
 
 - **Symbol.** A definition, not a placement: no tag, terminal number, position or orientation.
-  Those belong to the drawing library that places it. `Symbol` is a frozen dataclass; `orient`,
+  Those belong to the drawing program that places it. `Symbol` is a frozen dataclass; `orient`,
   `translate` and `repeat` return new ones. Spec sections 2 and 4.
 - **Port.** A place where a wire may attach, with an id, a position and a direction. Ids are
   roles (`in`, `out`, `anode`), never terminal markings such as `13` or `A1`. Spec sections 3
   and 4.
 - **Node.** A set of ports that are one electrical point. A port in no declared node gets a node
   of its own (`nodes_of`, in `model.py`). Spec section 5.
-- **Path.** A typed link between two ports (`from`, `to`, a `PathKind` such as `switch_open` or
-  `mechanical_link`, and `through`). Paths are the electrical function as data, so a consumer can
-  netlist without knowing any symbol. Spec section 5.
+- **Path.** A typed link between two ports (`from`, `to`, a `kind` word and `through`). The kind is a string
+  from your set's `[vocabulary]`, such as `switch_open` in the IEC fixtures. Paths are the function as data,
+  so a consumer can read connectivity without knowing any symbol. Spec section 5.
 - **Slot.** A box the symbol reserves for text: the `tag` and one `marking.<port>` per port. The
   box grows from the slot point towards its `side`. Spec section 6; `slot_box` returns it.
 - **Anchor.** A named point with a direction where another symbol can attach, used by composites.
@@ -32,32 +34,49 @@ spec was silent, the choice is a numbered entry in [DECISIONS.md](DECISIONS.md) 
 Units are modules (1 M = `DEFAULT_MODULE_MM`, 2.5 mm) on a drawing grid of `GRID_DIVISION` (0.125) M;
 wires run on a 1 M grid. The wiring contract is linted in all 8 orientations (`Orientation`).
 
-## Layout of a data repo
+## Layout of a symbol set
 
 ```
-library.toml          standard, title, number_pattern, package (optional)
+library.toml          standard, title, number_pattern, package (optional), vocabulary, rules
 symbols/<number>.toml one file per symbol; the file stem is the reference number
 build/                generated: resolved JSON, SVGs, a gallery README
 src/<package>/bundle.json   generated: every symbol, resolved
 ```
 
+`symdef init DIR` writes a starter set, `symdef build DIR` writes the generated files, and
+`symdef check DIR` runs every gate a set needs (D48). Exit code 0 is done, 1 is problems found.
+
 `library.toml` of the test fixture (`tests/fixtures/guide/`):
 
 ```toml
+#:schema https://olejbondahl.github.io/symdef/symbol.schema.json
 standard = "IEC 60617"
 title = "IEC 60617 symbols"
 number_pattern = '^S\d{5}$'
+
+[vocabulary]
+path_kinds = ["conductor", "switch_open", "switch_closed", "impedance", "source", "diode"]
+potentials = ["earth", "protective_earth", "functional_earth", "frame"]
+links = ["mechanical_link"]
+
+[rules]
+required_slots = ["tag", "marking.<port>"]
 ```
+
+`[vocabulary]` lists the words a symbol may use as a path kind, a node potential or a `via` link.
+The toolkit has no built-in list. A word not listed fails the load with the word, the file and the
+line (D46). `required_slots` lists the slot ids every symbol must carry; `marking.<port>` means one per port.
+Both tables are strict: an unknown key is a finding. The `#:schema` line lets an editor check the file as you type.
 
 `src/<package>` is the standard lowercased with only letters and digits (`IEC 60617` gives
 `iec60617`). An optional `package = "name"` line in `library.toml` names the folder instead (D45).
 
 A reference number must be a file stem: letters, digits, `_` and `-` in parts joined by single
-dots (D31). Data repos hold data only; the toolkit and its gates come from this package.
+dots (D31). A set holds data only; the toolkit and its gates come from this package.
 
 ## Defining a symbol
 
-This is `symbols/S00227.toml` of the same fixture, the make contact:
+This is `symbols/S00227.toml` of the same fixture, a make contact:
 
 ```toml
 schema = 1
@@ -103,7 +122,9 @@ parts = [
 ports = { in = "contact.in", out = "contact.out" }
 ```
 
-`src/symdef/schema/symbol.schema.json` describes the file structurally only (D4). The rules that need
+`src/symdef/schema/symbol.schema.json` ships in the wheel and carries the `$id`
+`https://olejbondahl.github.io/symdef/symbol.schema.json`. It describes the file structurally only
+(D4, D47): any string is a valid path kind there, and the declared words are a load check. The rules that need
 meaning are lint rules. A line may bind to a port with `port`, and the file's `schema` integer
 did not step for it (D40).
 
@@ -112,13 +133,13 @@ did not step for it (D40).
 ```python
 from symdef import load_library
 
-library = load_library(root)    # root is the data repo's directory
+library = load_library(root)    # root is the set's directory
 contact = library.get("S00227")  # UnknownSymbolError if absent
 ```
 
 `load_library` reads `library.toml` and every `symbols/*.toml`, validates each file, resolves
-composition and returns a `Library`. A `Library` has `standard`, `title`, `number_pattern` and
-`symbols`; `len` and iteration work, and iteration is sorted by number. If any file has a
+composition and returns a `Library`. A `Library` has `standard`, `title`, `number_pattern`,
+`symbols`, `vocabulary` and `required_slots`; `len` and iteration work, and iteration is sorted by number. If any file has a
 problem it raises `LibraryError` listing all of them, by file (D21). The pure core never raises:
 problems are `Finding`s with the rule `schema` until `load_library` collects them (D3, D15).
 Composite inheritance is D20; structural problems only the resolver sees are D17.
@@ -130,14 +151,14 @@ from symdef import lint
 from symdef.lint import RULES
 
 assert len(RULES) == 34
-for finding in lint(contact):
+for finding in lint(contact, library.required_slots):
     print(finding.rule, finding.severity, finding.location, finding.orientation, finding.message)
 ```
 
 There are 34 rules: the spec's 33 (section 9) and `lead-off-port`, the toolkit's one addition
-(D40). `lint` takes a symbol in base orientation and runs the orientation-dependent rules in all
-8 itself (D6, D23). It returns a tuple of `Finding`, each with `rule`, `severity` (`Severity`),
-`message`, `location` (a string or `None`) and `orientation` (or `None`), ordered by the spec
+(D40). `lint` takes a symbol in base orientation and your set's `required_slots`. That list is empty by default,
+so no slot is required. It runs the orientation-dependent rules in all 8 itself (D6, D23, D46). It returns a tuple of `Finding`, each with `rule`, `severity` (`Severity`),
+`message`, `location` (a string or `None`) and `orientation` (or `None`). They are ordered by the spec
 table, then orientation, then location (D23, D34).
 
 A symbol can exempt a rule with `lint_allow`, a list of `{ rule, reason }` (S00016, the
@@ -155,7 +176,7 @@ write_build(library, root)
 assert stale_build(library, root) == ()
 ```
 
-`write_build` writes, under the repo `root`:
+`write_build` is what `symdef build` calls after loading and linting. It writes, under the set's `root`:
 
 ```
 build/resolved/<number>.json   one resolved symbol (D11, D30)
@@ -169,7 +190,7 @@ src/<package>/bundle.json      every symbol, resolved
 `iec60617`, and a standard with no letter or digit cannot be built (D35). Files are written as
 bytes with LF endings and nothing is deleted. `stale_build` returns the files that are missing,
 differ, or sit under `build/resolved`, `build/svg` or `build/annotated` without a symbol behind
-them (D31). A data repo's test should assert it is empty, so a committed build cannot go stale.
+them (D31). `symdef check` reports the same files as `stale-build`, so a committed build cannot go stale.
 `scripts/build.py` in this repo is unrelated: it writes this package's `_version.py`.
 
 ## Serialized form
@@ -177,8 +198,8 @@ them (D31). A data repo's test should assert it is empty, so a committed build c
 Resolved JSON has the symbol's fields with composition flattened and the `lint_allow` list kept
 (D1, D11). The bundle is `{"schema": 1, "standard": ..., "symbols": {...}}` (D7).
 `load_bundle(path)` reads a `bundle.json` back into a `Library` without the TOML sources; it
-validates every symbol and requires the resolved form (D31). A data package loads its
-packaged bundle this way at import.
+validates every symbol and requires the resolved form (D31). A package that ships a set
+loads its bundle this way at import.
 
 ## Rendering
 
@@ -198,7 +219,7 @@ placeable `<g>` fragment instead of a document (D39). Both are total: any input 
 
 ## Consuming
 
-Pin the toolkit to an exact version from PyPI, never a range:
+Install with `uv add symdef`, or pin the toolkit to an exact version from PyPI, never a range:
 
 ```toml
 dependencies = ["symdef==X.Y.Z"]
@@ -206,8 +227,8 @@ dependencies = ["symdef==X.Y.Z"]
 
 Replace `X.Y.Z` with a released version. A change a consumer needs lands here first, is
 released under a new tag, and the consumer then bumps its pin.
-`LIBRARY_VERSION` is the installed version as a constant. The one runtime dependency is `deal`
-(D36). The spec ships as package data and is read through `importlib.resources` (D38).
+`LIBRARY_VERSION` is the installed version as a constant. The package has no runtime dependency
+(D49). The spec ships as package data and is read through `importlib.resources` (D38).
 
 ## Where to read more
 

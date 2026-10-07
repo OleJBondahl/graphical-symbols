@@ -1,0 +1,35 @@
+schema = 1
+name = "Change-over break before make contact"
+kind = "symbol"
+status = "unverified"
+reference = { standard = "IEC 60617", number = "S00230" }
+pole_pitch = 8          # 5.5 M wide with its markings, so it cannot repeat at 4 M
+
+ports = [
+  { id = "com", at = [0, 2],   dir = "S", description = "common" },
+  { id = "no",  at = [0, -2],  dir = "N", description = "closes on actuation" },
+  { id = "nc",  at = [-2, -2], dir = "N", description = "opens on actuation" },
+]
+
+paths = [
+  { from = "no", to = "com", kind = "switch_open", through = true },
+  { from = "nc", to = "com", kind = "switch_closed" },
+]
+
+anchors = [
+  { id = "link", at = [-0.5, 0], dir = "W" },
+]
+
+elements = [
+  { line = [[0, 2], [0, 1]] },
+  { line = [[0, -2], [0, -1]] },
+  { line = [[-2, -2], [-2, -1]] },
+  { line = [[-2, -1], [-1, -1]] },
+  { line = [[0, 1], [-1.125, -1.25]] },
+]
+
+[slots]
+tag           = { at = [-4, 0],        side = "W", box = [6, 1] }
+"marking.com" = { at = [0.25, 1.5],    side = "E", box = [1.5, 1] }
+"marking.no"  = { at = [0.25, -1.5],   side = "E", box = [1.5, 1] }
+"marking.nc"  = { at = [-2.25, -1.5],  side = "W", box = [1.5, 1] }

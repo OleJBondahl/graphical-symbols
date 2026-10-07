@@ -1,0 +1,12 @@
+# `pipe` in path_kinds shows a set declaring its own word: the three process symbols (S90001-S90003) use it.
+standard = "IEC 60617"
+title = "IEC 60617 symbols"
+number_pattern = '^S\d{5}$'
+
+[vocabulary]
+path_kinds = ["conductor", "switch_open", "switch_closed", "impedance", "source", "diode", "pipe"]
+potentials = ["earth", "protective_earth", "functional_earth", "frame"]
+links = ["mechanical_link"]
+
+[rules]
+required_slots = ["tag", "marking.<port>"]

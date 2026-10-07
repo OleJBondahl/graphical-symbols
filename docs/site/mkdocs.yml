@@ -1,0 +1,46 @@
+# The docs site config. Zensical and Material for MkDocs both read it.
+# `scripts/build_site.py` copies it to the work folder (the project root: Zensical keeps site_dir
+# inside it) and stages the pages into .site-src/pages/ beside it.
+site_name: symdef
+site_url: https://olejbondahl.github.io/symdef/
+repo_url: https://github.com/OleJBondahl/symdef
+docs_dir: .site-src/pages
+site_dir: .site
+use_directory_urls: true
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Tutorial: tutorial.md
+  - Guide: guide.md
+  - Gallery: gallery.md
+  - API: api.md
+  - Decisions: decisions.md
+  - Interface spec: SYMBOL_INTERFACE.html
+  - JSON schema: symbol.schema.json

@@ -29,6 +29,10 @@ test314:
 
 ci: check dead-code purity cov test314
 
+# build the docs site into .site/ (Zensical, strict: a broken link fails)
+site:
+    uv run python scripts/build_site.py
+
 fmt:
     uv run ruff format src tests scripts
     uv run ruff check --fix src tests scripts
