@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "symdef"
-version = "0.4.1"
+version = "0.5.0"
 description = "Standard-agnostic core for graphical symbols as strict, typed, immutable Python values"
 readme = "README.md"
 requires-python = ">=3.14"
