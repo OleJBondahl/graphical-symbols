@@ -1,7 +1,5 @@
 """Slots-group rules: text slots, their boxes and the pole pitch (guide sections 6 and 8)."""
 
-import deal
-
 from symdef.boxes import body_box, slot_box
 from symdef.lint.overlap import boxes_overlap, overlaps_rect
 from symdef.lint.registry import quote, rule_finding
@@ -14,7 +12,6 @@ _DEFAULT_PITCH = 4
 _LEFT_OUT_OF_THE_EXTENT = ("tag", "value")
 
 
-@deal.pure
 def _missing(entry: str, port_id: str) -> str:
     """Return the message for a required slot that is missing; `port_id` is for `<port>` entries."""
     if _PORT not in entry:
@@ -22,7 +19,6 @@ def _missing(entry: str, port_id: str) -> str:
     return f"the file has no {entry.split(_PORT)[0].rstrip('.')} slot for the port {quote(port_id)}"
 
 
-@deal.pure
 def slot_missing(symbol: Symbol, required_slots: tuple[str, ...] = ()) -> tuple[Finding, ...]:
     """Report each declared slot a `kind = "symbol"` file lacks; with none declared, no duty.
 
@@ -46,7 +42,6 @@ def slot_missing(symbol: Symbol, required_slots: tuple[str, ...] = ()) -> tuple[
     )
 
 
-@deal.pure
 def slot_unknown_port(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every marking slot whose port id is not a port of the symbol.
 
@@ -66,7 +61,6 @@ def slot_unknown_port(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def slot_overlap_body(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every slot box that overlaps an element, by the guide's definition of overlap.
 
@@ -91,7 +85,6 @@ def slot_overlap_body(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def slot_overlap_slot(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every pair of slot boxes that overlap, once, at the later slot of the pair.
 
@@ -111,7 +104,6 @@ def slot_overlap_slot(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def pitch_overflow(symbol: Symbol) -> tuple[Finding, ...]:
     """Report a bad `pole_pitch` and a symbol that is too wide for its pole pitch.
 

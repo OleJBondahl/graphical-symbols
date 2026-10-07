@@ -14,8 +14,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import replace
 from typing import Any
 
-import deal
-
 from symdef.geometry import (
     Arc,
     Circle,
@@ -55,13 +53,11 @@ _LIMIT = 1_000_000
 _Check = Callable[[object, str], list[Finding]]
 
 
-@deal.pure
 def _finding(location: str, message: str) -> Finding:
     """Make a `schema` error; the root location becomes `None`."""
     return Finding("schema", Severity.ERROR, message, location or None)
 
 
-@deal.pure
 def _short(text: object, limit: int = 60) -> str:
     """Cap text that comes from the input, so a finding stays readable whatever it was fed.
 
@@ -71,20 +67,17 @@ def _short(text: object, limit: int = 60) -> str:
     return shown if len(shown) <= limit else shown[:limit] + "..."
 
 
-@deal.pure
 def _child(location: str, key: str | int) -> str:
     """Extend a location by one key, escaping `~` and `/` as JSON Pointer does."""
     escaped = str(key).replace("~", "~0").replace("/", "~1")
     return f"{location}/{escaped}"
 
 
-@deal.pure
 def _is_number(value: object) -> bool:
     """Return whether a value is a JSON number: an int or float, never a bool."""
     return isinstance(value, int | float) and not isinstance(value, bool)
 
 
-@deal.pure
 def _is_integer(value: object) -> bool:
     """Return whether a value is a JSON integer; like JSON Schema, `8.0` counts."""
     if isinstance(value, bool):
@@ -92,19 +85,16 @@ def _is_integer(value: object) -> bool:
     return isinstance(value, int) or (isinstance(value, float) and value.is_integer())
 
 
-@deal.pure
 def _string(value: object, location: str) -> list[Finding]:
     """Check for a string."""
     return [] if isinstance(value, str) else [_finding(location, "must be a string")]
 
 
-@deal.pure
 def _within_limit(value: object) -> bool:
     """Return whether a number is at most `_LIMIT` in absolute value; NaN and infinity are not."""
     return isinstance(value, int | float) and -_LIMIT <= value <= _LIMIT
 
 
-@deal.pure
 def _number(value: object, location: str) -> list[Finding]:
     """Check for a number within the limit."""
     if not _is_number(value):
@@ -114,7 +104,6 @@ def _number(value: object, location: str) -> list[Finding]:
     return []
 
 
-@deal.pure
 def _integer(value: object, location: str) -> list[Finding]:
     """Check for an integer within the limit."""
     if not _is_integer(value):
@@ -124,19 +113,16 @@ def _integer(value: object, location: str) -> list[Finding]:
     return []
 
 
-@deal.pure
 def _boolean(value: object, location: str) -> list[Finding]:
     """Check for a boolean."""
     return [] if isinstance(value, bool) else [_finding(location, "must be true or false")]
 
 
-@deal.pure
 def _schema_version(value: object, location: str) -> list[Finding]:
     """Check that the schema version is 1."""
     return [] if _is_number(value) and value == 1 else [_finding(location, "must be 1")]
 
 
-@deal.pure
 def _enum(*allowed: str) -> _Check:
     """Build a check for one of a fixed set of strings."""
 
@@ -148,7 +134,6 @@ def _enum(*allowed: str) -> _Check:
     return check
 
 
-@deal.pure
 def _array(item: _Check, length: int | None = None) -> _Check:
     """Build a check for an array whose items pass `item`, optionally of an exact length."""
 
@@ -165,7 +150,6 @@ def _array(item: _Check, length: int | None = None) -> _Check:
     return check
 
 
-@deal.pure
 def _table(fields: Mapping[str, _Check], required: tuple[str, ...] = ()) -> _Check:
     """Build a check for a table with these keys and no others."""
 
@@ -187,7 +171,6 @@ def _table(fields: Mapping[str, _Check], required: tuple[str, ...] = ()) -> _Che
     return check
 
 
-@deal.pure
 def _map_of(item: _Check) -> _Check:
     """Build a check for a table with any keys whose values pass `item`."""
 
@@ -291,7 +274,6 @@ _ELEMENTS = {
 }
 
 
-@deal.pure
 def _element(value: object, location: str) -> list[Finding]:
     """Check an element: a table with exactly one shape key and only that shape's other keys."""
     if not isinstance(value, dict):
@@ -307,7 +289,6 @@ def _element(value: object, location: str) -> list[Finding]:
     return _ELEMENTS[shapes[0]](value, location)
 
 
-@deal.pure
 def _ports(value: object, location: str) -> list[Finding]:
     """Check `ports`: an array of port tables (atomic) or a table of strings (composite)."""
     if isinstance(value, list):
@@ -317,7 +298,6 @@ def _ports(value: object, location: str) -> list[Finding]:
     return [_finding(location, "must be an array of tables, or a table of strings in a composite")]
 
 
-@deal.pure
 def _slot(value: object, location: str) -> list[Finding]:
     """Check one slot: a table, or in a composite a string reference to a part's slot."""
     return [] if isinstance(value, str) else _SLOT(value, location)
@@ -346,7 +326,6 @@ _FILE = _table(
 )
 
 
-@deal.pure
 def parse_toml(text: str) -> tuple[dict[str, Any] | None, tuple[Finding, ...]]:
     """Decode TOML text; input the parser rejects or cannot handle becomes a `schema` finding.
 
@@ -360,7 +339,6 @@ def parse_toml(text: str) -> tuple[dict[str, Any] | None, tuple[Finding, ...]]:
     return data, ()
 
 
-@deal.pure
 def validate(data: object) -> tuple[Finding, ...]:
     """Check decoded data against the symbol file format, atomic, composite or resolved.
 
@@ -382,7 +360,6 @@ def validate(data: object) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def parse_json(text: str) -> tuple[Any, tuple[Finding, ...]]:
     """Decode JSON text; input the parser rejects or cannot handle becomes a `schema` finding.
 
@@ -396,13 +373,11 @@ def parse_json(text: str) -> tuple[Any, tuple[Finding, ...]]:
         return None, (_finding("", _short(f"invalid JSON: {error}", 200)),)
 
 
-@deal.pure
 def _point(value: list[float]) -> Point:
     """Build a point from an `[x, y]` array."""
     return Point(value[0], value[1])
 
 
-@deal.pure
 def _element_from_data(item: Mapping[str, Any]) -> Element:
     """Build an element, filling in the documented defaults for absent keys."""
     weight = Weight[item.get("weight", "normal").upper()]
@@ -433,7 +408,6 @@ def _element_from_data(item: Mapping[str, Any]) -> Element:
     return Text(item["text"], _point(item["at"]), item["height"], weight)
 
 
-@deal.pure
 def symbol_from_data(data: Mapping[str, Any]) -> Symbol:
     """Build a symbol from validated atomic data: a TOML file or a resolved JSON symbol.
 
@@ -489,7 +463,6 @@ _PACKAGE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 _STEM = re.compile(r"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*")
 
 
-@deal.pure
 def is_file_stem(text: object) -> bool:
     """Return whether a reference number is safe to use as a file name in a build.
 
@@ -498,7 +471,6 @@ def is_file_stem(text: object) -> bool:
     return isinstance(text, str) and _STEM.fullmatch(text) is not None
 
 
-@deal.pure
 def _bundle_symbol(value: object, location: str) -> list[Finding]:
     """Check one bundle symbol: `validate` and the resolved form (no `parts`, arrays, tables)."""
     found = [replace(f, location=location + (f.location or "")) for f in validate(value)]
@@ -524,7 +496,6 @@ _BUNDLE = _table(
 )
 
 
-@deal.pure
 def validate_bundle(data: object) -> tuple[Finding, ...]:
     """Check a decoded `bundle.json`: its three keys, and every symbol as a resolved symbol.
 
@@ -559,7 +530,6 @@ def validate_bundle(data: object) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def library_from_bundle(data: Mapping[str, Any]) -> Library:
     """Build a library from a validated bundle (D7).
 
@@ -581,7 +551,6 @@ _VOCABULARY = _table(dict.fromkeys(_VOCABULARY_LISTS, _array(_string)))
 _RULES = _table({"required_slots": _array(_string)})
 
 
-@deal.pure
 def _tables_problems(data: Mapping[str, Any]) -> list[Finding]:
     """Check the optional `[vocabulary]` and `[rules]` tables of `library.toml`."""
     found: list[Finding] = []
@@ -591,7 +560,6 @@ def _tables_problems(data: Mapping[str, Any]) -> list[Finding]:
     return found
 
 
-@deal.pure
 def parse_config(text: str) -> tuple[LibraryConfig | None, tuple[Finding, ...]]:
     """Read `library.toml`: `standard`, `title` and `number_pattern`, all strings, the last a regex.
 

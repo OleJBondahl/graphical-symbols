@@ -1,7 +1,5 @@
 """Ports-group rules: the wiring contract at each port (guide section 8, points 1 to 3 and 5)."""
 
-import deal
-
 from symdef.boxes import body_box, keepout_box, slot_box
 from symdef.geometry import Box, Direction, Line, Point
 from symdef.lint.geometry import point_on_geometry
@@ -16,7 +14,6 @@ _WIRING_GRID = 1
 _SPACING = 2
 
 
-@deal.pure
 def _lane_frame(symbol: Symbol) -> Box:
     """Return a box that holds every element, slot box and port, grown by the lane margin.
 
@@ -32,7 +29,6 @@ def _lane_frame(symbol: Symbol) -> Box:
     )
 
 
-@deal.pure
 def port_lane_clear(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port whose wire lane an element or a slot box overlaps.
 
@@ -59,7 +55,6 @@ def port_lane_clear(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def port_duplicate_id(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port whose id an earlier port already has, at the later port."""
     first_seen: dict[str, int] = {}
@@ -75,7 +70,6 @@ def port_duplicate_id(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def port_off_wiring_grid(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port whose position is not a whole number of modules, exactly.
 
@@ -95,7 +89,6 @@ def port_off_wiring_grid(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def port_off_geometry(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port that is not the free end of a lead or on an outline.
 
@@ -116,7 +109,6 @@ def port_off_geometry(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def _on_matching_side(port: Port, body: Box) -> bool:
     """Return whether a port lies, exactly, on the side of the box its direction points out of."""
     x, y = port.position.x, port.position.y
@@ -133,7 +125,6 @@ def _on_matching_side(port: Port, body: Box) -> bool:
             return x == body.min.x and across_y
 
 
-@deal.pure
 def port_on_body_edge(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port that is not on the body-box side its direction is the outward normal of.
 
@@ -154,13 +145,11 @@ def port_on_body_edge(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def _along_side(port: Port) -> float:
     """Return the coordinate that is measured along the side a port faces: x for N and S."""
     return port.position.x if port.direction in (Direction.N, Direction.S) else port.position.y
 
 
-@deal.pure
 def port_spacing(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port that is not a multiple of 2 M from an earlier port with the same `dir`.
 
@@ -183,7 +172,6 @@ def port_spacing(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def port_position_shared(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every port that shares a position with an earlier port of another node.
 
@@ -208,7 +196,6 @@ def port_position_shared(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def _along_port_axis(line: Line, direction: Direction) -> bool:
     """Return whether a line's two ends stay on the one coordinate the port's axis fixes.
 
@@ -220,7 +207,6 @@ def _along_port_axis(line: Line, direction: Direction) -> bool:
     return line.start.y == line.end.y
 
 
-@deal.pure
 def lead_off_port(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every line element whose `port` binding is broken (spec TL1).
 

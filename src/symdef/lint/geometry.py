@@ -3,8 +3,6 @@
 import math
 from itertools import pairwise
 
-import deal
-
 from symdef.geometry import (
     Arc,
     Circle,
@@ -28,7 +26,6 @@ _FULL_TURN = 360
 _PER_GRID = round(1 / GRID_DIVISION)
 
 
-@deal.pure
 def _on_grid(value: float) -> bool:
     """Return whether a value is a multiple of the drawing grid.
 
@@ -38,7 +35,6 @@ def _on_grid(value: float) -> bool:
     return (value * _PER_GRID).is_integer()
 
 
-@deal.pure
 def _grid_values(element: Element) -> tuple[tuple[str, float], ...]:
     """Return the labelled values of an element that must be on the drawing grid."""
     match element:
@@ -61,7 +57,6 @@ def _grid_values(element: Element) -> tuple[tuple[str, float], ...]:
             return (("position.x", at.x), ("position.y", at.y), ("height", height))
 
 
-@deal.pure
 def _off_grid(location: str, values: tuple[tuple[str, float], ...]) -> tuple[Finding, ...]:
     """Return one finding naming every value that is not on the grid, or none if all are."""
     bad = [f"{label} {value!r}" for label, value in values if not _on_grid(value)]
@@ -71,7 +66,6 @@ def _off_grid(location: str, values: tuple[tuple[str, float], ...]) -> tuple[Fin
     return (rule_finding("off-drawing-grid", message, location),)
 
 
-@deal.pure
 def off_drawing_grid(symbol: Symbol) -> tuple[Finding, ...]:
     """Check every element value, anchor, slot point and slot box size against the drawing grid.
 
@@ -109,7 +103,6 @@ def off_drawing_grid(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def _problem(element: Element) -> str | None:
     """Return what is degenerate about an element, or None."""
     match element:
@@ -124,7 +117,6 @@ def _problem(element: Element) -> str | None:
     return None
 
 
-@deal.pure
 def degenerate(symbol: Symbol) -> tuple[Finding, ...]:
     """Report elements that draw nothing or repeat, and slot boxes with a non-positive side.
 
@@ -154,7 +146,6 @@ def degenerate(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def text_too_large(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every text element taller than 1 M."""
     return tuple(
@@ -168,7 +159,6 @@ def text_too_large(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def segments(points: tuple[Point, ...], *, closed: bool) -> tuple[tuple[Point, Point], ...]:
     """Return the segments of a chain of points, plus the closing one; a lone point is a dot."""
     if len(points) == 1:
@@ -177,7 +167,6 @@ def segments(points: tuple[Point, ...], *, closed: bool) -> tuple[tuple[Point, P
     return (*chain, (points[-1], points[0])) if closed and points else chain
 
 
-@deal.pure
 def _near_segment(point: Point, start: Point, end: Point) -> bool:
     """Return whether the point is within the tolerance of a segment; a zero-length one is a dot."""
     dx, dy = end.x - start.x, end.y - start.y
@@ -192,13 +181,11 @@ def _near_segment(point: Point, start: Point, end: Point) -> bool:
     )
 
 
-@deal.pure
 def _near(point: Point, other: Point) -> bool:
     """Return whether two points are within the tolerance of each other."""
     return math.hypot(point.x - other.x, point.y - other.y) <= TOLERANCE
 
 
-@deal.pure
 def _inside(point: Point, corners: tuple[Point, ...]) -> bool:
     """Return whether a point is inside a polygon by the even-odd rule; the edge is not tested."""
     crossings = sum(
@@ -210,7 +197,6 @@ def _inside(point: Point, corners: tuple[Point, ...]) -> bool:
     return crossings % 2 == 1
 
 
-@deal.pure
 def _on_arc(point: Point, arc: Arc) -> bool:
     """Return whether the point is on the arc's swept curve, its two end points included."""
     if abs(math.hypot(point.x - arc.center.x, point.y - arc.center.y) - arc.radius) > TOLERANCE:
@@ -222,7 +208,6 @@ def _on_arc(point: Point, arc: Arc) -> bool:
     return any(_near(point, end) for end in ends)
 
 
-@deal.pure
 def _on_chain(
     point: Point, points: tuple[Point, ...], *, closed: bool, endpoints_only: bool
 ) -> bool:
@@ -232,7 +217,6 @@ def _on_chain(
     return any(_near_segment(point, a, b) for a, b in segments(points, closed=closed))
 
 
-@deal.pure
 def _on_element(point: Point, element: Element, *, endpoints_only: bool) -> bool:
     """Return whether a point is on one element; text is never geometry."""
     match element:
@@ -250,7 +234,6 @@ def _on_element(point: Point, element: Element, *, endpoints_only: bool) -> bool
             return False
 
 
-@deal.pure
 def point_on_geometry(
     point: Point, elements: tuple[Element, ...], *, endpoints_only: bool = False
 ) -> bool:

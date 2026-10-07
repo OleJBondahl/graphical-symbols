@@ -4,8 +4,6 @@ from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from enum import Enum
 
-import deal
-
 from symdef.errors import UnknownSymbolError
 from symdef.geometry import Direction, Element, Orientation, Point
 
@@ -234,7 +232,6 @@ class Library:
         return len(self.symbols)
 
 
-@deal.pure
 def nodes_of(symbol: Symbol) -> tuple[Node, ...]:
     """Return every node of a symbol: the declared ones, then one per port in no declared node.
 

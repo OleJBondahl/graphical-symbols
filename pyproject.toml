@@ -11,10 +11,7 @@ requires-python = ">=3.14"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Ole Johan Bondahl" }]
-# deal contracts (@deal.pure) run at import time, so deal is a runtime dependency.
-dependencies = [
-    "deal==4.24.6",
-]
+dependencies = []
 
 [project.scripts]
 symdef = "symdef.cli:main"
@@ -26,12 +23,12 @@ Repository = "https://github.com/OleJBondahl/symdef"
 dev = [
     "hypothesis==6.168.0",
     "jsonschema==4.26.0",
-    "markdown==3.11",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
     "ruff==0.16.8",
     "ty==0.0.82",
     "vulture==2.16",
+    "zensical==0.0.68",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -88,15 +85,9 @@ select = [
     "TID",  # flake8-tidy-imports
     "ANN",  # flake8-annotations
 ]
-# TC001/TC003 (move/lazy-import type-only-looking imports) ignored under target-version
-# py315: proven unsafe here, not just a style choice. Moving symdef.model /
-# symdef.geometry names into `if TYPE_CHECKING:` breaks dataclass field
-# annotations at runtime -- `deal`'s contract wrapper calls inspect.signature(), which
-# calls annotationlib.get_annotations() on frozen dataclasses (model.py's Port etc.),
-# raising `NameError: name 'Point' is not defined` because TYPE_CHECKING is False at
-# runtime. Confirmed by applying ruff's own --unsafe-fixes for these two rules across
-# the tree: 21 tests failed with this exact NameError. Revisit if deal or dataclasses
-# gain lazy-annotation support that doesn't need eager resolution.
+# TC001/TC003 (move type-only-looking imports into `if TYPE_CHECKING:`) stay ignored: under
+# target-version py315 their unsafe fixes make `lazy import` statements, a SyntaxError on the
+# supported 3.14 (35 test modules failed to collect when tried 2026-10-07, with the contract library gone).
 ignore = ["TRY003", "TC001", "TC003"]
 
 [tool.ruff.lint.pydocstyle]

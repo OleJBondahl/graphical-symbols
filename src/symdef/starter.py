@@ -4,8 +4,6 @@ The texts are plain strings. `tests/test_project.py` loads, lints and builds the
 the format that breaks the starter fails a test.
 """
 
-import deal
-
 LIBRARY_TOML = """\
 #:schema https://olejbondahl.github.io/symdef/symbol.schema.json
 standard = "My symbols"
@@ -60,7 +58,6 @@ STARTER_FILES = {
 }
 
 
-@deal.pure
 def starter_files() -> dict[str, str]:
     """Return the starter set: each path relative to the set's folder, and its text."""
     return dict(STARTER_FILES)

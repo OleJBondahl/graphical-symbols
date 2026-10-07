@@ -9,8 +9,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from typing import Any
 
-import deal
-
 from symdef.geometry import Element, Line, Orientation, Point, Style, Weight
 from symdef.lint.file import metadata_findings, part_id_findings
 from symdef.lint.registry import finding_key, quote, rule_finding
@@ -49,13 +47,11 @@ class Resolution:
     findings: Mapping[str, tuple[Finding, ...]]
 
 
-@deal.pure
 def _at(*keys: str | int) -> str:
     """Make a JSON Pointer, escaping `~` and `/` in the keys."""
     return "".join("/" + str(key).replace("~", "~0").replace("/", "~1") for key in keys)
 
 
-@deal.pure
 def _form_findings(data: Mapping[str, Any]) -> tuple[Finding, ...]:
     """Report the forms `validate` accepts but only one kind of file may use.
 
@@ -86,7 +82,6 @@ def _form_findings(data: Mapping[str, Any]) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def _prepare(
     index: int, part: Mapping[str, Any], base: Symbol
 ) -> tuple[Symbol | None, tuple[Finding, ...]]:
@@ -108,13 +103,11 @@ def _prepare(
     return orient(symbol, Orientation(part.get("orient", "R0"))), ()
 
 
-@deal.pure
 def _anchor(symbol: Symbol, anchor_id: str) -> Anchor | None:
     """Return the symbol's anchor with this id, if it has one."""
     return next((a for a in symbol.anchors if a.id == anchor_id), None)
 
 
-@deal.pure
 def _target(
     index: int, to: str, placed: Mapping[str, Symbol], failed: frozenset[str]
 ) -> tuple[Anchor | None, tuple[Finding, ...]]:
@@ -144,7 +137,6 @@ def _target(
     return anchor, ()
 
 
-@deal.pure
 def _attach(
     index: int,
     part: Mapping[str, Any],
@@ -187,7 +179,6 @@ def _attach(
     return moved, link, ()
 
 
-@deal.pure
 def _place(
     index: int,
     part: Mapping[str, Any],
@@ -217,7 +208,6 @@ def _place(
     return oriented, (), ()
 
 
-@deal.pure
 def _namespace_leads(elements: tuple[Element, ...], name: str) -> tuple[Element, ...]:
     """Prefix a bound lead's `port` with `<part>.`, matching `_export_ports`'s `part.port` keys."""
     return tuple(
@@ -226,7 +216,6 @@ def _namespace_leads(elements: tuple[Element, ...], name: str) -> tuple[Element,
     )
 
 
-@deal.pure
 def _place_parts(
     parts: list[Mapping[str, Any]], bases: Mapping[str, Symbol]
 ) -> tuple[dict[str, Symbol], tuple[Element, ...], tuple[Finding, ...]]:
@@ -263,7 +252,6 @@ def _place_parts(
     return placed, tuple(elements), tuple(found)
 
 
-@deal.pure
 def _export_ports(
     exports: Mapping[str, str], placed: Mapping[str, Symbol]
 ) -> tuple[tuple[Port, ...], dict[str, list[str]], tuple[Finding, ...]]:
@@ -295,7 +283,6 @@ def _export_ports(
     return tuple(ports), exported, tuple(found)
 
 
-@deal.pure
 def _export_leads(
     elements: tuple[Element, ...], exported: Mapping[str, list[str]]
 ) -> tuple[Element, ...]:
@@ -315,7 +302,6 @@ def _export_leads(
     )
 
 
-@deal.pure
 def _export_slots(
     slots: Mapping[str, Any], placed: Mapping[str, Symbol], own: Symbol
 ) -> tuple[tuple[Slot, ...], tuple[Finding, ...]]:
@@ -345,7 +331,6 @@ def _export_slots(
     return tuple(result), tuple(found)
 
 
-@deal.pure
 def _inherit_nodes(
     placed: Mapping[str, Symbol], exported: Mapping[str, list[str]], own: tuple[Node, ...]
 ) -> tuple[Node, ...]:
@@ -365,7 +350,6 @@ def _inherit_nodes(
     return tuple(nodes)
 
 
-@deal.pure
 def _inherit_paths(
     placed: Mapping[str, Symbol],
     exported: Mapping[str, list[str]],
@@ -396,7 +380,6 @@ def _inherit_paths(
     return (*(path for path in inherited if between(path) not in replaced), *own)
 
 
-@deal.pure
 def _compose(
     data: Mapping[str, Any], bases: Mapping[str, Symbol]
 ) -> tuple[Symbol | None, tuple[Finding, ...]]:
@@ -459,7 +442,6 @@ class _Walk:
     broken: set[str]
 
 
-@deal.pure
 def _cycle_findings(stack: list[str], progress: Mapping[str, int], use: str) -> _Found:
     """Report `part-cycle` on every file of the cycle `use` closes, at the part that leads on."""
     members = stack[stack.index(use) :]
@@ -476,7 +458,6 @@ def _cycle_findings(stack: list[str], progress: Mapping[str, int], use: str) -> 
     )
 
 
-@deal.pure
 def _classify(walk: _Walk, use: str) -> _Step:
     """Decide what the part of the file on top of the stack that uses `use` needs next.
 
@@ -497,7 +478,6 @@ def _classify(walk: _Walk, use: str) -> _Step:
     return _Step(descend=use)
 
 
-@deal.pure
 def _finish(walk: _Walk, stem: str) -> tuple[Symbol | None, tuple[Finding, ...]]:
     """Build a file whose parts are all decided: atomic files as read, composites flattened."""
     data = walk.sources[stem]
@@ -508,7 +488,6 @@ def _finish(walk: _Walk, stem: str) -> tuple[Symbol | None, tuple[Finding, ...]]
     return _compose(data, walk.bases[stem])
 
 
-@deal.pure
 def _walk(
     sources: Mapping[str, Mapping[str, Any]], valid: frozenset[str]
 ) -> tuple[dict[str, Symbol | None], _Found]:
@@ -549,7 +528,6 @@ def _walk(
     return walk.resolved, tuple(found)
 
 
-@deal.pure
 def resolve_library(config: LibraryConfig, sources: Mapping[str, Mapping[str, Any]]) -> Resolution:
     """Validate, check and flatten every file of a library.
 

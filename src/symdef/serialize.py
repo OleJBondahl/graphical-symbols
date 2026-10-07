@@ -9,8 +9,6 @@ decimal point, any other number as Python's `repr` gives it, one trailing newlin
 import json
 from typing import Any
 
-import deal
-
 from symdef.boxes import body_box, keepout_box
 from symdef.gallery import readme, sample_texts
 from symdef.geometry import Arc, Box, Circle, Element, Line, Point, Polyline, Text
@@ -25,25 +23,21 @@ GENERATED_DIRS = ("build/resolved", "build/svg", "build/annotated")
 type JsonValue = bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
 
 
-@deal.pure
 def _point(point: Point) -> list[float]:
     """Write a point as `[x, y]`."""
     return [point.x, point.y]
 
 
-@deal.pure
 def _box(box: Box) -> list[list[float]]:
     """Write a box as `[[min_x, min_y], [max_x, max_y]]`."""
     return [_point(box.min), _point(box.max)]
 
 
-@deal.pure
 def _slot_id(slot: Slot) -> str:
     """Return a slot's id, the sort key of the slot table."""
     return slot.id
 
 
-@deal.pure
 def _element(element: Element) -> dict[str, Any]:
     """Write an element in the source vocabulary with every default key present."""
     match element:
@@ -89,7 +83,6 @@ def _element(element: Element) -> dict[str, Any]:
             }
 
 
-@deal.pure
 def symbol_to_data(symbol: Symbol) -> dict[str, Any]:
     """Return the resolved form of a symbol (guide section 10) as plain data.
 
@@ -161,7 +154,6 @@ def symbol_to_data(symbol: Symbol) -> dict[str, Any]:
     return data
 
 
-@deal.pure
 def bundle_to_data(library: Library) -> dict[str, Any]:
     """Return the bundle: the schema version, the standard and every symbol, by number (D7)."""
     return {
@@ -173,7 +165,6 @@ def bundle_to_data(library: Library) -> dict[str, Any]:
     }
 
 
-@deal.pure
 def _whole_as_int(value: JsonValue) -> JsonValue:
     """Return the data with every whole finite float replaced by the int, so `2.0` prints as `2`."""
     if isinstance(value, float) and value.is_integer():
@@ -185,7 +176,6 @@ def _whole_as_int(value: JsonValue) -> JsonValue:
     return value
 
 
-@deal.pure
 def to_json(data: JsonValue) -> str:
     """Render JSON-like data as canonical text (guide section 10).
 
@@ -203,19 +193,16 @@ def to_json(data: JsonValue) -> str:
     return text + "\n"
 
 
-@deal.pure
 def package_name(standard: str) -> str:
     """Return the data repo package: the standard lowercased, letters and digits only (D8)."""
     return "".join(c for c in standard.lower() if c.isalnum())
 
 
-@deal.pure
 def package_folder(standard: str, package: str) -> str:
     """Return the data package's folder: the `package` key, else `package_name` (D45)."""
     return package or package_name(standard)
 
 
-@deal.pure
 def build_files(library: Library, package: str = "") -> dict[str, bytes]:
     """Return every file `write_build` writes, by path relative to the repo root (with `/`).
 

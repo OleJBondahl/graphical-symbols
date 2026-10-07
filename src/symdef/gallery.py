@@ -2,8 +2,6 @@
 
 from urllib.parse import quote
 
-import deal
-
 from symdef.model import Library, Symbol
 
 _INTRO = (
@@ -15,7 +13,6 @@ _TAG = "-X1"
 _VALUE = "10 A"
 
 
-@deal.pure
 def sample_texts(symbol: Symbol) -> dict[str, str]:
     """Return the sample text the annotated SVG shows in each slot (D33).
 
@@ -29,19 +26,16 @@ def sample_texts(symbol: Symbol) -> dict[str, str]:
     return texts
 
 
-@deal.pure
 def _line(text: str) -> str:
     """Put text on one line: every run of whitespace, line breaks included, becomes one space."""
     return " ".join(text.split())
 
 
-@deal.pure
 def _cell(text: str) -> str:
     """Make text safe inside a Markdown table cell."""
     return _line(text).replace("|", "\\|")
 
 
-@deal.pure
 def _row(number: str, library: Library) -> str:
     """Return the table row of one symbol: its facts, then the plain and annotated images."""
     symbol = library.symbols[number]
@@ -58,7 +52,6 @@ def _row(number: str, library: Library) -> str:
     return "| " + " | ".join(cells) + " |"
 
 
-@deal.pure
 def readme(library: Library) -> str:
     """Return the README of a build.
 

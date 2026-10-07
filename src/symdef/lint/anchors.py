@@ -1,13 +1,10 @@
 """Anchors-group rules: `anchor-duplicate-id` and `anchor-off-geometry`."""
 
-import deal
-
 from symdef.lint.geometry import point_on_geometry
 from symdef.lint.registry import quote, rule_finding
 from symdef.model import Finding, Symbol
 
 
-@deal.pure
 def anchor_duplicate_id(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every anchor whose id an earlier anchor already has, at the later anchor."""
     first_seen: dict[str, int] = {}
@@ -22,7 +19,6 @@ def anchor_duplicate_id(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def anchor_off_geometry(symbol: Symbol) -> tuple[Finding, ...]:
     """Warn about every anchor that lies on no element.
 

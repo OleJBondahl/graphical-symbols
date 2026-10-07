@@ -5,8 +5,6 @@ from dataclasses import replace
 from functools import partial
 from types import MappingProxyType
 
-import deal
-
 from symdef.geometry import Orientation
 from symdef.lint.anchors import anchor_duplicate_id, anchor_off_geometry
 from symdef.lint.connectivity import (
@@ -91,7 +89,6 @@ __all__ = [
 ]
 
 
-@deal.pure
 def run_checks(
     symbol: Symbol, rules: Mapping[str, Rule], checks: Mapping[str, Check]
 ) -> tuple[Finding, ...]:
@@ -115,7 +112,6 @@ def run_checks(
     return tuple(found)
 
 
-@deal.pure
 def ordered(findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
     """Sort findings by the guide table's rule order, then orientation, then location.
 
@@ -125,7 +121,6 @@ def ordered(findings: tuple[Finding, ...]) -> tuple[Finding, ...]:
     return tuple(sorted(findings, key=finding_key))
 
 
-@deal.pure
 def lint(symbol: Symbol, required_slots: tuple[str, ...] = ()) -> tuple[Finding, ...]:
     """Lint a flattened symbol in base orientation and return its findings.
 

@@ -3,8 +3,6 @@
 from collections.abc import Callable
 from dataclasses import replace
 
-import deal
-
 from symdef.geometry import (
     Arc,
     Circle,
@@ -39,7 +37,6 @@ _Turn = Callable[[Direction], Direction]
 _Angles = Callable[[float, float], tuple[float, float]]
 
 
-@deal.pure
 def _map_element(element: Element, move: _Move, angles: _Angles) -> Element:
     """Move an element's positions with `move` and an arc's angles with `angles`."""
     match element:
@@ -56,7 +53,6 @@ def _map_element(element: Element, move: _Move, angles: _Angles) -> Element:
             return replace(element, position=move(position))
 
 
-@deal.pure
 def _map_symbol(symbol: Symbol, move: _Move, turn: _Turn, angles: _Angles) -> Symbol:
     """Carry every geometric part of a symbol along: points with `move`, directions with `turn`.
 
@@ -76,7 +72,6 @@ def _map_symbol(symbol: Symbol, move: _Move, turn: _Turn, angles: _Angles) -> Sy
     )
 
 
-@deal.pure
 def orient_point(point: Point, orientation: Orientation) -> Point:
     """Return a point mirrored (if the orientation is an MR) and then turned clockwise.
 
@@ -89,7 +84,6 @@ def orient_point(point: Point, orientation: Orientation) -> Point:
     return Point(x + 0.0, y + 0.0)
 
 
-@deal.pure
 def orient_direction(direction: Direction, orientation: Orientation) -> Direction:
     """Return a direction (or slot side) transformed as a vector by an orientation."""
     mirrored, turns = _PARTS[orientation]
@@ -99,7 +93,6 @@ def orient_direction(direction: Direction, orientation: Orientation) -> Directio
     return Direction((x, y))
 
 
-@deal.pure
 def orient(symbol: Symbol, orientation: Orientation) -> Symbol:
     """Return the symbol mirrored first if the orientation is an MR, then turned clockwise.
 
@@ -131,7 +124,6 @@ def orient(symbol: Symbol, orientation: Orientation) -> Symbol:
     )
 
 
-@deal.pure
 def translate(symbol: Symbol, dx: float, dy: float) -> Symbol:
     """Return the symbol shifted by (dx, dy).
 

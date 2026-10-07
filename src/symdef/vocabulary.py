@@ -3,8 +3,6 @@
 from collections.abc import Callable, Mapping
 from typing import Any
 
-import deal
-
 from symdef.model import Finding, Severity, Vocabulary
 
 # Where each word sits in a symbol file: the table array, the key, what to call the word, and
@@ -16,7 +14,6 @@ _WORDS: tuple[tuple[str, str, str, str, Callable[[Vocabulary], tuple[str, ...]]]
 )
 
 
-@deal.pure
 def _line_of(word: str, text: str) -> int:
     """Return the 1-based first line of the text that quotes the word, or 1 if none does."""
     quoted = (f'"{word}"', f"'{word}'")
@@ -25,7 +22,6 @@ def _line_of(word: str, text: str) -> int:
     )
 
 
-@deal.pure
 def vocabulary_findings(
     data: Mapping[str, Any], vocabulary: Vocabulary, text: str
 ) -> tuple[Finding, ...]:

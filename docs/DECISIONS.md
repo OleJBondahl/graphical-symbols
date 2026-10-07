@@ -872,3 +872,64 @@ Why: a newcomer needs a first working set in three commands, and a test needs on
 gate.
 Cost if wrong: drop the verbs; the renamed module only matters to code that imported
 `symdef.build`, which was not on the public surface.
+
+## D49. `deal` is removed; an AST purity gate replaces it (SYMDEF SD12, amends D36)
+
+Decided (owner 2026-10-07): "remove deal from symdef, as we dont want to bug people with a non dev
+dependency that is not integral, we should instead just write in the claude and readme that such
+and such parts of the library is pure". `deal` leaves completely: no runtime or dev dependency, no
+`@deal.pure`, no `import deal`. The wheel has no dependency.
+`scripts/fp_purity_gate.py` now checks purity with the standard library's `ast`, over every module
+under `src/symdef/` except its `IMPURE_MODULES` (`files.py`, `project.py`, `cli.py`, `__main__.py`
+and the top-level `__init__.py`). In a pure module it fails on a call to `print`, `input`, `open`,
+`exec` or `eval`; an import of `time`, `datetime`, `random`, `secrets`, `os`, `io`, `shutil`,
+`subprocess`, `socket`, `tempfile`, `logging`, `sys` or `pathlib`; a `global` or `nonlocal`
+statement; and an assignment, `del` or mutating call (`append`, `update`, ...) that writes into a
+name bound at module level. Every kind has a test that makes it fire. Two probes against the real
+tree: a `print()` added to a pure function reports `calls print()`; a list appended to at module
+level reports `mutates module state`. The README says which modules are impure and why.
+The gate is weaker than `deal.pure` in one way: it cannot prove a function raises nothing, and
+the runtime wrapper also caught that. `repeat`'s two `deal.pre` preconditions are now a documented
+`ValueError`; the tests that expected `deal` errors expect `ValueError`. It is stronger in two:
+it also forbids file I/O and the clock, and it runs on code no test reaches. The totality of
+rendering stays covered by `tests/test_svg_total.py`.
+The `TC001`/`TC003` ruff ignore stays. Its stated reason was `deal`'s `inspect.signature` call,
+but with `deal` gone ruff's unsafe fixes for those rules still fail: they write `lazy import`
+statements, a `SyntaxError` on 3.14, and 35 test modules failed to collect. The comment in
+`pyproject.toml` now says that.
+Why: users should pay for nothing they did not ask for (lint was 2.6 times slower with the
+contracts on, the import 13 ms slower, and the package carried a 1.9 MB dependency).
+Cost if wrong: purity is proved statically only; a function that raises by accident is found by
+tests, not by a wrapper.
+
+## D50. The docs site is built by Zensical; a gallery set ships in `docs/` (SYMDEF SD13)
+
+Decided: `scripts/build_site.py` (run by `just site` and by `docs.yml` on a tag) stages the README
+as the home page, `docs/TUTORIAL.md`, `docs/GUIDE.md`, `docs/DECISIONS.md`, a generated gallery of
+`docs/tutorial-set/` and a generated API reference (every name of `symdef.__all__` with its
+signature and docstring) into the gitignored `.site-src/`, and builds it with Zensical (dev
+dependency, `zensical==0.0.68`, the latest stable) in `--strict` mode, so a broken link fails the
+build. The interface spec and the JSON schema are published at the site root, the schema at its
+`$id`. `tests/test_site.py` proves a broken link fails the build; `tests/test_tutorial.py` runs
+every `symdef` command, edit step and python block of the tutorial in an empty folder. The
+`markdown` dev dependency goes. The gallery set is the six IEC fixtures, plus a gate valve, a pump
+and a check valve drawn here (S90001 to S90003, path kind `pipe`, which shows a set declaring its
+own word). S00254 carries `pole_pitch = 8`, the fix D-concern C1 names, because `symdef check`
+refuses the fixture's pitch overflow; the other five files are byte-equal to the guide fixtures.
+No page names a user of the toolkit. The README carries the provenance line for every IEC-style
+example: original drawings, `unverified`. Both workflows run on `ubuntu-24.04` with an exact uv
+version.
+Why: the site must cover everything a newcomer needs, with no other repository to read.
+Cost if wrong: Zensical is pre-1.0; the staged Markdown also builds with MkDocs.
+
+## D51. The interface spec is amended in place for 0.5.0 (SYMDEF SD14)
+
+Decided (owner C1): `SYMBOL_INTERFACE.html` opens with a dated change list and changes only
+through a designer-approved spec, with a dated entry in that list and in this file. This amendment
+records D45 to D49 in it: declared words and required slots (sections 5, 6, 7, 9, 11 and 12), the
+API list (`Vocabulary`, `init`, `build`, `check`, `lint(symbol, required_slots)`, `Library`'s two
+fields; `PathKind` is gone), the schema location, the generic layout and gates of section 12, no
+runtime dependency, and a rewrite of sections 1, 12 and 13 that names no predecessor and no user.
+Section 14's open items stay. The byte-equality test of the guide's code blocks passes against it.
+Why: the spec was the one file still describing the first design.
+Cost if wrong: revert the file; code and tests do not read its prose except the code blocks.

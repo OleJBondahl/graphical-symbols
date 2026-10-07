@@ -3,7 +3,6 @@
 from dataclasses import replace
 from pathlib import Path as FilePath
 
-import deal
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
@@ -312,15 +311,15 @@ class TestEdgeCases:
 class TestPreconditions:
     @pytest.mark.parametrize("n", [0, -1])
     def test_a_pole_count_below_one_is_rejected(self, s227, n):
-        with pytest.raises(deal.PreContractError):
+        with pytest.raises(ValueError, match=r"pole count|through path"):
             repeat(s227, n)
 
     def test_a_symbol_without_a_through_path_is_rejected(self):
-        with pytest.raises(deal.PreContractError):
+        with pytest.raises(ValueError, match=r"pole count|through path"):
             repeat(bare(paths=(Path("in", "out", "conductor"),)), 2)
 
     def test_a_symbol_without_paths_is_rejected(self):
-        with pytest.raises(deal.PreContractError):
+        with pytest.raises(ValueError, match=r"pole count|through path"):
             repeat(bare(paths=()), 1)
 
 

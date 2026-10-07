@@ -10,8 +10,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 
-import deal
-
 from symdef.geometry import Orientation
 from symdef.model import Finding, Severity, Symbol
 
@@ -139,25 +137,21 @@ RULES: Mapping[str, Rule] = MappingProxyType(
 )
 
 
-@deal.pure
 def rule_finding(rule: str, message: str, location: str | None = None) -> Finding:
     """Make a finding of a registered rule, with the severity the registry gives it."""
     return Finding(rule, RULES[rule].severity, message, location)
 
 
-@deal.pure
 def quote(text: str) -> str:
     """Quote text that comes from a file for a message, capped so the message stays readable."""
     return repr(text if len(text) <= _QUOTE_LIMIT else text[:_QUOTE_LIMIT] + "...")
 
 
-@deal.pure
 def natural_key(text: str) -> str:
     """Return a sort key that puts numbers in natural order: `elements[2]` before `[10]`."""
     return re.sub(r"\d+", lambda m: f"{len(m.group()):04d}{m.group()}", text)
 
 
-@deal.pure
 def finding_key(finding: Finding) -> tuple[int, str, int, str]:
     """Return the sort key of the one finding order, shared by the resolver and the linter.
 

@@ -3,7 +3,6 @@
 import math
 import xml.etree.ElementTree as ET
 
-import deal
 import pytest
 from build_symbol import plain_symbol
 from hypothesis import HealthCheck, given, settings
@@ -140,7 +139,7 @@ def test_the_property_can_fail_when_arc_point_raises_on_a_non_finite_angle(monke
         return Point(arc.center.x, arc.center.y)
 
     monkeypatch.setattr(svg_module, "arc_point", raising)
-    with pytest.raises((ValueError, deal.ContractError)):
+    with pytest.raises(ValueError, match=r"finite|nan"):
         render_both_modes(base(elements=(Arc(Point(0, 0), 1, math.inf, 0),)))
 
 
@@ -152,5 +151,5 @@ def test_the_property_can_fail_when_the_number_formatter_raises_on_nan(monkeypat
         return "0"
 
     monkeypatch.setattr(svg_module, "_num", raising)
-    with pytest.raises((ValueError, deal.ContractError)):
+    with pytest.raises(ValueError, match=r"finite|nan"):
         render_both_modes(base(elements=(Line(Point(math.nan, 0), Point(1, 1)),)))

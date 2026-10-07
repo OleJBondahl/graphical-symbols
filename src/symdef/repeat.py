@@ -2,8 +2,6 @@
 
 from dataclasses import replace
 
-import deal
-
 from symdef.geometry import Element, Line, Point, Style, Weight
 from symdef.model import Node, Path, Port, Slot, Symbol, nodes_of
 from symdef.orient import translate
@@ -13,7 +11,6 @@ _LINK = "link"
 _MARKING = "marking."
 
 
-@deal.pure
 def _pole_elements(elements: tuple[Element, ...], k: int) -> tuple[Element, ...]:
     """Return pole `k`'s elements, a bound lead's `port` prefixed `<k>.` to match its port."""
     return tuple(
@@ -22,7 +19,6 @@ def _pole_elements(elements: tuple[Element, ...], k: int) -> tuple[Element, ...]
     )
 
 
-@deal.pure
 def _pole_slots(slots: tuple[Slot, ...], k: int) -> tuple[Slot, ...]:
     """Return the slots pole `k` contributes: its marking slots renamed, the rest from pole 1."""
     return tuple(
@@ -34,7 +30,6 @@ def _pole_slots(slots: tuple[Slot, ...], k: int) -> tuple[Slot, ...]:
     )
 
 
-@deal.pure
 def _pole_parts(
     pole: Symbol, k: int
 ) -> tuple[tuple[Port, ...], tuple[Node, ...], tuple[Path, ...]]:
@@ -54,9 +49,6 @@ def _pole_parts(
     )
 
 
-@deal.pure
-@deal.pre(lambda symbol, n: n >= 1)  # noqa: ARG005
-@deal.pre(lambda symbol, n: any(p.through for p in symbol.paths))  # noqa: ARG005
 def repeat(symbol: Symbol, n: int) -> Symbol:
     """Return `n` copies of a symbol placed along +x, as an ordinary symbol.
 
@@ -75,7 +67,16 @@ def repeat(symbol: Symbol, n: int) -> Symbol:
 
     Returns:
         The repeated symbol; with `n = 1` it is the symbol with renamed ports and slots.
+
+    Raises:
+        ValueError: If `n` is below 1, or no path of the symbol has `through`.
     """
+    if n < 1:
+        msg = f"the pole count must be at least 1, got {n}"
+        raise ValueError(msg)
+    if not any(p.through for p in symbol.paths):
+        msg = "the symbol has no through path to repeat"
+        raise ValueError(msg)
     pitch = symbol.pole_pitch or _DEFAULT_PITCH
     poles = tuple(translate(symbol, (k - 1) * pitch, 0) for k in range(1, n + 1))
     parts = tuple(_pole_parts(pole, k) for k, pole in enumerate(poles, start=1))

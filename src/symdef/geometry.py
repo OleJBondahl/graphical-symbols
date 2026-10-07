@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Self
 
-import deal
-
 
 class Direction(Enum):
     """Compass direction, with the unit vector as its value.
@@ -179,7 +177,6 @@ Element = Line | Polyline | Circle | Arc | Text
 _RIGHT_ANGLE_COS_SIN = {0: (1.0, 0.0), 90: (0.0, 1.0), 180: (-1.0, 0.0), 270: (0.0, -1.0)}
 
 
-@deal.pure
 def arc_point(arc: Arc, degrees: float) -> Point:
     """Return the point on the arc's circle at an angle, exact at multiples of 90 degrees.
 
@@ -203,7 +200,6 @@ def arc_point(arc: Arc, degrees: float) -> Point:
     )
 
 
-@deal.pure
 def arc_sweep(arc: Arc) -> float:
     """Return the clockwise sweep in degrees, in (0, 360]; equal angles are a full circle."""
     return (arc.end_deg - arc.start_deg) % 360 or 360

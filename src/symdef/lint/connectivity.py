@@ -1,7 +1,5 @@
 """Connectivity-group rules: nodes, paths and the through path (guide sections 3, 5 and 8)."""
 
-import deal
-
 from symdef.geometry import Direction
 from symdef.lint.registry import quote, rule_finding
 from symdef.model import Finding, Port, Symbol, SymbolKind, nodes_of
@@ -9,7 +7,6 @@ from symdef.model import Finding, Port, Symbol, SymbolKind, nodes_of
 _PAIR = 2
 
 
-@deal.pure
 def _first_node_of(symbol: Symbol) -> dict[str, int]:
     """Map each port id to the index in `nodes_of` of the first node that lists it."""
     first: dict[str, int] = {}
@@ -19,7 +16,6 @@ def _first_node_of(symbol: Symbol) -> dict[str, int]:
     return first
 
 
-@deal.pure
 def _first_port_of(symbol: Symbol) -> dict[str, Port]:
     """Map each port id to the first port that has it."""
     first: dict[str, Port] = {}
@@ -28,7 +24,6 @@ def _first_port_of(symbol: Symbol) -> dict[str, Port]:
     return first
 
 
-@deal.pure
 def node_invalid(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every place a declared node names an unknown port or lists a port a second time.
 
@@ -53,7 +48,6 @@ def node_invalid(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def path_invalid(symbol: Symbol) -> tuple[Finding, ...]:
     """Report paths that name an unknown port, join one node to itself or repeat a path.
 
@@ -90,7 +84,6 @@ def path_invalid(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def through_count(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every through path after the first, at the later path, naming the first."""
     through = [index for index, path in enumerate(symbol.paths) if path.through]
@@ -104,7 +97,6 @@ def through_count(symbol: Symbol) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def _axis_problem(from_port: Port, to_port: Port) -> str | None:
     """Return why two ports are not `(0, -a)` N and `(0, a)` S, `a` a positive whole number."""
     a = to_port.position.y
@@ -117,7 +109,6 @@ def _axis_problem(from_port: Port, to_port: Port) -> str | None:
     return None
 
 
-@deal.pure
 def through_axis(symbol: Symbol) -> tuple[Finding, ...]:
     """Report every through path whose ports are not `(0, -a)` N (from) and `(0, a)` S (to).
 
@@ -140,7 +131,6 @@ def through_axis(symbol: Symbol) -> tuple[Finding, ...]:
     return tuple(found)
 
 
-@deal.pure
 def through_missing(symbol: Symbol) -> tuple[Finding, ...]:
     """Warn for a kind-symbol file with two or more nodes, no potential and no through path."""
     nodes = nodes_of(symbol)
@@ -155,7 +145,6 @@ def through_missing(symbol: Symbol) -> tuple[Finding, ...]:
     return ()
 
 
-@deal.pure
 def port_isolated(symbol: Symbol) -> tuple[Finding, ...]:
     """Warn for every port in no path, in no multi-port node, whose node has no potential.
 

@@ -5,8 +5,6 @@ import re
 from collections.abc import Mapping, Sequence
 from xml.sax.saxutils import escape
 
-import deal
-
 from symdef.boxes import body_box, keepout_box, slot_box
 from symdef.geometry import (
     Arc,
@@ -74,7 +72,6 @@ _XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\U0000fffe\U
 _GROUP_OPEN = '<g fill="none" stroke="#000" stroke-linecap="butt" stroke-linejoin="miter">'
 
 
-@deal.pure
 def _num(value: float) -> str:
     """Format a number with at most 4 decimals, no trailing zeros and no negative zero.
 
@@ -87,7 +84,6 @@ def _num(value: float) -> str:
     return "0" if text == "-0" else text
 
 
-@deal.pure
 def _content(text: str) -> str:
     r"""Make text safe as XML character data (D32).
 
@@ -98,7 +94,6 @@ def _content(text: str) -> str:
     return escape(_XML_ILLEGAL.sub("\U0000fffd", text), {"\r": "&#13;"})
 
 
-@deal.pure
 def _stroke(weight: Weight, fill: Fill = Fill.NONE, style: Style = Style.SOLID) -> str:
     """Return the closing attributes of a stroked shape: dashed when asked, black when solid."""
     dashed = _DASHED if style is Style.DASHED else ""
@@ -106,7 +101,6 @@ def _stroke(weight: Weight, fill: Fill = Fill.NONE, style: Style = Style.SOLID) 
     return f'stroke-width="{_num(weight.value)}"{dashed}{solid}/>'
 
 
-@deal.pure
 def _arc(arc: Arc) -> str:
     """Render an arc as a path, clockwise on screen from its start to its end angle.
 
@@ -127,7 +121,6 @@ def _arc(arc: Arc) -> str:
     return f'<path d="{d}" {_stroke(arc.weight, style=arc.style)}'
 
 
-@deal.pure
 def _text(text: Text) -> str:
     """Render a text label, middle-anchored, in black without a stroke.
 
@@ -142,7 +135,6 @@ def _text(text: Text) -> str:
     )
 
 
-@deal.pure
 def _element(element: Element) -> str:
     """Render one element as an SVG tag."""
     match element:
@@ -165,13 +157,11 @@ def _element(element: Element) -> str:
             return _text(text)
 
 
-@deal.pure
 def _centred(at: Point, half_w: float, half_h: float) -> Box:
     """Return the box of the given half sizes around a point."""
     return Box(Point(at.x - half_w, at.y - half_h), Point(at.x + half_w, at.y + half_h))
 
 
-@deal.pure
 def _union(boxes: Sequence[Box]) -> Box:
     """Return the smallest box holding every box; the caller passes at least one."""
     return Box(
@@ -180,7 +170,6 @@ def _union(boxes: Sequence[Box]) -> Box:
     )
 
 
-@deal.pure
 def _label(  # noqa: PLR0913 - one text tag is these six things
     css: str, at: Point, size: float, *, anchor: str, colour: str, content: str
 ) -> str:
@@ -192,14 +181,12 @@ def _label(  # noqa: PLR0913 - one text tag is these six things
     )
 
 
-@deal.pure
 def _centred_label(css: str, at: Point, size: float, colour: str, content: str) -> str:
     """Render a middle-anchored text whose capitals are centred on `at` (D33)."""
     shifted = Point(at.x, at.y + _CAP_CENTRE * size)
     return _label(css, shifted, size, anchor="middle", colour=colour, content=content)
 
 
-@deal.pure
 def _rect(box: Box, css: str, style: str) -> str:
     """Render a box as a rect; a box turned inside out (a hand-built slot) has no size."""
     return (
@@ -208,20 +195,17 @@ def _rect(box: Box, css: str, style: str) -> str:
     )
 
 
-@deal.pure
 def _label_at(port: Port) -> Point:
     """Return the centre of a port's id label, one module out along the port direction."""
     return Point(port.position.x + port.direction.dx, port.position.y + port.direction.dy)
 
 
-@deal.pure
 def _lane_start(port: Port) -> Box:
     """Return the port end of its lane: a segment 0.5 M wide across the direction."""
     d = port.direction
     return _centred(port.position, _LANE_HALF_WIDTH * abs(d.dy), _LANE_HALF_WIDTH * abs(d.dx))
 
 
-@deal.pure
 def _anchor_label_at(anchor: Anchor) -> Point:
     """Return the centre of an anchor's id label, 0.75 M out along the anchor direction."""
     d = anchor.direction
@@ -230,7 +214,6 @@ def _anchor_label_at(anchor: Anchor) -> Point:
     )
 
 
-@deal.pure
 def _slot_label_box(slot: Slot) -> Box:
     """Return the box a slot's id label takes: just above the top edge of the slot box."""
     box = slot_box(slot)
@@ -240,7 +223,6 @@ def _slot_label_box(slot: Slot) -> Box:
     )
 
 
-@deal.pure
 def _annotation_boxes(symbol: Symbol) -> list[Box]:
     """Return every box the annotations occupy beyond the keep-out box, so nothing is clipped.
 
@@ -261,13 +243,11 @@ def _annotation_boxes(symbol: Symbol) -> list[Box]:
     return boxes
 
 
-@deal.pure
 def _slot_id(slot: Slot) -> str:
     """Return a slot's id, the sort key of the slots."""
     return slot.id
 
 
-@deal.pure
 def _slots_by_id(symbol: Symbol) -> list[Slot]:
     """Return the slots in id order (D33).
 
@@ -277,7 +257,6 @@ def _slots_by_id(symbol: Symbol) -> list[Slot]:
     return sorted(symbol.slots, key=_slot_id)
 
 
-@deal.pure
 def _sample_size(slot: Slot, content: str) -> float:
     """Return the font size of a sample text: the largest of at most 1 M that fits the slot box.
 
@@ -292,7 +271,6 @@ def _sample_size(slot: Slot, content: str) -> float:
     return math.floor(size * 10_000) / 10_000
 
 
-@deal.pure
 def _sampled(symbol: Symbol, texts: Mapping[str, str]) -> tuple[tuple[Slot, str, float], ...]:
     """Return the slots of the symbol that have a sample text, with the text and its size.
 
@@ -307,7 +285,6 @@ def _sampled(symbol: Symbol, texts: Mapping[str, str]) -> tuple[tuple[Slot, str,
     return tuple(found)
 
 
-@deal.pure
 def _sample_text(slot: Slot, content: str, size: float) -> str:
     """Render a sample text upright in its slot box, aligned by the slot side (guide section 6).
 
@@ -319,7 +296,6 @@ def _sample_text(slot: Slot, content: str, size: float) -> str:
     return _label("sample-text", at, size, anchor=anchor, colour=_SAMPLE_COLOUR, content=content)
 
 
-@deal.pure
 def _slot(slot: Slot) -> list[str]:
     """Render a slot box, translucent, with its id just above it."""
     box = slot_box(slot)
@@ -328,7 +304,6 @@ def _slot(slot: Slot) -> list[str]:
     return [_rect(box, "slot-box", _SLOT_STYLE), label]
 
 
-@deal.pure
 def _anchor(anchor: Anchor) -> list[str]:
     """Render an anchor: a diamond on its position and its id beside it, along its direction."""
     x, y, r = _num(anchor.position.x), _num(anchor.position.y), _ANCHOR_HALF
@@ -344,7 +319,6 @@ def _anchor(anchor: Anchor) -> list[str]:
     return [marker, label]
 
 
-@deal.pure
 def _reach(here: float, low: float, high: float, step: int) -> float:
     """Return where a lane stops on one axis: the view edge it runs towards, or where it is."""
     if step > 0:
@@ -352,7 +326,6 @@ def _reach(here: float, low: float, high: float, step: int) -> float:
     return low if step < 0 else here
 
 
-@deal.pure
 def _lane(port: Port, view: tuple[float, float, float, float]) -> str:
     """Render the wire lane of a port: 0.5 M wide, from the port along its direction to the edge."""
     x, y, w, h = view
@@ -362,7 +335,6 @@ def _lane(port: Port, view: tuple[float, float, float, float]) -> str:
     return _rect(_union([start, Box(far, far)]), "lane", _LANE_STYLE)
 
 
-@deal.pure
 def _port(port: Port) -> list[str]:
     """Render a port marker and its id label, one module out along the port direction."""
     p = port.position
@@ -374,7 +346,6 @@ def _port(port: Port) -> list[str]:
     return [marker, label]
 
 
-@deal.pure
 def _grid(view: tuple[float, float, float, float]) -> list[str]:
     """Return a dot at every whole module inside the view.
 
@@ -394,7 +365,6 @@ def _grid(view: tuple[float, float, float, float]) -> list[str]:
     ]
 
 
-@deal.pure
 def _annotation(symbol: Symbol, view: tuple[float, float, float, float]) -> list[str]:
     """Return the annotation group (D33), in drawing order.
 
@@ -415,7 +385,6 @@ def _annotation(symbol: Symbol, view: tuple[float, float, float, float]) -> list
     return lines
 
 
-@deal.pure
 def _extent(symbol: Symbol, sampled: Sequence[tuple[Slot, str, float]], *, annotate: bool) -> Box:
     """Return what the view must hold, before the margin.
 
@@ -429,7 +398,6 @@ def _extent(symbol: Symbol, sampled: Sequence[tuple[Slot, str, float]], *, annot
     return _union(boxes)
 
 
-@deal.pure
 def to_svg(
     symbol: Symbol,
     *,
@@ -485,7 +453,6 @@ def to_svg(
     return "\n".join(lines) + "\n"
 
 
-@deal.pure
 def to_fragment(symbol: Symbol) -> str:
     """Render a symbol as a placeable SVG fragment: a `<g>` of its plain elements only.
 

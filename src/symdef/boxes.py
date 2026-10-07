@@ -2,8 +2,6 @@
 
 import math
 
-import deal
-
 from symdef.geometry import (
     Arc,
     Box,
@@ -25,7 +23,6 @@ _TEXT_WIDTH_PER_HEIGHT = 0.6
 _ORIGIN_BOX = Box(Point(0, 0), Point(0, 0))
 
 
-@deal.pure
 def _extent_points(element: Element) -> tuple[Point, ...]:
     """Return points whose bounding box is the element's extent, ignoring stroke width.
 
@@ -53,7 +50,6 @@ def _extent_points(element: Element) -> tuple[Point, ...]:
             )
 
 
-@deal.pure
 def _bounding(points: tuple[Point, ...]) -> Box:
     """Return the smallest box holding every point; no points give the origin box."""
     if not points:
@@ -63,7 +59,6 @@ def _bounding(points: tuple[Point, ...]) -> Box:
     return Box(Point(min(xs), min(ys)), Point(max(xs), max(ys)))
 
 
-@deal.pure
 def element_box(element: Element) -> Box:
     """Return the extent of one element.
 
@@ -74,7 +69,6 @@ def element_box(element: Element) -> Box:
     return _bounding(_extent_points(element))
 
 
-@deal.pure
 def body_box(symbol: Symbol) -> Box:
     """Return the union of the element extents, in module units, ignoring stroke width.
 
@@ -85,7 +79,6 @@ def body_box(symbol: Symbol) -> Box:
     return _bounding(tuple(p for e in symbol.elements for p in _extent_points(e)))
 
 
-@deal.pure
 def slot_box(slot: Slot) -> Box:
     """Return the box a slot reserves: it grows from the slot point towards its side.
 
@@ -105,7 +98,6 @@ def slot_box(slot: Slot) -> Box:
             return Box(Point(x - w / 2, y), Point(x + w / 2, y + h))
 
 
-@deal.pure
 def keepout_box(symbol: Symbol) -> Box:
     """Return the body box united with every slot box: the room the symbol needs kept clear."""
     boxes = (body_box(symbol), *(slot_box(s) for s in symbol.slots))

@@ -16,8 +16,6 @@ import math
 from fractions import Fraction
 from itertools import pairwise
 
-import deal
-
 from symdef.boxes import element_box
 from symdef.geometry import (
     Arc,
@@ -44,25 +42,21 @@ _WIDE = (Fraction(-1), Fraction(2))
 _Exact = tuple[Fraction, Fraction]
 
 
-@deal.pure
 def _finite(*values: float) -> bool:
     """Return whether every value is a finite number."""
     return all(math.isfinite(v) for v in values)
 
 
-@deal.pure
 def _has_area(rect: Box) -> bool:
     """Return whether the rectangle has an interior; NaN, zero and negative sizes have none."""
     return rect.min.x < rect.max.x and rect.min.y < rect.max.y
 
 
-@deal.pure
 def _corners(rect: Box) -> tuple[float, float, float, float]:
     """Return the four bounds of a rectangle as (min x, min y, max x, max y)."""
     return rect.min.x, rect.min.y, rect.max.x, rect.max.y
 
 
-@deal.pure
 def boxes_overlap(a: Box, b: Box) -> bool:
     """Return whether the open interiors of two boxes intersect; a box with no area has none."""
     return max(a.min.x, b.min.x) < min(a.max.x, b.max.x) and max(a.min.y, b.min.y) < min(
@@ -70,7 +64,6 @@ def boxes_overlap(a: Box, b: Box) -> bool:
     )
 
 
-@deal.pure
 def wire_lane(position: Point, direction: Direction, frame: Box) -> Box:
     """Return the wire lane of a port, clipped to a finite frame.
 
@@ -90,7 +83,6 @@ def wire_lane(position: Point, direction: Direction, frame: Box) -> Box:
             return Box(Point(frame.min.x, y - LANE_HALF_WIDTH), Point(x, y + LANE_HALF_WIDTH))
 
 
-@deal.pure
 def _clip(
     start: Fraction, step: Fraction, low: Fraction, high: Fraction
 ) -> tuple[Fraction, Fraction] | None:
@@ -104,7 +96,6 @@ def _clip(
     return (min(first, second), max(first, second))
 
 
-@deal.pure
 def _segment_meets(a: Point, b: Point, rect: Box) -> bool:
     """Return whether the closed segment a-b meets the open rectangle; rectangle has an area.
 
@@ -123,7 +114,6 @@ def _segment_meets(a: Point, b: Point, rect: Box) -> bool:
     return low < high and low < 1 and high > 0
 
 
-@deal.pure
 def _inside(point: _Exact, corners: tuple[Point, ...]) -> bool:
     """Return whether an exact point is inside a polygon by the even-odd rule; edges not tested."""
     px, py = point
@@ -136,7 +126,6 @@ def _inside(point: _Exact, corners: tuple[Point, ...]) -> bool:
     return inside
 
 
-@deal.pure
 def _polyline_meets(polyline: Polyline, rect: Box) -> bool:
     """Return whether a polyline's outline, or its area if it is closed and filled, meets rect.
 
@@ -155,7 +144,6 @@ def _polyline_meets(polyline: Polyline, rect: Box) -> bool:
     return _inside(((x0 + x1) / 2, (y0 + y1) / 2), points)
 
 
-@deal.pure
 def _circle_meets(circle: Circle, rect: Box) -> bool:
     """Return whether a circle's outline, or its disk if it is filled, meets the open rectangle.
 
@@ -177,7 +165,6 @@ def _circle_meets(circle: Circle, rect: Box) -> bool:
     return near < r * r < far
 
 
-@deal.pure
 def _crossings(
     centre: float, radius: float, lines: tuple[float, float], *, x_axis: bool
 ) -> list[float]:
@@ -200,7 +187,6 @@ def _crossings(
     return angles
 
 
-@deal.pure
 def _arc_meets(arc: Arc, rect: Box) -> bool:
     """Return whether an arc's curve meets the open rectangle.
 
@@ -229,7 +215,6 @@ def _arc_meets(arc: Arc, rect: Box) -> bool:
     return False
 
 
-@deal.pure
 def _text_meets(text: Text, rect: Box) -> bool:
     """Return whether a text element's box overlaps the rectangle.
 
@@ -245,7 +230,6 @@ def _text_meets(text: Text, rect: Box) -> bool:
     return boxes_overlap(shrunk, rect)
 
 
-@deal.pure
 def overlaps_rect(element: Element, rect: Box) -> bool:
     """Return whether an element overlaps an open rectangle, by the guide's definition.
 

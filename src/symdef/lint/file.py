@@ -4,8 +4,6 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
-import deal
-
 from symdef.lint.registry import quote, rule_finding
 from symdef.model import Finding, LibraryConfig, Symbol
 
@@ -13,13 +11,11 @@ _ID = re.compile(r"[a-z][a-z0-9_]*")
 _POLE_PORT = re.compile(r"(?:[1-9][0-9]*\.)+[a-z][a-z0-9_]*")
 
 
-@deal.pure
 def is_valid_id(text: str) -> bool:
     """Return whether a port, anchor or part id matches `^[a-z][a-z0-9_]*$` in full."""
     return _ID.fullmatch(text) is not None
 
 
-@deal.pure
 def _matches(pattern: str, text: str) -> bool:
     """Return whether the pattern is found in the text.
 
@@ -32,7 +28,6 @@ def _matches(pattern: str, text: str) -> bool:
         return False
 
 
-@deal.pure
 def metadata_findings(
     stem: str, data: Mapping[str, Any], config: LibraryConfig
 ) -> tuple[Finding, ...]:
@@ -80,7 +75,6 @@ def metadata_findings(
     return tuple(found)
 
 
-@deal.pure
 def part_id_findings(data: Mapping[str, Any]) -> tuple[Finding, ...]:
     """Return an `id-format` finding for every part id that is not a valid id."""
     return tuple(
@@ -94,7 +88,6 @@ def part_id_findings(data: Mapping[str, Any]) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def symbol_id_findings(symbol: Symbol) -> tuple[Finding, ...]:
     """Return an `id-format` finding for every port id and anchor id that is not a valid id.
 

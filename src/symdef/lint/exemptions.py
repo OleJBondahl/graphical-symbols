@@ -1,19 +1,15 @@
 """Exemptions-group rules: applying `lint_allow`, `allow-unknown` and `allow-unused`."""
 
-import deal
-
 from symdef.lint.registry import RESOLVER_RULES, RULE_IDS, quote, rule_finding
 from symdef.model import Allow, Finding
 
 
-@deal.pure
 def exempt(findings: tuple[Finding, ...], allow: tuple[Allow, ...]) -> tuple[Finding, ...]:
     """Drop the findings of every exempted rule, of both severities, in every orientation."""
     exempted = {entry.rule for entry in allow}
     return tuple(f for f in findings if f.rule not in exempted)
 
 
-@deal.pure
 def allow_unknown(allow: tuple[Allow, ...]) -> tuple[Finding, ...]:
     """Report each exemption that names a rule the guide does not have, or gives no reason.
 
@@ -34,7 +30,6 @@ def allow_unknown(allow: tuple[Allow, ...]) -> tuple[Finding, ...]:
     )
 
 
-@deal.pure
 def allow_unused(allow: tuple[Allow, ...], fired: frozenset[str]) -> tuple[Finding, ...]:
     """Report each exemption of a known rule that did not fire, in any orientation.
 
